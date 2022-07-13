@@ -34,4 +34,4 @@ The library is designed to be:
 ```
 ## Dependencies
 
-- **Argo** By me, found [here](https://github.com/Moderocky/Argo).
+- **Argo** by me, found [here](https://github.com/Moderocky/Argo).
