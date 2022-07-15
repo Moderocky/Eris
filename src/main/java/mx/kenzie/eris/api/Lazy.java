@@ -1,11 +1,11 @@
 package mx.kenzie.eris.api;
 
-import mx.kenzie.eris.DiscordAPI;
-import mx.kenzie.eris.data.Payload;
+import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.error.DiscordException;
 import org.jetbrains.annotations.Contract;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Lazy objects are created unfulfilled.
@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 public abstract class Lazy extends Entity {
     private transient volatile boolean ready0;
     private transient final Object lock = new Object();
-    
+
     @Contract(pure = true)
     public void await() {
         try {
@@ -37,12 +37,12 @@ public abstract class Lazy extends Entity {
             throw new DiscordException(ex);
         }
     }
-    
+
     @Contract(pure = true)
     public synchronized void unready() {
         this.ready0 = false;
     }
-    
+
     @Contract(pure = true)
     public void finish() {
         synchronized (this) {
@@ -52,19 +52,24 @@ public abstract class Lazy extends Entity {
             this.lock.notifyAll();
         }
     }
-    
+
     @Contract(pure = true)
     public synchronized boolean ready() {
         return this.ready0;
     }
-    
+
+    @Contract(pure = true)
+    public <Type extends Lazy> CompletableFuture<Void> whenReady(Consumer<Type> consumer) {
+        return this.<Type>whenReady().thenAccept(consumer);
+    }
+
     @Contract(pure = true)
     @SuppressWarnings("unchecked")
-    public  <Type extends Lazy> CompletableFuture<Type> whenReady() {
+    public <Type extends Lazy> CompletableFuture<Type> whenReady() {
         return CompletableFuture.supplyAsync(() -> {
             this.await();
             return (Type) this;
         });
     }
-    
+
 }

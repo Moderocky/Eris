@@ -12,6 +12,7 @@ public class Channel extends Snowflake {
     public User[] recipients;
     
     public Message send(Message message) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return api.sendMessage(this, message);
     }
     

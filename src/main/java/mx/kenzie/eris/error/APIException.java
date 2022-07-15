@@ -14,4 +14,8 @@ public class APIException extends DiscordException {
         super(message);
     }
     
+    public Map<String, Object> getErrors() {
+        return errors;
+    }
+    
 }

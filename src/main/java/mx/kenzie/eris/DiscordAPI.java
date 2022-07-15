@@ -1,18 +1,16 @@
 package mx.kenzie.eris;
 
 import mx.kenzie.argo.Json;
+import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.*;
 import mx.kenzie.eris.api.utility.LazyList;
-import mx.kenzie.eris.data.Payload;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.error.APIException;
 import mx.kenzie.eris.error.DiscordException;
 import mx.kenzie.eris.http.NetworkController;
-import org.jetbrains.annotations.Contract;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -71,6 +69,7 @@ public class DiscordAPI {
             try (final Json json = new Json(this.network.post(path, body, bot.headers).body())) {
                 json.toMap(map);
                 if (map.containsKey("code") && map.containsKey("message")) {
+                    System.err.println(map);//todo
                     final APIException error = new APIException(map.get("message") + "");
                     this.network.helper.mapToObject(error, APIException.class, map);
                     throw error;
@@ -89,36 +88,56 @@ public class DiscordAPI {
     }
     //</editor-fold>
     
+    //<editor-fold desc="Messages" defaultstate="collapsed">
     public Message write(String content) {
         final Message message = new Message();
         message.api = this;
-        return message;
-    }
-    
-    public Message sendMessage(Channel channel, Message message) {
-        channel.await();
-        final String body = Json.toJson(message, UnsentMessage.class, null);
-        message.unready();
-        channel.api = this;
-        message.api = this;
-        this.post("/channels/" + channel.id + "/messages", body, message).thenAccept(Lazy::finish);
         message.finish();
         return message;
     }
     
+    public Message sendMessage(Channel channel, Message message) {
+        if (channel.api == null) channel.api = this;
+        return this.sendMessage(channel.id, message);
+    }
+    
+    public Message sendMessage(long channel, Message message) {
+        return this.sendMessage(Long.toString(channel), message);
+    }
+    
+    public Message sendMessage(String channel, Message message) {
+        final String body = Json.toJson(message, UnsentMessage.class, null);
+        message.unready();
+        this.post("/channels/" + channel + "/messages", body, message).thenAccept(Lazy::finish);
+        if (message.api == null) message.api = this;
+        return message;
+    }
+    //</editor-fold>
+    
+    //<editor-fold desc="Channels" defaultstate="collapsed">
     public Channel createDirectMessage(long id) {
-        final Channel channel = new Channel();
-        channel.api = this;
-        this.post("/users/@me/channels", "{\"recipient_id\":" + id + "}", channel).thenAccept(Lazy::finish);
-        return channel;
+        return this.createDirectMessage(Long.toString(id));
     }
     
     public Channel createDirectMessage(String id) {
         final Channel channel = new Channel();
         channel.api = this;
+        channel.id = id;
         this.post("/users/@me/channels", "{\"recipient_id\":" + id + "}", channel).thenAccept(Lazy::finish);
         return channel;
     }
+    
+    public Channel getChannel(long id) {
+        return this.getChannel(Long.toString(id));
+    }
+    
+    public Channel getChannel(String id) {
+        final Channel channel = new Channel();
+        channel.api = this;
+        this.get("/channels/" + id, channel).thenAccept(Lazy::finish);
+        return channel;
+    }
+    //</editor-fold>
     
     //<editor-fold desc="Users" defaultstate="collapsed">
     public Self getSelf() {
@@ -127,11 +146,7 @@ public class DiscordAPI {
     }
     
     public User getUser(long id) {
-        final User user = new User();
-        user.api = this;
-        user.id = id + "";
-        this.get("/users/" + id, user).thenAccept(Lazy::finish);
-        return user;
+        return this.getUser(Long.toString(id));
     }
     
     public User getUser(String id) {
@@ -152,24 +167,27 @@ public class DiscordAPI {
     
     //<editor-fold desc="Guilds" defaultstate="collapsed">
     public Guild getGuild(long id) {
-        final Guild guild = new Guild();
-        guild.api = this;
-        this.get("/guilds/" + id, guild).thenAccept(Lazy::finish);
-        return guild;
+        return this.getGuild(Long.toString(id));
     }
     
     public Guild getGuild(String id) {
         final Guild guild = new Guild();
+        guild.id = id;
         guild.api = this;
         this.get("/guilds/" + id, guild).thenAccept(Lazy::finish);
         return guild;
     }
     
-    public Guild getGuildPreview(String id) { // todo
-        final Guild guild = new Guild();
-        guild.api = this;
-        this.get("/guilds/" + id + "/preview", guild).thenAccept(Lazy::finish);
-        return guild;
+    public Guild.Preview getGuildPreview(long id) {
+        return this.getGuildPreview(Long.toString(id));
+    }
+    
+    public Guild.Preview getGuildPreview(String id) {
+        final Guild.Preview preview = new Guild.Preview();
+        preview.id = id;
+        preview.api = this;
+        this.get("/guilds/" + id + "/preview", preview).thenAccept(Lazy::finish);
+        return preview;
     }
     
     public LazyList<Channel> getChannels(Guild guild) {
@@ -190,11 +208,55 @@ public class DiscordAPI {
         return channels;
     }
     
+    //<editor-fold desc="Members" defaultstate="collapsed">
+    public Member getMember(long guild, long user) {
+        return this.getMember(Long.toString(guild), Long.toString(user));
+    }
+    
+    public Member getMember(String guild, String user) {
+        final Member member = new Member();
+        member.guild_id = guild;
+        member.user.id = user;
+        member.api = this;
+        this.get("/guilds/" + guild + "/members/" + user, member);
+        return member;
+    }
+    
+    public Member getMember(Guild guild, User user) {
+        return this.getMember(guild.id, user);
+    }
+    
+    public Member getMember(long guild, User user) {
+        return this.getMember(Long.toString(guild), user);
+    }
+    
+    public Member getMember(String guild, User user) {
+        final Member member = new Member();
+        member.user = user;
+        member.guild_id = guild;
+        member.api = this;
+        this.get("/guilds/" + guild + "/members/" + user.id, member);
+        return member;
+    }
+    
+    public void update(Member member) {
+        if (!member.isValid()) throw new DiscordException("Unable to update member - user ID unknown.");
+        if (member.guild_id == null) throw new DiscordException("Unable to update member - guild ID unknown.");
+        member.unready();
+        member.api = this;
+        this.get("/guilds/" + member.guild_id + "/members/" + member.user.id, member).thenAccept(Lazy::finish);
+    }
+    //</editor-fold>
+    
     public void update(Guild guild) {
         guild.unready();
         guild.api = this;
         this.get("/guilds/" + guild.id, guild).thenAccept(Lazy::finish);
     }
     //</editor-fold>
+    
+    public static DiscordException unlinkedEntity(Entity entity) {
+        return new DiscordException("The object " + entity.debugName() + " is not linked to a DiscordAPI.");
+    }
     
 }

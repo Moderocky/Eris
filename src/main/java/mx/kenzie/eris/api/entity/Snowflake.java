@@ -15,4 +15,8 @@ public class Snowflake extends Lazy {
         return id0;
     }
     
+    @Override
+    public String debugName() {
+        return "[" + this.getClass().getSimpleName() + ":" + this.id + "]";
+    }
 }

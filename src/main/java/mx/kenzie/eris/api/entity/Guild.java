@@ -1,7 +1,9 @@
 package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.argo.meta.Name;
+import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.data.Payload;
+import mx.kenzie.eris.error.DiscordException;
 
 public class Guild extends Snowflake {
     
@@ -20,6 +22,19 @@ public class Guild extends Snowflake {
     public static class GuildHashes extends Payload {
         public Hash channels, roles, metadata;
         public int version;
+    }
+    
+    public static class Preview extends Snowflake {
+        public String name, icon, splash, discovery_splash, description;
+        public String[] features;
+        public Payload[] emojis, stickers;
+        public int approximate_member_count, approximate_presence_count;
+        
+        public Guild getGuild() {
+            if (api == null) throw DiscordAPI.unlinkedEntity(this);
+            return this.api.getGuild(this.id);
+        }
+        
     }
     
 }
