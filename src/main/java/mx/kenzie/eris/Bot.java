@@ -7,6 +7,7 @@ import mx.kenzie.eris.api.Listener;
 import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.api.entity.Self;
 import mx.kenzie.eris.api.event.IdentifyGuild;
+import mx.kenzie.eris.api.event.Interaction;
 import mx.kenzie.eris.api.event.Ready;
 import mx.kenzie.eris.api.event.ReceiveMessage;
 import mx.kenzie.eris.data.Payload;
@@ -37,6 +38,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("READY", Ready.class);
         EVENT_LIST.put("GUILD_CREATE", IdentifyGuild.class);
         EVENT_LIST.put("MESSAGE_CREATE", ReceiveMessage.class);
+        EVENT_LIST.put("INTERACTION_CREATE", Interaction.class);
     }
     
     final String token;
@@ -53,6 +55,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     protected volatile String session;
     protected final DiscordAPI api;
     private CompletableFuture<?> process;
+    
     public Bot(String token, int... intents) {
         this.token = token;
         this.headers[1] = "Bot " + token;
@@ -105,7 +108,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     @SuppressWarnings({"unchecked", "RawUseOfParameterized"})
     protected void triggerEvent(Event event) {
-        assert event instanceof Payload: "Event was not a payload.";
+        assert event instanceof Payload : "Event was not a payload.";
         for (final Map.Entry<Listener<?>, Class<? extends Event>> entry : this.listeners.entrySet()) {
             final Class<?> type = entry.getValue();
             if (!type.isInstance(event)) continue;

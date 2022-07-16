@@ -3,6 +3,7 @@ package mx.kenzie.eris.api.entity;
 import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.entity.message.ActionRow;
+import mx.kenzie.eris.api.entity.message.UnsentMessage;
 import mx.kenzie.eris.data.Payload;
 
 public class Message extends UnsentMessage {
@@ -19,7 +20,8 @@ public class Message extends UnsentMessage {
     public Message referenced_message;
     public Thread thread;
     
-    public Message() {}
+    public Message() {
+    }
     
     public Message(String content) {
         this.content = content;
@@ -43,6 +45,11 @@ public class Message extends UnsentMessage {
     
     public Message reply(String message) {
         return this.reply(new Message(message));
+    }
+    
+    public boolean isFromSelf() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        return (author.equals(api.getSelf()));
     }
     
     public static class Reference extends Payload {

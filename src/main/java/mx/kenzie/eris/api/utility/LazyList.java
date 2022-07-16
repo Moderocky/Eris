@@ -4,7 +4,10 @@ import mx.kenzie.eris.api.Lazy;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
 @SuppressWarnings("unchecked")
 public class LazyList<Type> extends Lazy implements List<Type> {

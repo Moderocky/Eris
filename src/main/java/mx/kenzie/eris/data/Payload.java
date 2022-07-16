@@ -4,7 +4,8 @@ import mx.kenzie.argo.Json;
 
 public class Payload {
     
-    protected Payload() {}
+    protected Payload() {
+    }
     
     @Override
     public String toString() {

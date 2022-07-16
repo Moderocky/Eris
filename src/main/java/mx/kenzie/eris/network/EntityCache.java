@@ -5,7 +5,6 @@ import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.api.entity.Snowflake;
 import mx.kenzie.eris.error.DiscordException;
 
-import java.io.*;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.HashSet;

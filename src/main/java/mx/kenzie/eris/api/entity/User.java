@@ -69,7 +69,8 @@ public class User extends Snowflake {
     public Message sendMessage(Message message) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         message.unready();
-        this.api.createDirectChannel(id).<Channel>whenReady().thenAccept(channel -> this.api.sendMessage(channel, message));
+        this.api.createDirectChannel(id).<Channel>whenReady()
+            .thenAccept(channel -> this.api.sendMessage(channel, message));
         return message;
     }
     

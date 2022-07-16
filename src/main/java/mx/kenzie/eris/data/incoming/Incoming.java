@@ -12,8 +12,9 @@ public class Incoming extends Payload {
     public @Name("t") String key;
     
     public transient NetworkController network;
+    
     public void reply(Outgoing payload) {
         this.network.sendPayload(payload);
     }
-
+    
 }

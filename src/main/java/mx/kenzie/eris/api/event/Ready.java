@@ -8,7 +8,7 @@ import mx.kenzie.eris.api.entity.Self;
 import mx.kenzie.eris.data.Payload;
 
 public class Ready extends Payload implements Event { // todo
-
+    
     public @Name("v") int version;
     public Self user;
     public Payload[] guilds;

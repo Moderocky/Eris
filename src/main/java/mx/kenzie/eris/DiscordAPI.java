@@ -1,9 +1,13 @@
 package mx.kenzie.eris;
 
 import mx.kenzie.argo.Json;
-import mx.kenzie.eris.api.entity.Entity;
+import mx.kenzie.argo.meta.JsonException;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.*;
+import mx.kenzie.eris.api.entity.command.Command;
+import mx.kenzie.eris.api.entity.command.CreateCommand;
+import mx.kenzie.eris.api.entity.message.UnsentMessage;
+import mx.kenzie.eris.api.event.Interaction;
 import mx.kenzie.eris.api.utility.LazyList;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.error.APIException;
@@ -65,6 +69,16 @@ public class DiscordAPI {
         });
     }
     
+    public CompletableFuture<Void> delete(String path) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (final Json json = new Json(this.network.delete(path, bot.headers).body())) {
+                return null;
+            } catch (IOException | InterruptedException ex) {
+                throw new DiscordException(ex);
+            }
+        });
+    }
+    
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> post(String path, String body, Type object) {
         return CompletableFuture.supplyAsync(() -> {
@@ -72,6 +86,7 @@ public class DiscordAPI {
             try (final Json json = new CacheJson(this.network.post(path, body, bot.headers).body(), cache)) {
                 json.toMap(map);
                 if (map.containsKey("code") && map.containsKey("message")) {
+                    System.out.println(path); // todo
                     System.out.println(map); // todo
                     System.out.println(body); // todo
                     final APIException error = new APIException(map.get("message") + "");
@@ -84,6 +99,8 @@ public class DiscordAPI {
                 return object;
             } catch (IOException | InterruptedException ex) {
                 throw new DiscordException("Error in request:\n" + Json.toJson(map), ex);
+            } catch (JsonException ignored) {
+                return object;
             }
         }).exceptionally(throwable -> {
             throwable.printStackTrace();
@@ -145,7 +162,7 @@ public class DiscordAPI {
     
     //<editor-fold desc="Users" defaultstate="collapsed">
     public Self getSelf() {
-        assert bot.session != null: "Bot has not connected";
+        assert bot.session != null : "Bot has not connected";
         return bot.self;
     }
     
@@ -258,6 +275,52 @@ public class DiscordAPI {
         cache.store(guild);
         guild.api = this;
         this.get("/guilds/" + guild.id, guild).thenAccept(Lazy::finish);
+    }
+    //</editor-fold>
+    
+    //<editor-fold desc="Interactions" defaultstate="collapsed">
+    public Command registerCommand(Command command) {
+        return this.registerCommand(command, (String) null);
+    }
+    
+    public Command registerCommand(Command command, Guild guild) {
+        return this.registerCommand(command, guild.id);
+    }
+    
+    public Command registerCommand(Command command, long guild) {
+        return this.registerCommand(command, Long.toString(guild));
+    }
+    
+    public Command registerCommand(Command command, String guild) {
+        final String id = bot.self.id;
+        final String body = Json.toJson(command, CreateCommand.class, null);
+        command.unready();
+        if (guild == null) this.post("/applications/" + id + "/commands", body, command).thenAccept(Lazy::finish);
+        else
+            this.post("/applications/" + id + "/guilds/" + guild + "/commands", body, command).thenAccept(Lazy::finish);
+        return command;
+    }
+    
+    public void deleteCommand(Command command) {
+        this.deleteCommand(command.id, command.guild_id);
+    }
+    
+    public void deleteCommand(long command, long guild) {
+        this.deleteCommand(Long.toString(command), Long.toString(guild));
+    }
+    
+    public void deleteCommand(String command, String guild) {
+        final String id = bot.self.id;
+        if (guild == null) this.delete("/applications/" + id + "/commands/" + command);
+        else this.delete("/applications/" + id + "/guilds/" + guild + "/commands/" + command);
+    }
+    
+    public void interactionResponse(Interaction interaction, Interaction.Response response) {
+        final String body = Json.toJson(response);
+        if (response.data() instanceof Lazy lazy)
+            this.post("/interactions/" + interaction.id + "/" + interaction.token + "/callback", body, lazy)
+                .thenAccept(Lazy::finish);
+        else this.post("/interactions/" + interaction.id + "/" + interaction.token + "/callback", body, null);
     }
     //</editor-fold>
     

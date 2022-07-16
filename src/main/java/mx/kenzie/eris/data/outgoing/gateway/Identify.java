@@ -10,6 +10,7 @@ public class Identify extends Outgoing {
     
     public final int op = 2;
     public final @Name("d") Data data = new Data();
+    
     public static class Data extends Payload {
         public String token;
         public int intents;

@@ -48,7 +48,7 @@ public class Embed extends Entity {
         else if (this.fields.length == 0) this.fields = fields;
         else {
             final Field[] result = Arrays.copyOf(this.fields, fields.length + this.fields.length);
-            System.arraycopy(fields, 0, result, this.fields.length-1, fields.length);
+            System.arraycopy(fields, 0, result, this.fields.length - 1, fields.length);
             this.fields = result;
         }
     }
@@ -112,9 +112,20 @@ public class Embed extends Entity {
     public static class Field extends Payload {
         public String name, value;
         public boolean inline;
-        public Field() {}
-        public Field(String name, String value) {this.name = name; this.value = value;}
-        public Field(String name, String value, boolean inline) {this.name = name; this.value = value; this.inline = inline;}
+        
+        public Field() {
+        }
+        
+        public Field(String name, String value) {
+            this.name = name;
+            this.value = value;
+        }
+        
+        public Field(String name, String value, boolean inline) {
+            this.name = name;
+            this.value = value;
+            this.inline = inline;
+        }
     }
     
     static class Media extends Payload {

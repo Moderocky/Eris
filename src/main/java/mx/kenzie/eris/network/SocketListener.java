@@ -16,7 +16,6 @@ public class SocketListener implements WebSocket.Listener { // TODO
     @Override
     public void onOpen(WebSocket socket) {
         this.network.socket = socket;
-        System.out.println("Opened socket."); // todo
         WebSocket.Listener.super.onOpen(socket);
     }
     
@@ -39,7 +38,6 @@ public class SocketListener implements WebSocket.Listener { // TODO
     
     @Override
     public CompletionStage<?> onClose(WebSocket socket, int statusCode, String reason) {
-        System.out.println("Closed socket: " + reason); // todo
         return WebSocket.Listener.super.onClose(socket, statusCode, reason);
     }
 }

@@ -15,7 +15,7 @@ public class Channel extends Snowflake {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return api.sendMessage(this, message);
     }
-    
+
 //    id	snowflake	the id of this channel
 //    type	integer	the type of channel
 //    guild_id?	snowflake	the id of the guild (may be missing for some channel objects received over gateway guild dispatches)

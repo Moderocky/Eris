@@ -149,6 +149,12 @@ public class NetworkController {
         return this.patch(path, publisher, headers);
     }
     
+    public HttpResponse<InputStream> delete(String path, String... headers) throws IOException, InterruptedException {
+        final URI uri = URI.create(base + path);
+        final HttpRequest request = HttpRequest.newBuilder(uri).DELETE().headers(headers).build();
+        return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+    }
+    
     protected HttpResponse<InputStream> post(String path, HttpRequest.BodyPublisher publisher, String... headers) throws IOException, InterruptedException {
         final URI uri = URI.create(base + path);
         final HttpRequest request = HttpRequest.newBuilder(uri).POST(publisher).headers(headers).build();

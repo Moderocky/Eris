@@ -2,8 +2,8 @@ package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.argo.meta.Name;
 import mx.kenzie.eris.DiscordAPI;
+import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.data.Payload;
-import mx.kenzie.eris.error.DiscordException;
 
 public class Guild extends Snowflake {
     
@@ -18,6 +18,12 @@ public class Guild extends Snowflake {
     
     public Payload welcome_screen, application_command_counts;
     public final GuildHashes guild_hashes = new GuildHashes();
+    
+    public Command registerCommand(Command command) {
+        assert id != null;
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        return api.registerCommand(command, this);
+    }
     
     public static class GuildHashes extends Payload {
         public Hash channels, roles, metadata;
