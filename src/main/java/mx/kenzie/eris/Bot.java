@@ -4,9 +4,11 @@ import mx.kenzie.argo.Json;
 import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.Listener;
+import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.api.entity.Self;
 import mx.kenzie.eris.api.event.IdentifyGuild;
 import mx.kenzie.eris.api.event.Ready;
+import mx.kenzie.eris.api.event.ReceiveMessage;
 import mx.kenzie.eris.data.Payload;
 import mx.kenzie.eris.data.incoming.Incoming;
 import mx.kenzie.eris.data.incoming.gateway.Dispatch;
@@ -15,7 +17,7 @@ import mx.kenzie.eris.data.incoming.http.GatewayConnection;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.data.outgoing.gateway.Heartbeat;
 import mx.kenzie.eris.data.outgoing.gateway.Identify;
-import mx.kenzie.eris.http.NetworkController;
+import mx.kenzie.eris.network.NetworkController;
 
 import java.io.InputStream;
 import java.net.http.WebSocket;
@@ -34,6 +36,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     static {
         EVENT_LIST.put("READY", Ready.class);
         EVENT_LIST.put("GUILD_CREATE", IdentifyGuild.class);
+        EVENT_LIST.put("MESSAGE_CREATE", ReceiveMessage.class);
     }
     
     final String token;
@@ -49,6 +52,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     protected volatile Self self;
     protected volatile String session;
     protected final DiscordAPI api;
+    private CompletableFuture<?> process;
     public Bot(String token, int... intents) {
         this.token = token;
         this.headers[1] = "Bot " + token;
@@ -92,6 +96,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         this.running = false;
         this.network.codes.clear();
         this.network.listeners.clear();
+        this.process.cancel(true);
 //        this.socket.sendClose(100, "Shutting down.");
         synchronized (lock) {
             this.lock.notifyAll();
@@ -114,7 +119,8 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     }
     
     public void start() {
-        CompletableFuture.runAsync(this);
+        if (process != null) return;
+        this.process = CompletableFuture.runAsync(this);
     }
     
     public synchronized boolean isRunning() {
@@ -134,6 +140,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 final Json.JsonHelper helper = dispatch.network.helper;
                 final Class<? extends Event> type = EVENT_LIST.getOrDefault(dispatch.key, Event.Unknown.class);
                 final Event event = helper.createObject(type);
+                if (event instanceof Entity entity) entity.api = this.api;
                 helper.mapToObject(event, type, dispatch.data);
                 this.triggerEvent(event);
             });

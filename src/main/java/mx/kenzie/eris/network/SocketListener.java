@@ -1,4 +1,4 @@
-package mx.kenzie.eris.http;
+package mx.kenzie.eris.network;
 
 import mx.kenzie.eris.data.incoming.Incoming;
 
@@ -29,7 +29,6 @@ public class SocketListener implements WebSocket.Listener { // TODO
         if (last) try {
             final Incoming payload = this.network.getPayload(builder.toString());
             this.builder = null;
-            System.out.println("Received " + payload.getClass().getSimpleName()); // todo
             payload.network = network;
             this.network.triggerEvent(payload);
         } catch (Throwable ex) {

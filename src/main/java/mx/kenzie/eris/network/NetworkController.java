@@ -1,4 +1,4 @@
-package mx.kenzie.eris.http;
+package mx.kenzie.eris.network;
 
 import mx.kenzie.argo.Json;
 import mx.kenzie.eris.api.Listener;
@@ -28,9 +28,9 @@ public class NetworkController {
     public static final Map<Integer, Class<? extends Incoming>> NETWORK_CODES = new HashMap<>();
     
     static {
+        NETWORK_CODES.put(0, Dispatch.class);
         NETWORK_CODES.put(10, Hello.class);
         NETWORK_CODES.put(11, Heartbeat.class);
-        NETWORK_CODES.put(0, Dispatch.class);
     }
     
     public final Map<Integer, Class<? extends Incoming>> codes = new HashMap<>(NETWORK_CODES);
@@ -64,7 +64,6 @@ public class NetworkController {
     public CompletableFuture<?> sendPayload(Outgoing payload) {
         assert socket != null;
         assert payload != null;
-        System.out.println("Sent " + payload.getClass().getSimpleName()); // todo
         return this.socket.sendText(Json.toJson(payload), true);
     }
     

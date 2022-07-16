@@ -8,7 +8,9 @@ import mx.kenzie.eris.api.utility.LazyList;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.error.APIException;
 import mx.kenzie.eris.error.DiscordException;
-import mx.kenzie.eris.http.NetworkController;
+import mx.kenzie.eris.network.CacheJson;
+import mx.kenzie.eris.network.EntityCache;
+import mx.kenzie.eris.network.NetworkController;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,6 +23,7 @@ public class DiscordAPI {
     
     private final NetworkController network;
     private final Bot bot;
+    private final EntityCache cache = new EntityCache();
     
     DiscordAPI(NetworkController network, Bot bot) {
         this.network = network;
@@ -35,7 +38,7 @@ public class DiscordAPI {
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> get(String path, Type object) {
         return CompletableFuture.supplyAsync(() -> {
-            try (final Json json = new Json(this.network.get(path, bot.headers).body())) {
+            try (final Json json = new CacheJson(this.network.get(path, bot.headers).body(), cache)) {
                 if (object == null) return null;
                 else if (object instanceof List list) list.addAll(json.toList());
                 else if (object instanceof Map map) map.putAll(json.toMap());
@@ -50,7 +53,7 @@ public class DiscordAPI {
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> patch(String path, String body, Type object) {
         return CompletableFuture.supplyAsync(() -> {
-            try (final Json json = new Json(this.network.patch(path, body, bot.headers).body())) {
+            try (final Json json = new CacheJson(this.network.patch(path, body, bot.headers).body(), cache)) {
                 if (object == null) return null;
                 else if (object instanceof List list) list.addAll(json.toList());
                 else if (object instanceof Map map) map.putAll(json.toMap());
@@ -66,10 +69,11 @@ public class DiscordAPI {
     public <Type> CompletableFuture<Type> post(String path, String body, Type object) {
         return CompletableFuture.supplyAsync(() -> {
             final Map<String, Object> map = new HashMap<>();
-            try (final Json json = new Json(this.network.post(path, body, bot.headers).body())) {
+            try (final Json json = new CacheJson(this.network.post(path, body, bot.headers).body(), cache)) {
                 json.toMap(map);
                 if (map.containsKey("code") && map.containsKey("message")) {
-                    System.err.println(map);//todo
+                    System.out.println(map); // todo
+                    System.out.println(body); // todo
                     final APIException error = new APIException(map.get("message") + "");
                     this.network.helper.mapToObject(error, APIException.class, map);
                     throw error;
@@ -115,14 +119,13 @@ public class DiscordAPI {
     //</editor-fold>
     
     //<editor-fold desc="Channels" defaultstate="collapsed">
-    public Channel createDirectMessage(long id) {
-        return this.createDirectMessage(Long.toString(id));
+    public Channel createDirectChannel(long id) {
+        return this.createDirectChannel(Long.toString(id));
     }
     
-    public Channel createDirectMessage(String id) {
-        final Channel channel = new Channel();
+    public Channel createDirectChannel(String id) {
+        final Channel channel = cache.getOrUse(id, new Channel());
         channel.api = this;
-        channel.id = id;
         this.post("/users/@me/channels", "{\"recipient_id\":" + id + "}", channel).thenAccept(Lazy::finish);
         return channel;
     }
@@ -132,8 +135,9 @@ public class DiscordAPI {
     }
     
     public Channel getChannel(String id) {
-        final Channel channel = new Channel();
+        final Channel channel = cache.getOrUse(id, new Channel());
         channel.api = this;
+        cache.store(channel);
         this.get("/channels/" + id, channel).thenAccept(Lazy::finish);
         return channel;
     }
@@ -159,6 +163,7 @@ public class DiscordAPI {
     
     public void update(User user) {
         user.unready();
+        cache.store(user);
         user.api = this;
         if (user instanceof Self self) this.get("/users/@me", self).thenAccept(Lazy::finish);
         else this.get("/users/" + user.id, user).thenAccept(Lazy::finish);
@@ -171,7 +176,7 @@ public class DiscordAPI {
     }
     
     public Guild getGuild(String id) {
-        final Guild guild = new Guild();
+        final Guild guild = cache.getOrUse(id, new Guild());
         guild.id = id;
         guild.api = this;
         this.get("/guilds/" + id, guild).thenAccept(Lazy::finish);
@@ -231,7 +236,7 @@ public class DiscordAPI {
     }
     
     public Member getMember(String guild, User user) {
-        final Member member = new Member();
+        final Member member = new Member(); // don't cache members due to the ID overload
         member.user = user;
         member.guild_id = guild;
         member.api = this;
@@ -250,10 +255,27 @@ public class DiscordAPI {
     
     public void update(Guild guild) {
         guild.unready();
+        cache.store(guild);
         guild.api = this;
         this.get("/guilds/" + guild.id, guild).thenAccept(Lazy::finish);
     }
     //</editor-fold>
+    
+    @SuppressWarnings("unchecked")
+    public <Type> Type getLocal(String id, Class<Type> expected) {
+        final Snowflake snowflake = cache.get(id);
+        if (expected.isInstance(snowflake)) return (Type) snowflake;
+        else return null;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public <Type> Type getRemote(String id, Class<Type> expected) {
+        if (expected == Guild.class) return (Type) this.getGuild(id);
+        if (expected == Channel.class) return (Type) this.getChannel(id);
+        if (expected == User.class) return (Type) this.getUser(id);
+        if (expected == Guild.Preview.class) return (Type) this.getGuildPreview(id);
+        else return null;
+    }
     
     public static DiscordException unlinkedEntity(Entity entity) {
         return new DiscordException("The object " + entity.debugName() + " is not linked to a DiscordAPI.");

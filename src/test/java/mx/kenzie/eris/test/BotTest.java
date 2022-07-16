@@ -3,21 +3,14 @@ package mx.kenzie.eris.test;
 import mx.kenzie.argo.Json;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.DiscordAPI;
-import mx.kenzie.eris.api.Event;
-import mx.kenzie.eris.api.entity.*;
-import mx.kenzie.eris.api.entity.message.ActionRow;
-import mx.kenzie.eris.api.entity.message.Button;
-import mx.kenzie.eris.api.event.IdentifyGuild;
-import mx.kenzie.eris.api.event.Ready;
-import mx.kenzie.eris.api.magic.ButtonStyle;
+import mx.kenzie.eris.api.entity.Channel;
+import mx.kenzie.eris.api.entity.Message;
+import mx.kenzie.eris.api.entity.UnsentMessage;
+import mx.kenzie.eris.api.event.ReceiveMessage;
 import mx.kenzie.eris.api.magic.Intents;
-import mx.kenzie.eris.data.incoming.gateway.Dispatch;
 
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
+import java.lang.Thread;
 
 public class BotTest {
     
@@ -32,13 +25,15 @@ public class BotTest {
     }
     
     public static void main(String[] args) throws Throwable {
-        try (final Bot bot = new Bot(TOKEN, Intents.MESSAGE_CONTENT, Intents.DIRECT_MESSAGES, Intents.GUILDS)) {
-            final DiscordAPI api = bot.getAPI();
-            bot.start();
-            bot.await();
-        
-        
-        }
+        final Bot bot = new Bot(TOKEN, Intents.MESSAGE_CONTENT, Intents.DIRECT_MESSAGES, Intents.GUILDS, Intents.GUILD_MESSAGES);
+        final DiscordAPI api = bot.getAPI();
+        bot.registerListener(ReceiveMessage.class, message -> {
+            if (message.author.equals(api.getSelf())) return;
+            message.reply("Hello :D");
+        });
+        bot.start();
+        bot.await();
+        bot.close();
     }
     
     

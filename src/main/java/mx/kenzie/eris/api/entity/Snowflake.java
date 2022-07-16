@@ -4,6 +4,8 @@ import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.api.Lazy;
 import org.jetbrains.annotations.Contract;
 
+import java.util.Objects;
+
 public class Snowflake extends Lazy {
     
     public @Optional String id;
@@ -18,5 +20,10 @@ public class Snowflake extends Lazy {
     @Override
     public String debugName() {
         return "[" + this.getClass().getSimpleName() + ":" + this.id + "]";
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof Snowflake snowflake) && Objects.equals(this.id, snowflake.id);
     }
 }

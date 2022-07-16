@@ -3,9 +3,7 @@ package mx.kenzie.eris.data.incoming;
 import mx.kenzie.argo.meta.Name;
 import mx.kenzie.eris.data.Payload;
 import mx.kenzie.eris.data.outgoing.Outgoing;
-import mx.kenzie.eris.http.NetworkController;
-
-import java.net.http.WebSocket;
+import mx.kenzie.eris.network.NetworkController;
 
 public class Incoming extends Payload {
     

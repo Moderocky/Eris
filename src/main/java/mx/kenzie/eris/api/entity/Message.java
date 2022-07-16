@@ -1,5 +1,6 @@
 package mx.kenzie.eris.api.entity;
 
+import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.entity.message.ActionRow;
 import mx.kenzie.eris.data.Payload;
@@ -35,7 +36,7 @@ public class Message extends UnsentMessage {
     public Message reply(Message message) {
         message.message_reference = new Reference();
         message.message_reference.message_id = id;
-        message.message_reference.channel_id = channel_id;
+//        message.message_reference.channel_id = channel_id;
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return api.sendMessage(channel_id, message);
     }
@@ -46,7 +47,7 @@ public class Message extends UnsentMessage {
     
     public static class Reference extends Payload {
         public boolean fail_if_not_exists;
-        public String message_id, channel_id, guild_id;
+        public @Optional String message_id, channel_id, guild_id;
     }
     
 }
