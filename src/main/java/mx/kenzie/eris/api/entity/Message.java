@@ -43,6 +43,16 @@ public class Message extends UnsentMessage {
         return api.sendMessage(channel_id, message);
     }
     
+    public Message withFlag(int flag) {
+        this.flags |= flag;
+        return this;
+    }
+    
+    public Message withoutFlag(int flag) {
+        this.flags &= flag;
+        return this;
+    }
+    
     public Message reply(String message) {
         return this.reply(new Message(message));
     }

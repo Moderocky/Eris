@@ -27,7 +27,7 @@ public class CacheJson extends Json {
     
     @Override
     @SuppressWarnings("unchecked")
-    protected <Type> Type toObject(Type object, Class<?> type, Map<?, ?> map) {
+    public <Type> Type toObject(Type object, Class<?> type, Map<?, ?> map) {
         if (!(object instanceof Snowflake source)) return super.toObject(object, type, map);
         if (!Snowflake.class.isAssignableFrom(type)) return super.toObject(object, type, map);
         final String id;

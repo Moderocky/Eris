@@ -25,6 +25,7 @@ public class BotTest {
         final DiscordAPI api = bot.getAPI();
         bot.start();
         bot.await();
+        while (bot.isRunning()) Thread.sleep(1000);
         bot.close();
     }
     

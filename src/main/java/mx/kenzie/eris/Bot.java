@@ -4,8 +4,11 @@ import mx.kenzie.argo.Json;
 import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.Listener;
+import mx.kenzie.eris.api.command.CommandHandler;
 import mx.kenzie.eris.api.entity.Entity;
+import mx.kenzie.eris.api.entity.Guild;
 import mx.kenzie.eris.api.entity.Self;
+import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.event.IdentifyGuild;
 import mx.kenzie.eris.api.event.Interaction;
 import mx.kenzie.eris.api.event.Ready;
@@ -27,12 +30,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 
 public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     public static String API_URL = "https://discord.com/api/v10";
     public static String CDN_URL = "https://cdn.discordapp.com";
     public static final Map<String, Class<? extends Event>> EVENT_LIST = new HashMap<>();
+    
+    public static Consumer<Throwable> exceptionHandler;
     
     static {
         EVENT_LIST.put("READY", Ready.class);
@@ -49,6 +55,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     private final Object lock = new Object();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
     protected final Map<Listener<?>, Class<? extends Event>> listeners = new HashMap<>();
+    protected final Map<Command, CommandHandler> commands = new HashMap<>();
     protected int intents;
     
     protected volatile Self self;
@@ -59,7 +66,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     public Bot(String token, int... intents) {
         this.token = token;
         this.headers[1] = "Bot " + token;
-        this.network = new NetworkController(API_URL);
+        this.network = new NetworkController(API_URL, this);
         this.api = new DiscordAPI(network, this);
         for (int intent : intents) this.intents |= intent;
     }
@@ -86,6 +93,17 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         this.network.unregisterListener(listener);
     }
     
+    public <IGuild> void registerCommand(Command command, IGuild guild, CommandHandler handler) {
+        final String id;
+        if (guild == null) id = null;
+        else if (guild instanceof Guild value) id = value.id;
+        else if (guild instanceof String value) id = value;
+        else id = guild.toString();
+        command.guild_id = id;
+        this.api.registerCommand(command, id);
+        this.commands.put(command, handler);
+    }
+    
     public Listener<?>[] getPayloadListeners(Class<? extends Incoming> type) {
         return this.network.getListeners(type);
     }
@@ -96,6 +114,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     @Override
     public void close() {
+        for (final Command command : commands.keySet()) this.api.deleteCommand(command);
         this.running = false;
         this.network.codes.clear();
         this.network.listeners.clear();
@@ -107,7 +126,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     }
     
     @SuppressWarnings({"unchecked", "RawUseOfParameterized"})
-    protected void triggerEvent(Event event) {
+    public void triggerEvent(Event event) {
         assert event instanceof Payload : "Event was not a payload.";
         for (final Map.Entry<Listener<?>, Class<? extends Event>> entry : this.listeners.entrySet()) {
             final Class<?> type = entry.getValue();
@@ -116,7 +135,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             try {
                 listener.on((Payload) event);
             } catch (Throwable ex) {
-                ex.printStackTrace();
+                Bot.handle(ex);
             }
         }
     }
@@ -167,10 +186,18 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 }
                 this.finish();
             });
+            this.registerListener(Interaction.class, interaction -> {
+                for (final Map.Entry<Command, CommandHandler> entry : this.commands.entrySet()) {
+                    final Command command = entry.getKey();
+                    if (!command.name.equals(interaction.data.name)) continue;
+                    entry.getValue().on(interaction);
+                }
+            });
             try (final Json json = new Json(stream)) {
                 final GatewayConnection connection = json.toObject(new GatewayConnection());
                 this.socket = network.openSocket(connection.url + "/?v=10&encoding=json");
             }
+            this.scheduler.schedule(this.api::cleanCache, 90, TimeUnit.SECONDS);
         } catch (Throwable ex) {
             ex.printStackTrace();
         }
@@ -179,5 +206,10 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     @Override
     public String toString() {
         return "Bot " + this.self;
+    }
+    
+    public static void handle(Throwable throwable) {
+        if (exceptionHandler != null) exceptionHandler.accept(throwable);
+        else throwable.printStackTrace();
     }
 }

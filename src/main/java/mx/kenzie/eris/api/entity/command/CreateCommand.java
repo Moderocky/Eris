@@ -6,7 +6,8 @@ import mx.kenzie.eris.data.Payload;
 
 public abstract class CreateCommand extends Lazy {
     
-    public String name, description;
+    public String name;
+    public @Optional String description;
     public int type = 1;
     public @Optional Option[] options;
     public @Optional Payload name_localizations;

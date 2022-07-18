@@ -16,7 +16,7 @@ public class EntityCache {
     public Set<Class<? extends Snowflake>> permitted = new HashSet<>();
     protected final Map<String, WeakReference<Snowflake>> map;
     protected boolean shouldCache;
-    private final Json.JsonHelper helper = new Json.JsonHelper();
+    public final Json.JsonHelper helper = new Json.JsonHelper();
     
     public EntityCache() {
         this(new HashMap<>());
@@ -75,5 +75,10 @@ public class EntityCache {
         }
     }
     
+    public void clean() {
+        synchronized (map) {
+            this.map.entrySet().removeIf(entry -> entry.getValue().get() == null);
+        }
+    }
 }
 

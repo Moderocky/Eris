@@ -1,5 +1,7 @@
 package mx.kenzie.eris.network;
 
+import mx.kenzie.eris.Bot;
+import mx.kenzie.eris.api.event.SocketClose;
 import mx.kenzie.eris.data.incoming.Incoming;
 
 import java.net.http.WebSocket;
@@ -31,13 +33,15 @@ public class SocketListener implements WebSocket.Listener { // TODO
             payload.network = network;
             this.network.triggerEvent(payload);
         } catch (Throwable ex) {
-            ex.printStackTrace();
+            Bot.handle(ex);
         }
         return WebSocket.Listener.super.onText(socket, data, last);
     }
     
     @Override
     public CompletionStage<?> onClose(WebSocket socket, int statusCode, String reason) {
+        final SocketClose close = new SocketClose(statusCode, reason);
+        this.network.triggerEvent(close);
         return WebSocket.Listener.super.onClose(socket, statusCode, reason);
     }
 }

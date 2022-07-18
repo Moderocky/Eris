@@ -28,6 +28,7 @@ public class DiscordAPI {
     private final NetworkController network;
     private final Bot bot;
     private final EntityCache cache = new EntityCache();
+    private String application;
     
     DiscordAPI(NetworkController network, Bot bot) {
         this.network = network;
@@ -103,8 +104,8 @@ public class DiscordAPI {
                 return object;
             }
         }).exceptionally(throwable -> {
-            throwable.printStackTrace();
-            return object;
+            Bot.handle(throwable);
+            return null;
         });
     }
     //</editor-fold>
@@ -171,7 +172,7 @@ public class DiscordAPI {
     }
     
     public User getUser(String id) {
-        final User user = new User();
+        final User user = cache.getOrUse(id, new User());
         user.api = this;
         user.id = id;
         this.get("/users/" + id, user).thenAccept(Lazy::finish);
@@ -272,7 +273,7 @@ public class DiscordAPI {
     
     public void update(Guild guild) {
         guild.unready();
-        cache.store(guild);
+        this.cache.store(guild);
         guild.api = this;
         this.get("/guilds/" + guild.id, guild).thenAccept(Lazy::finish);
     }
@@ -332,12 +333,53 @@ public class DiscordAPI {
     }
     
     @SuppressWarnings("unchecked")
+    public <Type extends Entity> Type makeEntity(Type template, Map<String, Object> data) {
+        this.cache.helper.mapToObject(template, template.getClass(), data);
+        if (!(template instanceof Snowflake snowflake)) return template;
+        if (!this.shouldCache(template)) return template;
+        final Snowflake cached = cache.get(snowflake.id);
+        if (cached != null) {
+            this.cache.helper.mapToObject(cached, cached.getClass(), data);
+            return (Type) cached;
+        }
+        this.cache.store(snowflake);
+        return template;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public <Type extends Entity> Type makeEntity(Type template) {
+        if (!(template instanceof Snowflake snowflake)) return template;
+        if (!this.shouldCache(template)) return template;
+        final Snowflake cached = cache.get(snowflake.id);
+        if (cached != null) return (Type) cached;
+        this.cache.store(snowflake);
+        return template;
+        
+    }
+    
+    @SuppressWarnings("unchecked")
     public <Type> Type getRemote(String id, Class<Type> expected) {
         if (expected == Guild.class) return (Type) this.getGuild(id);
         if (expected == Channel.class) return (Type) this.getChannel(id);
         if (expected == User.class) return (Type) this.getUser(id);
         if (expected == Guild.Preview.class) return (Type) this.getGuildPreview(id);
         else return null;
+    }
+    
+    public void cleanCache() {
+        this.cache.clean();
+    }
+    
+    protected boolean shouldCache(Object entity) {
+        return (entity instanceof User || entity instanceof Guild || entity instanceof Channel);
+    }
+    
+    public String getApplicationID() {
+        if (application == null) {
+            bot.await();
+            this.application = bot.self.id;
+        }
+        return application;
     }
     
     public static DiscordException unlinkedEntity(Entity entity) {

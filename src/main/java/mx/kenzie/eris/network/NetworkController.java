@@ -1,6 +1,8 @@
 package mx.kenzie.eris.network;
 
 import mx.kenzie.argo.Json;
+import mx.kenzie.eris.Bot;
+import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.Listener;
 import mx.kenzie.eris.data.incoming.Incoming;
 import mx.kenzie.eris.data.incoming.gateway.Dispatch;
@@ -42,9 +44,15 @@ public class NetworkController {
     
     public final Json.JsonHelper helper = new Json.JsonHelper();
     protected WebSocket socket;
+    protected final Bot bot;
     
-    public NetworkController(String base) {
+    public NetworkController(String base, Bot bot) {
         this.base = base;
+        this.bot = bot;
+    }
+    
+    void triggerEvent(Event event) {
+        this.bot.triggerEvent(event);
     }
     
     @SuppressWarnings({"unchecked", "RawUseOfParameterized"})
@@ -56,7 +64,7 @@ public class NetworkController {
             try {
                 listener.on(payload);
             } catch (Throwable ex) {
-                ex.printStackTrace();
+                Bot.handle(ex);
             }
         }
     }
