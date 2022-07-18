@@ -3,9 +3,12 @@ package mx.kenzie.eris;
 import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.JsonException;
 import mx.kenzie.eris.api.Lazy;
+import mx.kenzie.eris.api.annotation.Accept;
 import mx.kenzie.eris.api.entity.*;
 import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.entity.command.CreateCommand;
+import mx.kenzie.eris.api.entity.guild.Ban;
+import mx.kenzie.eris.api.entity.guild.ModifyMember;
 import mx.kenzie.eris.api.entity.message.UnsentMessage;
 import mx.kenzie.eris.api.event.Interaction;
 import mx.kenzie.eris.api.utility.LazyList;
@@ -17,10 +20,7 @@ import mx.kenzie.eris.network.EntityCache;
 import mx.kenzie.eris.network.NetworkController;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class DiscordAPI {
@@ -40,6 +40,21 @@ public class DiscordAPI {
     }
     
     //<editor-fold desc="Request Helpers" defaultstate="collapsed">
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> request(String type, String path, String body, Type object) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (final Json json = new CacheJson(this.network.request(type, path, body, bot.headers).body(), cache)) {
+                if (object == null) return null;
+                else if (object instanceof List list) list.addAll(json.toList());
+                else if (object instanceof Map map) map.putAll(json.toMap());
+                else json.toObject(object);
+                return object;
+            } catch (IOException | InterruptedException ex) {
+                throw new DiscordException(ex);
+            }
+        });
+    }
+    
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> get(String path, Type object) {
         return CompletableFuture.supplyAsync(() -> {
@@ -262,6 +277,15 @@ public class DiscordAPI {
         return member;
     }
     
+    public <IGuild, IUser> Member modifyMember(IGuild guild, IUser user, ModifyMember member) {
+        final String gid = this.getGuildId(guild), uid = this.getUserId(user);
+        final Member result;
+        if (member instanceof Member value) result = value;
+        else result = new Member();
+        this.patch("/guilds/" + gid + "/members/" + uid, Json.toJson(member, ModifyMember.class, null), result).thenAccept(Lazy::finish);
+        return result;
+    }
+    
     public void update(Member member) {
         if (!member.isValid()) throw new DiscordException("Unable to update member - user ID unknown.");
         if (member.guild_id == null) throw new DiscordException("Unable to update member - guild ID unknown.");
@@ -269,6 +293,30 @@ public class DiscordAPI {
         member.api = this;
         this.get("/guilds/" + member.guild_id + "/members/" + member.user.id, member).thenAccept(Lazy::finish);
     }
+    //</editor-fold>
+    
+    //<editor-fold desc="Bans" defaultstate="collapsed">
+    public <IGuild, IUser> Ban getBan(IGuild guild, IUser user) {
+        final String gid = this.getGuildId(guild), uid = this.getUserId(user);
+        final Ban ban = new Ban();
+        this.get("/guilds/" + gid + "/bans/" + uid, ban).thenAccept(Lazy::finish);
+        return ban;
+    }
+    
+    public <IGuild, IUser> void createBan(IGuild guild, IUser user, Ban ban) {
+        final String gid = this.getGuildId(guild), uid = this.getUserId(user);
+        this.request("PUT", "/guilds/" + gid + "/bans/" + uid, Json.toJson(ban), null).thenRun(ban::finish);
+    }
+    
+    public <
+        @Accept({long.class, String.class, Guild.class}) IGuild,
+        @Accept({long.class, String.class, User.class}) IUser
+        > void removeBan(IGuild guild, IUser user) {
+        final String gid = this.getGuildId(guild), uid = this.getUserId(user);
+        this.request("DELETE", "/guilds/" + gid + "/bans/" + uid, null, null);
+    }
+    
+    
     //</editor-fold>
     
     public void update(Guild guild) {
@@ -324,6 +372,22 @@ public class DiscordAPI {
         else this.post("/interactions/" + interaction.id + "/" + interaction.token + "/callback", body, null);
     }
     //</editor-fold>
+    
+    
+    //<editor-fold desc="Helpers" defaultstate="collapsed">
+    private String getUserId(Object object) {
+        if (object instanceof String value) return value;
+        if (object instanceof User value) return value.id;
+        if (object instanceof Member value) return value.user.id;
+        return Objects.toString(object);
+    }
+    
+    private String getGuildId(Object object) {
+        if (object instanceof String value) return value;
+        if (object instanceof Guild value) return value.id;
+        if (object instanceof Guild.Preview value) return value.id;
+        return Objects.toString(object);
+    }
     
     @SuppressWarnings("unchecked")
     public <Type> Type getLocal(String id, Class<Type> expected) {
@@ -385,5 +449,6 @@ public class DiscordAPI {
     public static DiscordException unlinkedEntity(Entity entity) {
         return new DiscordException("The object " + entity.debugName() + " is not linked to a DiscordAPI.");
     }
+    //</editor-fold>
     
 }

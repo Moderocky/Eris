@@ -49,6 +49,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     final String token;
     final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(A, B)", "Content-Type", "application/json"};
+    public final Executor executor = Executors.newCachedThreadPool();
     protected final NetworkController network;
     private volatile boolean running = true;
     private WebSocket socket;
@@ -132,11 +133,13 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             final Class<?> type = entry.getValue();
             if (!type.isInstance(event)) continue;
             final Listener listener = entry.getKey();
-            try {
-                listener.on((Payload) event);
-            } catch (Throwable ex) {
-                Bot.handle(ex);
-            }
+            CompletableFuture.runAsync(() -> {
+                try {
+                    listener.on((Payload) event);
+                } catch (Throwable ex) {
+                    Bot.handle(ex);
+                }
+            }, executor);
         }
     }
     

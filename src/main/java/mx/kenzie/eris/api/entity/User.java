@@ -11,39 +11,39 @@ public class User extends Snowflake {
     private transient int discriminator0;
     
     public int discriminator() {
-        this.await();
+        if (discriminator == null) this.await();
         if (discriminator0 < 1) discriminator0 = Integer.parseInt(discriminator);
         return discriminator0;
     }
     
     public String getTag() {
-        this.await();
+        if (username == null || discriminator == null) this.await();
         return username + "#" + discriminator;
     }
     
     public boolean hasFlag(int flag) {
-        this.await();
+        if (flags < 1) this.await();
         return (flags & flag) != 0;
     }
     
     public boolean hasPublicFlag(int flag) {
-        this.await();
+        if (flags < 1) this.await();
         return (flags & flag) != 0;
     }
     
     public String getBannerURL() {
-        this.await();
+        if (banner == null) this.await();
         return Bot.CDN_URL + "/banners/" + id + "/" + banner + ".png";
     }
     
     public String getAvatarURL() {
-        this.await();
+        if (avatar == null) this.await();
         if (avatar == null) return this.getDefaultAvatarURL();
         return Bot.CDN_URL + "/avatars/" + id + "/" + avatar + ".png";
     }
     
     public String getDefaultAvatarURL() {
-        this.await();
+        if (discriminator == null) this.await();
         return Bot.CDN_URL + "/embed/avatars/" + discriminator + ".png";
     }
     

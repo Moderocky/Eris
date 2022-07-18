@@ -4,6 +4,7 @@ import mx.kenzie.argo.Json;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.Listener;
+import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.data.incoming.Incoming;
 import mx.kenzie.eris.data.incoming.gateway.Dispatch;
 import mx.kenzie.eris.data.incoming.gateway.Heartbeat;
@@ -61,11 +62,13 @@ public class NetworkController {
             final Class<?> type = entry.getValue();
             if (!type.isInstance(payload)) continue;
             final Listener listener = entry.getKey();
-            try {
-                listener.on(payload);
-            } catch (Throwable ex) {
-                Bot.handle(ex);
-            }
+            CompletableFuture.runAsync(() -> {
+                try {
+                    listener.on(payload);
+                } catch (Throwable ex) {
+                    Bot.handle(ex);
+                }
+            }, bot.executor);
         }
     }
     
@@ -129,6 +132,15 @@ public class NetworkController {
         final WebSocket.Builder builder = client.newWebSocketBuilder();
         this.socket = builder.buildAsync(URI.create(url), new SocketListener(this)).join();
         return socket;
+    }
+    
+    public HttpResponse<InputStream> request(String method, String path, String body, String... headers) throws IOException, InterruptedException {
+        final URI uri = URI.create(base + path);
+        final HttpRequest.BodyPublisher publisher;
+        if (body == null) publisher = HttpRequest.BodyPublishers.noBody();
+        else publisher = HttpRequest.BodyPublishers.ofString(body);
+        final HttpRequest request = HttpRequest.newBuilder(uri).method(method, publisher).headers(headers).build();
+        return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
     }
     
     public HttpResponse<InputStream> get(String path, String... headers) throws IOException, InterruptedException {

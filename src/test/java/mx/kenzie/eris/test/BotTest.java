@@ -6,6 +6,7 @@ import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.magic.Intents;
 
 import java.io.InputStream;
+import java.time.Duration;
 
 public class BotTest {
     

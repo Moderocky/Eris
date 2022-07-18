@@ -60,7 +60,7 @@ public class Interaction extends Entity implements Event {
     }
     
     public class Data extends Payload {
-        public String name, id, custom_id;
+        public String name, id, custom_id, guild_id, target_id;
         public Option[] options;
         
         public Row[] components;

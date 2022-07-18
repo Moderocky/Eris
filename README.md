@@ -107,10 +107,18 @@ Before requesting the data you **must** set its snowflake `id` field.
 
 Please note that any helper methods on the entity (e.g. `channel.send(...)`) will not function until you update the entity or attach a `DiscordAPI` object.
 
+### Generic Entities
 
+Many utility methods will accept a generic `I` entity, e.g. `api.getBan(IGuild, IUser)`.
 
+These generic `I` entities have two special rules:
+1. They can accept an object relating to the ID of the entity rather than the entity itself. \
+    E.g. you can provide a guild's ID in String/long form instead of a Guild object.
+2. If you use an object, it **does not** need to be finished, since only the ID is required. \
+    E.g. you can provide the product of `api.getUser(...)` without `await`ing it first.
 
-
+These objects are not strictly checked outside a test environment.
+Most methods will specify which types are permitted.
 
 ## Dependencies
 

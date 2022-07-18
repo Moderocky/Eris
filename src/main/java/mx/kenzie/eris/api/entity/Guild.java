@@ -3,7 +3,14 @@ package mx.kenzie.eris.api.entity;
 import mx.kenzie.argo.meta.Name;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.entity.command.Command;
+import mx.kenzie.eris.api.entity.guild.Ban;
+import mx.kenzie.eris.api.entity.guild.ModifyMember;
 import mx.kenzie.eris.data.Payload;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 public class Guild extends Snowflake {
     
@@ -23,6 +30,47 @@ public class Guild extends Snowflake {
         assert id != null;
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return api.registerCommand(command, this);
+    }
+    
+    public <IUser> Member setVoiceDeafened(IUser user, boolean deaf) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        final Member member = new Member();
+        member.deaf = deaf;
+        return this.api.modifyMember(this.id, user, member);
+    }
+    
+    public <IUser> Member setVoiceMuted(IUser user, boolean mute) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        final Member member = new Member();
+        member.mute = mute;
+        return this.api.modifyMember(this.id, user, member);
+    }
+    
+    public <IUser> Member setNickname(IUser user, String name) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        final Member member = new Member();
+        member.nick = name;
+        return this.api.modifyMember(this.id, user, member);
+    }
+    
+    public <IUser> Member timeOut(IUser user, Duration duration) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        final String end = DateTimeFormatter.ISO_INSTANT.format(Instant.now().plus(duration));
+        final Member member = new Member();
+        member.communication_disabled_until = end;
+        return this.api.modifyMember(this.id, user, member);
+    }
+    
+    public <IUser> void ban(IUser user, String reason) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        final Ban ban = new Ban();
+        ban.reason = reason;
+        this.api.createBan(this, user, ban);
+    }
+    
+    public <IUser> void ban(IUser user, Ban ban) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.api.createBan(this, user, ban);
     }
     
     public static class GuildHashes extends Payload {
