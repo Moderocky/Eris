@@ -1,7 +1,9 @@
 package mx.kenzie.eris.api.event;
 
+import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.Any;
 import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.Entity;
@@ -26,12 +28,19 @@ public class Interaction extends Entity implements Event {
     public User user;
     public Data data = new Data();
     
+    public Message sendMessage(Message message) {
+        final String application = api.getApplicationID();
+        this.api.post("/webhooks/" + application + "/" + token, Json.toJson(message, InteractionMessage.class, null), message).thenAccept(Lazy::finish);
+        return message;
+    }
+    
     public Callback respond(Callback callback) {
         return this.respond(callback, callback.interactionResponseType());
     }
     
     public Callback respond(Callback callback, int type) {
         final Response response;
+        if (callback instanceof Entity entity) entity.api = api;
         if (callback instanceof Message message) response = new MessageResponse(message);
         else response = new GenericResponse(callback);
         response.type = type;
@@ -40,11 +49,16 @@ public class Interaction extends Entity implements Event {
         return callback;
     }
     
-    public Message getOriginalMessage() {
+    public void deleteOriginalResponse() {
+        final String application = api.getApplicationID();
+        assert api != null;
+        this.api.delete("/webhooks/" + application + "/" + token + "/messages/@original");
+    }
+    
+    public Message getOriginalResponse() {
         final String application = api.getApplicationID();
         final Message message = new Message();
-        this.api.get("/webhooks/" + application + "/" + token + "/messages/@original", message)
-            .thenAccept(Lazy::finish);
+        this.api.get("/webhooks/" + application + "/" + token + "/messages/@original", message).thenAccept(Lazy::finish);
         return message;
     }
     

@@ -26,4 +26,28 @@ public class Button extends Component {
         this.label = label;
     }
     
+    public Button style(int style) {
+        this.style = style;
+        return this;
+    }
+    
+    public Button label(String label) {
+        this.label = label;
+        return this;
+    }
+    
+    public Button url(String url) {
+        this.url = url;
+        return this;
+    }
+    
+    public Button emoji(Payload emoji) {
+        this.emoji = emoji;
+        return this;
+    }
+    
+    public Button disabled(boolean disabled) {
+        this.disabled = disabled;
+        return this;
+    }
 }

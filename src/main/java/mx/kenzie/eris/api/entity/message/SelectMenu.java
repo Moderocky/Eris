@@ -38,6 +38,31 @@ public class SelectMenu extends Component {
         this.options = options;
     }
     
+    public SelectMenu min_values(int min_values) {
+        this.min_values = min_values;
+        return this;
+    }
+    
+    public SelectMenu max_values(int max_values) {
+        this.max_values = max_values;
+        return this;
+    }
+    
+    public SelectMenu placeholder(String placeholder) {
+        this.placeholder = placeholder;
+        return this;
+    }
+    
+    public SelectMenu options(Option[] options) {
+        this.options = options;
+        return this;
+    }
+    
+    public SelectMenu disabled(boolean disabled) {
+        this.disabled = disabled;
+        return this;
+    }
+    
     public static Option option() {
         return new Option();
     }

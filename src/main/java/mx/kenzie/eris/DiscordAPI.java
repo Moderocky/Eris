@@ -102,9 +102,6 @@ public class DiscordAPI {
             try (final Json json = new CacheJson(this.network.post(path, body, bot.headers).body(), cache)) {
                 json.toMap(map);
                 if (map.containsKey("code") && map.containsKey("message")) {
-                    System.out.println(path); // todo
-                    System.out.println(map); // todo
-                    System.out.println(body); // todo
                     final APIException error = new APIException(map.get("message") + "");
                     this.network.helper.mapToObject(error, APIException.class, map);
                     throw error;
