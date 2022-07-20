@@ -7,9 +7,13 @@ public class Payload {
     protected Payload() {
     }
     
+    public String toJson(String indent) {
+        return Json.toJson(this, indent);
+    }
+    
     @Override
     public String toString() {
-        return Json.toJson(this, "  ");
+        return this.toJson("  ");
     }
     
 }

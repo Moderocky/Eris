@@ -2,6 +2,7 @@ package mx.kenzie.eris.api.entity.command;
 
 import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.api.magic.CommandType;
+import mx.kenzie.eris.data.Payload;
 
 public class Command extends CreateCommand {
     
@@ -17,23 +18,43 @@ public class Command extends CreateCommand {
         this.options = options;
     }
     
-    public Command guild_id(String guild_id) {
-        this.guild_id = guild_id;
+    public Command name(String name) {
+        this.name = name;
         return this;
     }
     
-    public Command application_id(String application_id) {
-        this.application_id = application_id;
+    public Command description(String description) {
+        this.description = description;
         return this;
     }
     
-    public Command version(String version) {
-        this.version = version;
+    public Command type(int type) {
+        this.type = type;
         return this;
     }
     
-    public Command permissions(long permissions) {
-        this.default_member_permissions = Long.toString(permissions);
+    public Command options(Option[] options) {
+        this.options = options;
+        return this;
+    }
+    
+    public Command name_localizations(Payload name_localizations) {
+        this.name_localizations = name_localizations;
+        return this;
+    }
+    
+    public Command description_localizations(Payload description_localizations) {
+        this.description_localizations = description_localizations;
+        return this;
+    }
+    
+    public Command default_member_permissions(String default_member_permissions) {
+        this.default_member_permissions = default_member_permissions;
+        return this;
+    }
+    
+    public Command dm_permission(boolean dm_permission) {
+        this.dm_permission = dm_permission;
         return this;
     }
     

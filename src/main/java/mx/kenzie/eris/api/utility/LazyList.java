@@ -1,26 +1,49 @@
 package mx.kenzie.eris.api.utility;
 
+import mx.kenzie.argo.Json;
+import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
+import mx.kenzie.eris.api.entity.Channel;
+import mx.kenzie.eris.api.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Array;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 @SuppressWarnings("unchecked")
 public class LazyList<Type> extends Lazy implements List<Type> {
     
-    protected final List<Type> list;
+    protected List<Type> list;
     protected final Class<Type> type;
-    
     
     public LazyList(Class<Type> type, List<Type> list) {
         this.list = list;
         this.type = type;
     }
     
+    public void update(Json.JsonHelper helper, List<?> objects, DiscordAPI api) {
+        this.unready();
+        try {
+            final List<Type> list = new ArrayList<>();
+            for (final Object object : objects) {
+                final Type type = helper.createObject(this.type);
+                list.add(type);
+                if (type instanceof Entity entity) entity.api = api;
+                helper.mapToObject(type, this.type, (Map<?, ?>) object);
+            }
+            synchronized (this) {
+                this.list = list;
+            }
+        } catch (Throwable ex) {
+            ex.getCause().getCause().printStackTrace();
+        } finally {
+            this.finish();
+        }
+    }
+    
+    public synchronized void setBacker(List<Type> list) {
+        this.list = list;
+    }
     
     @Override
     public int size() {
@@ -160,5 +183,19 @@ public class LazyList<Type> extends Lazy implements List<Type> {
     public List<Type> subList(int fromIndex, int toIndex) {
         this.await();
         return list.subList(fromIndex, toIndex);
+    }
+    
+    @Override
+    public String toString() {
+        final Iterator<Type> iterator = iterator();
+        if (!iterator.hasNext()) return "[]";
+        final StringBuilder builder = new StringBuilder();
+        builder.append('[');
+        for (;;) {
+            final Type thing = iterator.next();
+            builder.append(thing == this ? "(this Collection)" : thing);
+            if (!iterator.hasNext()) return builder.append(']').toString();
+            builder.append(',').append(' ');
+        }
     }
 }

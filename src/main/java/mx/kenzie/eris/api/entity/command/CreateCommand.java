@@ -14,5 +14,4 @@ public abstract class CreateCommand extends Lazy {
     public @Optional Payload description_localizations;
     public @Optional String default_member_permissions;
     public boolean dm_permission = true;
-    
 }

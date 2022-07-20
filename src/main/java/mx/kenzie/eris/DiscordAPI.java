@@ -20,8 +20,10 @@ import mx.kenzie.eris.network.EntityCache;
 import mx.kenzie.eris.network.NetworkController;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 public class DiscordAPI {
     
@@ -41,53 +43,59 @@ public class DiscordAPI {
     
     //<editor-fold desc="Request Helpers" defaultstate="collapsed">
     @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> request(String type, String path, String body, Type object) {
+    public CompletableFuture<InputStream> request(String type, String path, String body) {
         return CompletableFuture.supplyAsync(() -> {
-            try (final Json json = new CacheJson(this.network.request(type, path, body, bot.headers).body(), cache)) {
-                if (object == null) return null;
-                else if (object instanceof List list) list.addAll(json.toList());
-                else if (object instanceof Map map) map.putAll(json.toMap());
-                else json.toObject(object);
-                return object;
+            try {
+                return this.network.request(type, path, body, bot.headers).body();
             } catch (IOException | InterruptedException ex) {
                 throw new DiscordException(ex);
             }
+        });
+    }
+    
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> request(String type, String path, String body, Type object) {
+        return CompletableFuture.supplyAsync(() -> {
+            Object something = null;
+            try (final Json json = new CacheJson(this.network.request(type, path, body, bot.headers).body(), cache)) {
+                something = json.toSomething();
+                if (something instanceof Map<?,?> map && map.containsKey("code") && map.containsKey("message")) {
+                    final APIException error = new APIException(map.get("message") + "");
+                    this.network.helper.mapToObject(error, APIException.class, map);
+                    throw error;
+                }
+                if (object == null) return null;
+                else if (object instanceof LazyList<?> list && something instanceof List<?> result) list.update(this.network.helper, result, this);
+                else if (object instanceof List list && something instanceof List<?> result) list.addAll(result);
+                else if (object instanceof Map map && something instanceof Map<?,?> result) map.putAll(result);
+                else if (something instanceof Map<?,?> result) this.network.helper.mapToObject(object, object.getClass(), result);
+                return object;
+            } catch (IOException | InterruptedException ex) {
+                throw new DiscordException("Error in request:\n" + something, ex);
+            } catch (JsonException ignored) {
+                return object;
+            }
+        }).exceptionally(throwable -> {
+            if (throwable instanceof CompletionException ex) throwable = ex.getCause();
+            if (object instanceof Lazy lazy) lazy.error(throwable);
+            else Bot.handle(throwable);
+            return object;
         });
     }
     
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> get(String path, Type object) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (final Json json = new CacheJson(this.network.get(path, bot.headers).body(), cache)) {
-                if (object == null) return null;
-                else if (object instanceof List list) list.addAll(json.toList());
-                else if (object instanceof Map map) map.putAll(json.toMap());
-                else json.toObject(object);
-                return object;
-            } catch (IOException | InterruptedException ex) {
-                throw new DiscordException(ex);
-            }
-        });
+        return this.request("GET", path, null, object);
     }
     
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> patch(String path, String body, Type object) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (final Json json = new CacheJson(this.network.patch(path, body, bot.headers).body(), cache)) {
-                if (object == null) return null;
-                else if (object instanceof List list) list.addAll(json.toList());
-                else if (object instanceof Map map) map.putAll(json.toMap());
-                else json.toObject(object);
-                return object;
-            } catch (IOException | InterruptedException ex) {
-                throw new DiscordException(ex);
-            }
-        });
+        return this.request("PATCH", path, body, object);
     }
     
     public CompletableFuture<Void> delete(String path) {
         return CompletableFuture.supplyAsync(() -> {
-            try (final Json json = new Json(this.network.delete(path, bot.headers).body())) {
+            try (final InputStream stream = this.network.delete(path, bot.headers).body()) {
                 return null;
             } catch (IOException | InterruptedException ex) {
                 throw new DiscordException(ex);
@@ -97,28 +105,7 @@ public class DiscordAPI {
     
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> post(String path, String body, Type object) {
-        return CompletableFuture.supplyAsync(() -> {
-            final Map<String, Object> map = new HashMap<>();
-            try (final Json json = new CacheJson(this.network.post(path, body, bot.headers).body(), cache)) {
-                json.toMap(map);
-                if (map.containsKey("code") && map.containsKey("message")) {
-                    final APIException error = new APIException(map.get("message") + "");
-                    this.network.helper.mapToObject(error, APIException.class, map);
-                    throw error;
-                }
-                if (object == null) return null;
-                else if (object instanceof Map result) result.putAll(json.toMap());
-                else this.network.helper.mapToObject(object, object.getClass(), map);
-                return object;
-            } catch (IOException | InterruptedException ex) {
-                throw new DiscordException("Error in request:\n" + Json.toJson(map), ex);
-            } catch (JsonException ignored) {
-                return object;
-            }
-        }).exceptionally(throwable -> {
-            Bot.handle(throwable);
-            return null;
-        });
+        return this.request("POST", path, body, object);
     }
     //</editor-fold>
     
@@ -241,6 +228,19 @@ public class DiscordAPI {
             channels.finish();
         });
         return channels;
+    }
+    
+    public <IGuild> LazyList<Role> getRoles(IGuild guild) {
+        final LazyList<Role> roles = new LazyList<>(Role.class, new ArrayList<>());
+        if (guild instanceof Guild g) g.api = this;
+        this.get("/guilds/" + guild + "/roles", roles);
+        return roles;
+    }
+    
+    public <IGuild> LazyList<Role> updateRoles(IGuild guild, LazyList<Role> roles) {
+        roles.unready();
+        this.get("/guilds/" + guild + "/roles", roles);
+        return roles;
     }
     
     //<editor-fold desc="Members" defaultstate="collapsed">
@@ -369,7 +369,6 @@ public class DiscordAPI {
         else this.post("/interactions/" + interaction.id + "/" + interaction.token + "/callback", body, null);
     }
     //</editor-fold>
-    
     
     //<editor-fold desc="Helpers" defaultstate="collapsed">
     private String getUserId(Object object) {

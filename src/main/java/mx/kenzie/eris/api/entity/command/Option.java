@@ -27,6 +27,66 @@ public class Option extends Entity {
         this.choices = choices;
     }
     
+    public Option type(int type) {
+        this.type = type;
+        return this;
+    }
+    
+    public Option required(boolean required) {
+        this.required = required;
+        return this;
+    }
+    
+    public Option name(String name) {
+        this.name = name;
+        return this;
+    }
+    
+    public Option description(String description) {
+        this.description = description;
+        return this;
+    }
+    
+    public Option choices(Choice<?>... choices) {
+        this.choices = choices;
+        return this;
+    }
+    
+    public Option options(Option... options) {
+        this.options = options;
+        return this;
+    }
+    
+    public Option channel_types(int... channel_types) {
+        this.channel_types = channel_types;
+        return this;
+    }
+    
+    public Option min_value(Number min_value) {
+        this.min_value = min_value;
+        return this;
+    }
+    
+    public Option max_value(Number max_value) {
+        this.max_value = max_value;
+        return this;
+    }
+    
+    public Option min_length(Integer min_length) {
+        this.min_length = min_length;
+        return this;
+    }
+    
+    public Option max_length(Integer max_length) {
+        this.max_length = max_length;
+        return this;
+    }
+    
+    public Option autocomplete(boolean autocomplete) {
+        this.autocomplete = autocomplete;
+        return this;
+    }
+    
     public static <Type> Choice<Type> choice(String name, Type value) {
         return new Choice<>(name, value);
     }

@@ -1,15 +1,21 @@
 package mx.kenzie.eris.api.entity;
 
+import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.Name;
+import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
+import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.entity.guild.Ban;
+import mx.kenzie.eris.api.entity.guild.CreateRole;
 import mx.kenzie.eris.api.entity.guild.ModifyMember;
+import mx.kenzie.eris.api.utility.LazyList;
 import mx.kenzie.eris.data.Payload;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class Guild extends Snowflake {
@@ -26,10 +32,44 @@ public class Guild extends Snowflake {
     public Payload welcome_screen, application_command_counts;
     public final GuildHashes guild_hashes = new GuildHashes();
     
+    private transient LazyList<Role> roles0;
+    
     public Command registerCommand(Command command) {
         assert id != null;
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return api.registerCommand(command, this);
+    }
+    
+    public Role createRole(Role role) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.api.post("/guilds/" + this + "/roles", Json.toJson(role, CreateRole.class, null), role)
+            .exceptionally(role::error).thenAccept(Lazy::finish);
+        return role;
+    }
+    
+    public void deleteRole(Role role) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.api.delete("/guilds/" + this + "/roles/" + role);
+    }
+    
+    public <IRole> LazyList<Role> moveRole(IRole role, int position) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        final String id = role instanceof String string ? string : role.toString();
+        if (roles0 == null) roles0 = new LazyList<>(Role.class, new ArrayList<>());
+        this.api.patch("/guilds/" + this + "/roles", "[{\"id\": \"" + id + "\", \"position\": " + position + "}]", roles0)
+            .exceptionally(roles0::error).thenAccept(Lazy::finish);
+        return roles0;
+    }
+    
+    public LazyList<Role> getRoles() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        if (roles0 != null) return api.updateRoles(this, roles0);
+        return roles0 = this.api.getRoles(this);
+    }
+    
+    public LazyList<Channel> getChannels() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        return this.api.getChannels(this);
     }
     
     public <IUser> Member setVoiceDeafened(IUser user, boolean deaf) {

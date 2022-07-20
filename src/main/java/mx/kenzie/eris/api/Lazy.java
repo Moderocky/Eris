@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 public abstract class Lazy extends Entity {
     private transient volatile boolean ready0;
     private transient final Object lock = new Object();
+    private transient DiscordException exception;
     
     @Contract(pure = true)
     public void await() {
@@ -34,7 +35,7 @@ public abstract class Lazy extends Entity {
                 this.lock.wait();
             }
         } catch (Throwable ex) {
-            throw new DiscordException(ex);
+            this.exception = new DiscordException(ex);
         }
     }
     
@@ -53,9 +54,44 @@ public abstract class Lazy extends Entity {
         }
     }
     
+    @SuppressWarnings("unchecked")
+    public <Type extends Lazy> Type error(Throwable ex) {
+        synchronized (this) {
+            if (ex instanceof DiscordException discord) exception = discord;
+            else exception = new DiscordException(ex);
+            this.ready0 = true;
+        }
+        synchronized (lock) {
+            this.lock.notifyAll();
+        }
+        return (Type) this;
+    }
+    
+    public synchronized DiscordException error() {
+        return exception;
+    }
+    
+    @Contract(pure = true)
+    public boolean successful() {
+        this.await();
+        synchronized (this) {
+            return exception == null;
+        }
+    }
+    
     @Contract(pure = true)
     public synchronized boolean ready() {
         return this.ready0;
+    }
+    
+    @Contract(pure = true)
+    @SuppressWarnings("unchecked")
+    public <Type extends Lazy> CompletableFuture<Void> whenReady(Consumer<Type> consumer, Consumer<DiscordException> error) {
+        return CompletableFuture.runAsync(() -> {
+            this.await();
+            if (this.successful()) consumer.accept((Type) this);
+            else error.accept(this.error());
+        });
     }
     
     @Contract(pure = true)

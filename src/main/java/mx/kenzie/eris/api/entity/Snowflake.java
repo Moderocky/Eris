@@ -23,6 +23,11 @@ public class Snowflake extends Lazy {
     }
     
     @Override
+    public String toString() {
+        return id;
+    }
+    
+    @Override
     public boolean equals(Object obj) {
         return (obj instanceof Snowflake snowflake) && Objects.equals(this.id, snowflake.id);
     }
