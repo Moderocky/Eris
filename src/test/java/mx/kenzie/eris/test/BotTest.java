@@ -3,14 +3,14 @@ package mx.kenzie.eris.test;
 import mx.kenzie.argo.Json;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.DiscordAPI;
-import mx.kenzie.eris.api.entity.Guild;
-import mx.kenzie.eris.api.entity.Role;
+import mx.kenzie.eris.api.entity.Channel;
+import mx.kenzie.eris.api.entity.Message;
+import mx.kenzie.eris.api.entity.command.Command;
+import mx.kenzie.eris.api.entity.command.Option;
 import mx.kenzie.eris.api.magic.Intents;
 import mx.kenzie.eris.api.utility.LazyList;
-import mx.kenzie.eris.error.APIException;
 
 import java.io.InputStream;
-import java.time.Duration;
 
 public class BotTest {
     
@@ -30,7 +30,9 @@ public class BotTest {
         final DiscordAPI api = bot.getAPI();
         bot.start();
         bot.await();
-        Thread.sleep(1000);
+        
+        
+        Thread.sleep(20000);
         bot.close();
         System.exit(0);
     }

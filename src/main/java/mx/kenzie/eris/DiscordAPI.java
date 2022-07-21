@@ -56,22 +56,25 @@ public class DiscordAPI {
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> request(String type, String path, String body, Type object) {
         return CompletableFuture.supplyAsync(() -> {
-            Object something = null;
+            final Map<?, ?> map;
+            final List<?> result;
             try (final Json json = new CacheJson(this.network.request(type, path, body, bot.headers).body(), cache)) {
-                something = json.toSomething();
-                if (something instanceof Map<?,?> map && map.containsKey("code") && map.containsKey("message")) {
+                final boolean isMap = json.willBeMap();
+                if (isMap) map = json.toMap();
+                else {map = null;}
+                if (isMap && map.containsKey("code") && map.containsKey("message")) {
                     final APIException error = new APIException(map.get("message") + "");
                     this.network.helper.mapToObject(error, APIException.class, map);
                     throw error;
                 }
                 if (object == null) return null;
-                else if (object instanceof LazyList<?> list && something instanceof List<?> result) list.update(this.network.helper, result, this);
-                else if (object instanceof List list && something instanceof List<?> result) list.addAll(result);
-                else if (object instanceof Map map && something instanceof Map<?,?> result) map.putAll(result);
-                else if (something instanceof Map<?,?> result) this.network.helper.mapToObject(object, object.getClass(), result);
+                else if (object instanceof LazyList<?> list && !isMap) list.update(this.network.helper, json.toList(), this);
+                else if (object instanceof List list && !isMap) json.toList(list);
+                else if (object instanceof Map source && isMap) source.putAll(map);
+                else if (isMap) this.network.helper.mapToObject(object, object.getClass(), map);
                 return object;
             } catch (IOException | InterruptedException ex) {
-                throw new DiscordException("Error in request:\n" + something, ex);
+                throw new DiscordException("Error in request.", ex);
             } catch (JsonException ignored) {
                 return object;
             }
@@ -85,6 +88,16 @@ public class DiscordAPI {
     
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> get(String path, Type object) {
+        return this.request("GET", path, null, object);
+    }
+    
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> get(String path, Map<?, ?> query, Type object) {
+        if (query != null && !query.isEmpty()) {
+            final List<String> parts = new ArrayList<>();
+            for (final Map.Entry<?, ?> entry : query.entrySet()) parts.add(entry.getKey() + "=" + entry.getValue());
+            path += "?" + String.join("&", parts);
+        }
         return this.request("GET", path, null, object);
     }
     
@@ -154,6 +167,7 @@ public class DiscordAPI {
     public Channel getChannel(String id) {
         final Channel channel = cache.getOrUse(id, new Channel());
         channel.api = this;
+        channel.id = id;
         cache.store(channel);
         this.get("/channels/" + id, channel).thenAccept(Lazy::finish);
         return channel;

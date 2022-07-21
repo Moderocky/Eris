@@ -18,4 +18,9 @@ public class APIException extends DiscordException {
         return errors;
     }
     
+    @Override
+    public void printStackTrace() {
+        System.err.println("Errors from API: " + errors);
+        super.printStackTrace();
+    }
 }

@@ -21,6 +21,7 @@ import mx.kenzie.eris.data.incoming.http.GatewayConnection;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.data.outgoing.gateway.Heartbeat;
 import mx.kenzie.eris.data.outgoing.gateway.Identify;
+import mx.kenzie.eris.error.APIException;
 import mx.kenzie.eris.network.NetworkController;
 
 import java.io.InputStream;
@@ -213,6 +214,9 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     public static void handle(Throwable throwable) {
         if (exceptionHandler != null) exceptionHandler.accept(throwable);
-        else throwable.printStackTrace();
+        else if (throwable instanceof APIException api) {
+            throwable.printStackTrace();
+            System.err.println(api.getErrors());
+        } else throwable.printStackTrace();
     }
 }

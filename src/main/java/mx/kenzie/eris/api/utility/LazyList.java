@@ -16,6 +16,10 @@ public class LazyList<Type> extends Lazy implements List<Type> {
     protected List<Type> list;
     protected final Class<Type> type;
     
+    public static <Type> LazyList<Type> of(Class<Type> type) {
+        return new LazyList<>(type, new ArrayList<>());
+    }
+    
     public LazyList(Class<Type> type, List<Type> list) {
         this.list = list;
         this.type = type;
