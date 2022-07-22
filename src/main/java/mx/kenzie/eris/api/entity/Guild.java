@@ -7,8 +7,10 @@ import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.entity.guild.Ban;
+import mx.kenzie.eris.api.entity.guild.CreateChannel;
 import mx.kenzie.eris.api.entity.guild.CreateRole;
 import mx.kenzie.eris.api.entity.guild.ModifyMember;
+import mx.kenzie.eris.api.utility.BulkEntity;
 import mx.kenzie.eris.api.utility.LazyList;
 import mx.kenzie.eris.data.Payload;
 
@@ -17,6 +19,9 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class Guild extends Snowflake {
     
@@ -38,6 +43,25 @@ public class Guild extends Snowflake {
         assert id != null;
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return api.registerCommand(command, this);
+    }
+    
+    public Channel createChannel(Channel channel) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.api.post("/guilds/" + this + "/channels", Json.toJson(channel, CreateChannel.class, null), channel)
+            .exceptionally(channel::error).thenAccept(Lazy::finish);
+        return channel;
+    }
+    
+    public Channel modifyChannel(Channel channel) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.api.post("/channels/" + channel, Json.toJson(channel, CreateChannel.class, null), channel)
+            .exceptionally(channel::error).thenAccept(Lazy::finish);
+        return channel;
+    }
+    
+    public <IChannel> void deleteChannel(IChannel channel) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.api.delete("/channels/" + channel);
     }
     
     public Role createRole(Role role) {
@@ -67,9 +91,35 @@ public class Guild extends Snowflake {
         return roles0 = this.api.getRoles(this);
     }
     
-    public LazyList<Channel> getChannels() {
-        if (api == null) throw DiscordAPI.unlinkedEntity(this);
-        return this.api.getChannels(this);
+    public class ResultChannels extends BulkEntity<Channel> {
+        
+        public int limit = 1000;
+    
+        @Override
+        protected int limit() { return limit; }
+    
+        @Override
+        protected DiscordAPI api() {return api;}
+    
+        @Override
+        protected Class<Channel> getType() {
+            return Channel.class;
+        }
+    
+        public ResultChannels limit(int limit) {
+            this.limit = limit;
+            return this;
+        }
+    
+        @Override
+        protected CompletableFuture<List<?>> getEntities(List<?> list) {
+            if (api == null) throw DiscordAPI.unlinkedEntity(Guild.this);
+            return api.get("/guilds/" + id + "/channels", list);
+        }
+    }
+    
+    public ResultChannels getChannels() {
+        return new ResultChannels();
     }
     
     public <IUser> Member setVoiceDeafened(IUser user, boolean deaf) {

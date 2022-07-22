@@ -3,15 +3,15 @@ package mx.kenzie.eris.api.utility;
 import mx.kenzie.eris.error.DiscordException;
 
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MagicQueue<Type> {
     
-    private final SynchronousQueue<Type> queue = new SynchronousQueue<>();
+    private final Queue<Type> queue = new ConcurrentLinkedQueue<>();
     private final Object lock = new Object();
-    private final AtomicInteger integer = new AtomicInteger(6);
     volatile boolean closed;
     
     public MagicQueue() {
@@ -26,18 +26,24 @@ public class MagicQueue<Type> {
     
     public void add(Type type) {
         try {
-            this.queue.offer(type, 100L, TimeUnit.MILLISECONDS);
+            this.queue.offer(type);
+            synchronized (lock) {
+                this.lock.notifyAll();
+            }
         } catch (Throwable ex) {
             ex.printStackTrace();
         }
     }
     
     public Type get() {
-        try {
-            return this.queue.take();
+        Type type;
+        while ((type = this.queue.poll()) == null && !closed) try {
+            synchronized (lock) {
+                this.lock.wait(50L);
+            }
         } catch (Throwable ex) {
             ex.printStackTrace();
-            return null;
         }
+        return type;
     }
 }

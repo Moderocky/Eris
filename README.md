@@ -203,14 +203,16 @@ If the messages do not need to be consumed immediately, they may be dealt with i
 channel.getMessages().limit(100)
     .forEach(message -> System.out.println(message.content));
 ```
-This will use very little memory: once a message is assembled from JSON it is immediately consumed. \
-However, there is a short (nanosecond) delay between messages since they are consumed while the data stream is still incoming.
+This will use the least memory: once an entity is assembled from JSON it is immediately consumed. \
+After the consumer has finished - providing the user is not storing a strong reference - the entity object is destroyed. \
+However, there is a short delay (nanoseconds) between messages since they are consumed while the data stream is still incoming.
 
-| Pros                                                              | Cons                                             |
-|-------------------------------------------------------------------|--------------------------------------------------|
-| Low-memory: objects are discarded after the consumer is finished. | Can act on only one message at a time.           |
-| Fast: consumers are run as the data is read.                      | Cannot look ahead/behind at other messages.      |
-| Background: doesn't block the current thread.                     | Slow consumers will slow down the incoming data. |
+| Pros                                                              | Cons                                              |
+|-------------------------------------------------------------------|---------------------------------------------------|
+| Low-memory: objects are discarded after the consumer is finished. | Can act on only one message at a time.            |
+| Fast: consumers are run as the data is read.                      | Cannot look ahead/behind at other messages.       |
+| Background: doesn't block the current thread.                     | Slow consumers will slow down the incoming data.  |
+|                                                                   | The parser must wait for each consumer to finish. |
 
 
 > Note: this is not a standard for-each.
@@ -223,16 +225,17 @@ for (final Message message : channel.getMessages().limit(100)) {
     System.out.println(message.content);
 }
 ```
-This is potentially the fastest and lowest-memory approach, but it blocks the current thread.
+This is the fastest and lowest-memory approach, but it blocks the current thread.
 
 Messages are passed across a transferring queue and then iterated. This allows the messages to be read on the current thread.
 
 
-| Pros                                                              | Cons                                        |
-|-------------------------------------------------------------------|---------------------------------------------|
-| Low-memory: objects are discarded after the consumer is finished. | Both threads are throttled while iterating. |
-| Low-CPU: no heavy consumers or lambdas required.                  | Cannot look ahead/behind at other messages. |
-| In-situ: entities are in the current method.                      |                                             |
+| Pros                                                    | Cons                                        |
+|---------------------------------------------------------|---------------------------------------------|
+| Low-memory: objects are discarded after each iteration. | Cannot look ahead/behind at other messages. |
+| Low-CPU: no heavy consumers or lambdas required.        |                                             |
+| In-situ: entities are in the current method.            |                                             |
+| Speedy: incoming entities are queued in the background. |                                             |
 
 
 ## Dependencies

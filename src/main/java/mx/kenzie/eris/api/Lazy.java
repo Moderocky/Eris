@@ -67,6 +67,14 @@ public abstract class Lazy extends Entity {
         return (Type) this;
     }
     
+    /**
+     * Exists purely for use in CompletableFuture chains.
+     */
+    public Void error0(Throwable ex) {
+        this.error(ex);
+        return null;
+    }
+    
     public synchronized DiscordException error() {
         return exception;
     }

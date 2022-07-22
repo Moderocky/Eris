@@ -76,4 +76,9 @@ public class Command extends CreateCommand {
         return command;
     }
     
+    @Override
+    public String toString() {
+        return id;
+    }
+    
 }

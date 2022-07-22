@@ -342,22 +342,14 @@ public class DiscordAPI {
     public Command registerCommand(Command command) {
         return this.registerCommand(command, (String) null);
     }
-    
-    public Command registerCommand(Command command, Guild guild) {
-        return this.registerCommand(command, guild.id);
-    }
-    
-    public Command registerCommand(Command command, long guild) {
-        return this.registerCommand(command, Long.toString(guild));
-    }
-    
-    public Command registerCommand(Command command, String guild) {
+    public <IGuild> Command registerCommand(Command command, IGuild guild) {
         final String id = bot.self.id;
         final String body = Json.toJson(command, CreateCommand.class, null);
+        command.api = this;
         command.unready();
         if (guild == null) this.post("/applications/" + id + "/commands", body, command).thenAccept(Lazy::finish);
-        else
-            this.post("/applications/" + id + "/guilds/" + guild + "/commands", body, command).thenAccept(Lazy::finish);
+        else this.post("/applications/" + id + "/guilds/" + this.getGuildId(guild) + "/commands", body, command)
+            .thenAccept(Lazy::finish);
         return command;
     }
     
@@ -365,11 +357,7 @@ public class DiscordAPI {
         this.deleteCommand(command.id, command.guild_id);
     }
     
-    public void deleteCommand(long command, long guild) {
-        this.deleteCommand(Long.toString(command), Long.toString(guild));
-    }
-    
-    public void deleteCommand(String command, String guild) {
+    public <ICommand, IGuild> void deleteCommand(ICommand command, IGuild guild) {
         final String id = bot.self.id;
         if (guild == null) this.delete("/applications/" + id + "/commands/" + command);
         else this.delete("/applications/" + id + "/guilds/" + guild + "/commands/" + command);

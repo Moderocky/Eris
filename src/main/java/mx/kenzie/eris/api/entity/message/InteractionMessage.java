@@ -10,7 +10,7 @@ import mx.kenzie.eris.data.Payload;
 public abstract class InteractionMessage extends Snowflake implements Callback {
     
     public int flags;
-    public boolean tts;
+    public @Optional Boolean tts;
     public @Optional String content;
     public @Optional
     @Any Component[] components;

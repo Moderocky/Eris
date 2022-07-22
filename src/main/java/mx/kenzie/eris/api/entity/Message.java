@@ -1,7 +1,10 @@
 package mx.kenzie.eris.api.entity;
 
+import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
+import mx.kenzie.eris.api.Lazy;
+import mx.kenzie.eris.api.entity.guild.CreateChannel;
 import mx.kenzie.eris.api.entity.message.ActionRow;
 import mx.kenzie.eris.api.entity.message.UnsentMessage;
 import mx.kenzie.eris.data.Payload;
@@ -41,6 +44,20 @@ public class Message extends UnsentMessage {
 //        message.message_reference.channel_id = channel_id;
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return api.sendMessage(channel_id, message);
+    }
+    
+    public Message edit() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.unready();
+        this.api.patch("/channels/" + channel_id + "/messages/" + id, Json.toJson(this, UnsentMessage.class, null), this)
+            .exceptionally(this::error).thenAccept(Lazy::finish);
+        return this;
+    }
+    
+    public void delete() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.unready();
+        this.api.delete("/channels/" + channel_id + "/messages/" + id).thenRun(this::finish);
     }
     
     public Message withFlag(int flag) {

@@ -4,13 +4,15 @@ import mx.kenzie.argo.Json;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.entity.Channel;
+import mx.kenzie.eris.api.entity.Guild;
 import mx.kenzie.eris.api.entity.Message;
-import mx.kenzie.eris.api.entity.command.Command;
-import mx.kenzie.eris.api.entity.command.Option;
+import mx.kenzie.eris.api.entity.User;
+import mx.kenzie.eris.api.magic.ChannelType;
 import mx.kenzie.eris.api.magic.Intents;
 import mx.kenzie.eris.api.utility.LazyList;
 
 import java.io.InputStream;
+import java.util.Objects;
 
 public class BotTest {
     
@@ -31,8 +33,13 @@ public class BotTest {
         bot.start();
         bot.await();
         
+        final Guild guild = api.getGuild(399248280300683275L);
+        final Channel channel = guild.createChannel(new Channel("hello", ChannelType.GUILD_TEXT));
+        channel.await();
+        if (!channel.successful()) channel.error().printStackTrace();
+        Objects.hash(Channel.class, Guild.class);
         
-        Thread.sleep(20000);
+        Thread.sleep(1000);
         bot.close();
         System.exit(0);
     }

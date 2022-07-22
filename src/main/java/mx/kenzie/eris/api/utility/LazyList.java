@@ -34,6 +34,7 @@ public class LazyList<Type> extends Lazy implements List<Type> {
                 list.add(type);
                 if (type instanceof Entity entity) entity.api = api;
                 helper.mapToObject(type, this.type, (Map<?, ?>) object);
+                if (type instanceof Lazy lazy) lazy.finish();
             }
             synchronized (this) {
                 this.list = list;
