@@ -373,14 +373,14 @@ public class DiscordAPI {
     //</editor-fold>
     
     //<editor-fold desc="Helpers" defaultstate="collapsed">
-    private String getUserId(Object object) {
+    public String getUserId(Object object) {
         if (object instanceof String value) return value;
         if (object instanceof User value) return value.id;
         if (object instanceof Member value) return value.user.id;
         return Objects.toString(object);
     }
     
-    private String getGuildId(Object object) {
+    public String getGuildId(Object object) {
         if (object instanceof String value) return value;
         if (object instanceof Guild value) return value.id;
         if (object instanceof Guild.Preview value) return value.id;

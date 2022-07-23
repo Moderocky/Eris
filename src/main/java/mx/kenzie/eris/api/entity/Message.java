@@ -4,9 +4,9 @@ import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
-import mx.kenzie.eris.api.entity.guild.CreateChannel;
 import mx.kenzie.eris.api.entity.message.ActionRow;
 import mx.kenzie.eris.api.entity.message.UnsentMessage;
+import mx.kenzie.eris.api.utility.RequestBuilder;
 import mx.kenzie.eris.data.Payload;
 
 public class Message extends UnsentMessage {
@@ -36,6 +36,29 @@ public class Message extends UnsentMessage {
     
     public Message(ActionRow... rows) {
         this.components = rows;
+    }
+    
+    public Message pin() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.unready();
+        this.api.request("PUT", "/channels/" + channel_id + "/pins/" + id, null, null)
+            .exceptionally(this::error).thenRun(this::finish);
+        return this;
+    }
+    
+    public Message unpin() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.api.request("DELETE", "/channels/" + channel_id + "/pins/" + id, null, null)
+            .exceptionally(this::error).thenRun(this::finish);
+        return this;
+    }
+    
+    public RequestBuilder<Thread> createThread(String name) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        final Thread thread = new Thread();
+        final RequestBuilder<Thread> builder = new RequestBuilder<>(api, "POST", "/channels/" + channel_id + "/messages/" + id + "/threads", thread);
+        builder.set("name", name);
+        return builder;
     }
     
     public Message reply(Message message) {

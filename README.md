@@ -57,6 +57,14 @@ bot.registerListener(Ready.class, ready -> {
 Entities represent Discord objects (users, guilds, members, etc.)
 The entity structure corresponds directly to its raw data.
 
+#### Fields
+Entities have exposed, mutable fields rather than methods. \
+This is a design choice:
+1. Entity classes are data-stores, not high-security API.
+2. Some entities have 30+ fields - adding methods for each would increase bloat.
+3. Users are __supposed__ to edit entity objects in order to update/patch them.
+
+#### Requesting Entities
 Most entities have a `Snowflake` ID by which they can be retrieved.
 
 ```java 
@@ -236,6 +244,33 @@ Messages are passed across a transferring queue and then iterated. This allows t
 | Low-CPU: no heavy consumers or lambdas required.        |                                             |
 | In-situ: entities are in the current method.            |                                             |
 | Speedy: incoming entities are queued in the background. |                                             |
+
+
+## Caching
+Unlike other discord libraries, Eris operates only a very limited cache. \
+Eris is designed to function in low-memory environments, so caching large amounts of potentially-unnecessary data would be inappropriate.
+
+Some ID-based entities (Users, Guilds, Channels) are cached when requested.
+This cache will be maintained only as long as the user keeps a reference to that entity somewhere.
+This is to prevent having to wait to reacquire entities in multiple places at the same time. \
+In order to use this cache longer-term, simply store the entity references somewhere within your own project to stop them being garbage-collected from the cache.
+
+Every time a cached entity is requested, the cached version will be returned but a call will be sent to the Discord API for an updated copy. \
+You do **not** need to `await` the updated copy before using the entity, however in some cases you may wish to if the cached copy is old.
+
+Some API methods allow a user to provide their own copy of an entity. This copy may be different from the cached version. \
+If the method returns the same type of entity it will always return the cached version (pending the result from Discord's API.) \
+The user-provided entity may supplant the cached version and be returned if:
+1. The cached version is marked outdated or incomplete.
+2. The cached version has no strong references and due to be garbage-collected.
+3. The cached version is implemented at a lower-level (e.g. raw `Channel` vs `Thread`.)
+
+## Bypassing the API
+Users are not forced into using the provided API methods or even the `Entity` data objects.
+
+The API provides ways to send raw requests to Discord and read their data as an `InputStream`.
+
+You may also unregister the payload-listener that creates wrapped events and interpret payloads directly from the gateway socket.
 
 
 ## Dependencies

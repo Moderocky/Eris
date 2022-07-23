@@ -11,6 +11,4 @@ public class Application extends Snowflake {
     public @Optional String[] rpc_origins, tags;
     public @Optional User owner;
     public @Optional Payload team, install_params;
-    
-    
 }

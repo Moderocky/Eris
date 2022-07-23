@@ -37,7 +37,11 @@ public class BotTest {
         final Channel channel = guild.createChannel(new Channel("hello", ChannelType.GUILD_TEXT));
         channel.await();
         if (!channel.successful()) channel.error().printStackTrace();
-        Objects.hash(Channel.class, Guild.class);
+        channel.send(new Message("beans"));
+    
+        Thread.sleep(5000);
+        channel.delete().await();
+        if (!channel.successful()) channel.error().printStackTrace();
         
         Thread.sleep(1000);
         bot.close();

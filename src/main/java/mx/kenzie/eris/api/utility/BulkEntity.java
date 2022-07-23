@@ -1,12 +1,12 @@
 package mx.kenzie.eris.api.utility;
 
 import mx.kenzie.eris.DiscordAPI;
-import mx.kenzie.eris.api.entity.Message;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public abstract class BulkEntity<Type> implements Iterable<Type> {
     
@@ -69,5 +69,41 @@ public abstract class BulkEntity<Type> implements Iterable<Type> {
     @Override
     public Spliterator<Type> spliterator() {
         return Iterable.super.spliterator();
+    }
+    
+    public static <Type> BulkEntity<Type> of(DiscordAPI api, Class<Type> type, Function<List<?>, CompletableFuture<List<?>>> function) {
+        return new DefaultImplementation<>(api, type, function);
+    }
+}
+class DefaultImplementation<Type> extends BulkEntity<Type> {
+    
+    private final DiscordAPI api;
+    private final Class<Type> type;
+    private final Function<List<?>, CompletableFuture<List<?>>> function;
+    
+    DefaultImplementation(DiscordAPI api, Class<Type> type, Function<List<?>, CompletableFuture<List<?>>> function) {
+        this.api = api;
+        this.type = type;
+        this.function = function;
+    }
+    
+    @Override
+    protected int limit() {
+        return 200;
+    }
+    
+    @Override
+    protected DiscordAPI api() {
+        return api;
+    }
+    
+    @Override
+    protected Class<Type> getType() {
+        return type;
+    }
+    
+    @Override
+    protected CompletableFuture<List<?>> getEntities(List<?> list) {
+        return function.apply(list);
     }
 }

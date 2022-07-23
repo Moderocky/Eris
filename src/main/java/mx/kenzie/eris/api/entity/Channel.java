@@ -6,10 +6,7 @@ import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.guild.CreateChannel;
 import mx.kenzie.eris.api.magic.ChannelType;
-import mx.kenzie.eris.api.utility.BulkEntity;
-import mx.kenzie.eris.api.utility.DeferredList;
-import mx.kenzie.eris.api.utility.LazyList;
-import mx.kenzie.eris.api.utility.MagicQueue;
+import mx.kenzie.eris.api.utility.*;
 import mx.kenzie.eris.data.Payload;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,6 +26,16 @@ public class Channel extends CreateChannel {
     public Channel(String name, int type) {
         this.name = name;
         this.type = type;
+    }
+    
+    public RequestBuilder<Thread> createThread(String name) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        final Thread thread = new Thread();
+        this.api.post("/channels/" + id + "/threads", "{\"name\":\"" + name + "\"}", thread)
+            .exceptionally(thread::error).thenAccept(Lazy::finish);
+        final RequestBuilder<Thread> builder = new RequestBuilder<>(api, "POST", "/channels/" + id + "/threads", thread);
+        builder.set("name", name);
+        return builder;
     }
     
     public <IMessage> Message getMessage(IMessage id) {
@@ -67,10 +74,11 @@ public class Channel extends CreateChannel {
         return this;
     }
     
-    public void delete() {
+    public Channel delete() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
         this.api.delete("/channels/" + this).exceptionally(this::error0).thenRun(this::finish);
+        return this;
     }
     
     public boolean isText() {
@@ -87,7 +95,7 @@ public class Channel extends CreateChannel {
         return api.sendMessage(this, message);
     }
     
-    public class ResultMessages extends BulkEntity<Message> implements Iterable<Message> {
+    public class ResultMessages extends BulkEntity<Message> {
         transient int limit = 50;
         transient String around, before, after;
     
@@ -140,6 +148,11 @@ public class Channel extends CreateChannel {
     
     public ResultMessages getMessages() {
         return new ResultMessages();
+    }
+    
+    public BulkEntity<Message> getPinnedMessages() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
+        return BulkEntity.of(api, Message.class, list -> this.api.get("/channels/" + id + "/pins", null, list));
     }
 
 }

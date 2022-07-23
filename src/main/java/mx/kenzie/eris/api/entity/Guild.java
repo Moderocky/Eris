@@ -42,11 +42,13 @@ public class Guild extends Snowflake {
     public Command registerCommand(Command command) {
         assert id != null;
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        command.api = api;
         return api.registerCommand(command, this);
     }
     
     public Channel createChannel(Channel channel) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        channel.api = api;
         this.api.post("/guilds/" + this + "/channels", Json.toJson(channel, CreateChannel.class, null), channel)
             .exceptionally(channel::error).thenAccept(Lazy::finish);
         return channel;
@@ -54,6 +56,7 @@ public class Guild extends Snowflake {
     
     public Channel modifyChannel(Channel channel) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        channel.api = api;
         this.api.post("/channels/" + channel, Json.toJson(channel, CreateChannel.class, null), channel)
             .exceptionally(channel::error).thenAccept(Lazy::finish);
         return channel;
@@ -66,6 +69,7 @@ public class Guild extends Snowflake {
     
     public Role createRole(Role role) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        role.api = api;
         this.api.post("/guilds/" + this + "/roles", Json.toJson(role, CreateRole.class, null), role)
             .exceptionally(role::error).thenAccept(Lazy::finish);
         return role;
@@ -73,6 +77,7 @@ public class Guild extends Snowflake {
     
     public void deleteRole(Role role) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        role.api = api;
         this.api.delete("/guilds/" + this + "/roles/" + role);
     }
     
