@@ -49,7 +49,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     }
     
     final String token;
-    final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(A, B)", "Content-Type", "application/json"};
+    final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(A, B)"};
     public final Executor executor = Executors.newCachedThreadPool();
     protected final NetworkController network;
     private volatile boolean running = true;
@@ -160,7 +160,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     @Override
     public void run() {
         try {
-            final InputStream stream = network.get("/gateway/bot", headers).body();
+            final InputStream stream = network.request("GET", "/gateway/bot", null, headers).body();
             this.registerPayloadListener(Incoming.class, incoming -> incoming.network.notify(incoming.sequence));
             this.registerPayloadListener(Dispatch.class, dispatch -> {
                 final Json.JsonHelper helper = dispatch.network.helper;

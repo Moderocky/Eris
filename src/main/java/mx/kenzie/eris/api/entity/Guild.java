@@ -2,14 +2,12 @@ package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.Name;
-import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.entity.guild.Ban;
 import mx.kenzie.eris.api.entity.guild.CreateChannel;
 import mx.kenzie.eris.api.entity.guild.CreateRole;
-import mx.kenzie.eris.api.entity.guild.ModifyMember;
 import mx.kenzie.eris.api.utility.BulkEntity;
 import mx.kenzie.eris.api.utility.LazyList;
 import mx.kenzie.eris.data.Payload;
@@ -18,9 +16,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class Guild extends Snowflake {
@@ -92,30 +88,42 @@ public class Guild extends Snowflake {
     
     public LazyList<Role> getRoles() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
-        if (roles0 != null) return api.updateRoles(this, roles0);
-        return roles0 = this.api.getRoles(this);
+        return this.api.getRoles(this);
+    }
+    
+    public <IUser, IRole> Guild addRole(IUser id, IRole role) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.unready();
+        System.out.println("/guilds/" + this.id + "/members/" + api.getUserId(id) + "/roles/" + role); // todo
+        this.api.request("PUT", "/guilds/" + this.id + "/members/" + api.getUserId(id) + "/roles/" + role, "[]", null)
+            .exceptionally(this::error).thenRun(this::finish);
+        return this;
     }
     
     public class ResultChannels extends BulkEntity<Channel> {
         
         public int limit = 1000;
-    
+        
         @Override
-        protected int limit() { return limit; }
-    
+        protected int limit() {
+            return limit;
+        }
+        
         @Override
-        protected DiscordAPI api() {return api;}
-    
+        protected DiscordAPI api() {
+            return api;
+        }
+        
         @Override
         protected Class<Channel> getType() {
             return Channel.class;
         }
-    
+        
         public ResultChannels limit(int limit) {
             this.limit = limit;
             return this;
         }
-    
+        
         @Override
         protected CompletableFuture<List<?>> getEntities(List<?> list) {
             if (api == null) throw DiscordAPI.unlinkedEntity(Guild.this);

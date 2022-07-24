@@ -23,14 +23,15 @@ import java.util.function.Consumer;
  * The methods of a lazy object are safe to use outside synchronization.
  */
 public abstract class Lazy extends Entity {
-    private transient volatile int ready0;
+    private transient volatile boolean ready0;
     private transient final Object lock = new Object();
     private transient DiscordException exception;
     
     @Contract(pure = true)
     public void await(long timeout) {
         try {
-            if (!this.ready()) synchronized (lock) {
+            synchronized (lock) {
+                if (this.ready()) return;
                 this.lock.wait(timeout);
             }
         } catch (Throwable ex) {
@@ -41,7 +42,8 @@ public abstract class Lazy extends Entity {
     @Contract(pure = true)
     public void await() {
         try {
-            if (!this.ready()) synchronized (lock) {
+            synchronized (lock) {
+                if (this.ready()) return;
                 this.lock.wait();
             }
         } catch (Throwable ex) {
@@ -52,13 +54,13 @@ public abstract class Lazy extends Entity {
     @Contract(pure = true)
     public synchronized void unready() {
         this.exception = null;
-        this.ready0++;
+        this.ready0 = false;
     }
     
     @Contract(pure = true)
     public void finish() {
         synchronized (this) {
-            if (ready0 > 0) this.ready0--;
+            this.ready0 = true;
         }
         synchronized (lock) {
             this.lock.notifyAll();
@@ -70,7 +72,7 @@ public abstract class Lazy extends Entity {
         synchronized (this) {
             if (ex instanceof DiscordException discord) exception = discord;
             else exception = new DiscordException(ex);
-            if (ready0 > 0) this.ready0--;
+            this.ready0 = true;
         }
         synchronized (lock) {
             this.lock.notifyAll();
@@ -100,7 +102,7 @@ public abstract class Lazy extends Entity {
     
     @Contract(pure = true)
     public synchronized boolean ready() {
-        return this.ready0 < 1;
+        return this.ready0;
     }
     
     @Contract(pure = true)

@@ -21,7 +21,11 @@ import mx.kenzie.eris.network.NetworkController;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -58,25 +62,30 @@ public class DiscordAPI {
         return CompletableFuture.supplyAsync(() -> {
             final Map<?, ?> map;
             final List<?> result;
-            try (final Json json = new CacheJson(this.network.request(type, path, body, bot.headers).body(), cache)) {
-                final boolean isMap = json.willBeMap();
-                if (isMap) map = json.toMap();
-                else {map = null;}
-                if (isMap && map.containsKey("code") && map.containsKey("message")) {
-                    final APIException error = new APIException(map.get("message") + "");
-                    this.network.helper.mapToObject(error, APIException.class, map);
-                    throw error;
+            try {
+                final HttpResponse<InputStream> request = this.network.request(type, path, body, bot.headers);
+                System.out.println(request.toString());
+                try (final Json json = new CacheJson(request.body(), cache)) {
+                    final boolean isMap = json.willBeMap();
+                    if (isMap) map = json.toMap();
+                    else {map = null;}
+                    if (isMap && map.containsKey("code") && map.containsKey("message")) {
+                        final APIException error = new APIException(map.get("message") + "");
+                        this.network.helper.mapToObject(error, APIException.class, map);
+                        throw error;
+                    }
+                    if (object == null) return null;
+                    else if (object instanceof LazyList<?> list && !isMap)
+                        list.update(this.network.helper, json.toList(), this);
+                    else if (object instanceof List list && !isMap) json.toList(list);
+                    else if (object instanceof Map source && isMap) source.putAll(map);
+                    else if (isMap) this.network.helper.mapToObject(object, object.getClass(), map);
+                    return object;
+                } catch (JsonException ignored) {
+                    return object;
                 }
-                if (object == null) return null;
-                else if (object instanceof LazyList<?> list && !isMap) list.update(this.network.helper, json.toList(), this);
-                else if (object instanceof List list && !isMap) json.toList(list);
-                else if (object instanceof Map source && isMap) source.putAll(map);
-                else if (isMap) this.network.helper.mapToObject(object, object.getClass(), map);
-                return object;
             } catch (IOException | InterruptedException ex) {
                 throw new DiscordException("Error in request.", ex);
-            } catch (JsonException ignored) {
-                return object;
             }
         }).exceptionally(throwable -> {
             if (throwable instanceof CompletionException ex) throwable = ex.getCause();
@@ -108,8 +117,8 @@ public class DiscordAPI {
     
     public CompletableFuture<Void> delete(String path) {
         return CompletableFuture.supplyAsync(() -> {
-            try (final InputStream stream = this.network.delete(path, bot.headers).body()) {
-                return null;
+            try {
+                return this.network.delete(path, bot.headers).body();
             } catch (IOException | InterruptedException ex) {
                 throw new DiscordException(ex);
             }
@@ -258,33 +267,14 @@ public class DiscordAPI {
     }
     
     //<editor-fold desc="Members" defaultstate="collapsed">
-    public Member getMember(long guild, long user) {
-        return this.getMember(Long.toString(guild), Long.toString(user));
-    }
-    
-    public Member getMember(String guild, String user) {
-        final Member member = new Member();
-        member.guild_id = guild;
-        member.user.id = user;
-        member.api = this;
-        this.get("/guilds/" + guild + "/members/" + user, member);
-        return member;
-    }
-    
-    public Member getMember(Guild guild, User user) {
-        return this.getMember(guild.id, user);
-    }
-    
-    public Member getMember(long guild, User user) {
-        return this.getMember(Long.toString(guild), user);
-    }
-    
-    public Member getMember(String guild, User user) {
+    public <IGuild, IUser> Member getMember(IGuild guild, IUser user) {
         final Member member = new Member(); // don't cache members due to the ID overload
-        member.user = user;
-        member.guild_id = guild;
+        if (user instanceof User u) member.user = u;
+        else member.user.id = this.getUserId(user);
+        member.guild_id = this.getGuildId(guild);
         member.api = this;
-        this.get("/guilds/" + guild + "/members/" + user.id, member);
+        this.get("/guilds/" + member.guild_id + "/members/" + member.user.id, member)
+            .exceptionally(member::error).thenAccept(Lazy::finish);
         return member;
     }
     
@@ -293,7 +283,8 @@ public class DiscordAPI {
         final Member result;
         if (member instanceof Member value) result = value;
         else result = new Member();
-        this.patch("/guilds/" + gid + "/members/" + uid, Json.toJson(member, ModifyMember.class, null), result).thenAccept(Lazy::finish);
+        this.patch("/guilds/" + gid + "/members/" + uid, Json.toJson(member, ModifyMember.class, null), result)
+            .exceptionally(result::error).thenAccept(Lazy::finish);
         return result;
     }
     
@@ -302,7 +293,8 @@ public class DiscordAPI {
         if (member.guild_id == null) throw new DiscordException("Unable to update member - guild ID unknown.");
         member.unready();
         member.api = this;
-        this.get("/guilds/" + member.guild_id + "/members/" + member.user.id, member).thenAccept(Lazy::finish);
+        this.get("/guilds/" + member.guild_id + "/members/" + member.user.id, member)
+            .exceptionally(member::error).thenAccept(Lazy::finish);
     }
     //</editor-fold>
     
@@ -334,7 +326,8 @@ public class DiscordAPI {
         guild.unready();
         this.cache.store(guild);
         guild.api = this;
-        this.get("/guilds/" + guild.id, guild).thenAccept(Lazy::finish);
+        this.get("/guilds/" + guild.id, guild)
+            .exceptionally(guild::error).thenAccept(Lazy::finish);
     }
     //</editor-fold>
     
@@ -342,6 +335,7 @@ public class DiscordAPI {
     public Command registerCommand(Command command) {
         return this.registerCommand(command, (String) null);
     }
+    
     public <IGuild> Command registerCommand(Command command, IGuild guild) {
         final String id = bot.self.id;
         final String body = Json.toJson(command, CreateCommand.class, null);

@@ -1,12 +1,7 @@
 package mx.kenzie.eris.api.utility;
 
-import mx.kenzie.eris.error.DiscordException;
-
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MagicQueue<Type> {
     

@@ -3,7 +3,6 @@ package mx.kenzie.eris.api.utility;
 import mx.kenzie.argo.Json;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
-import mx.kenzie.eris.api.entity.Channel;
 import mx.kenzie.eris.api.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,7 +39,7 @@ public class LazyList<Type> extends Lazy implements List<Type> {
                 this.list = list;
             }
         } catch (Throwable ex) {
-            ex.getCause().getCause().printStackTrace();
+            this.error(ex);
         } finally {
             this.finish();
         }
@@ -196,7 +195,7 @@ public class LazyList<Type> extends Lazy implements List<Type> {
         if (!iterator.hasNext()) return "[]";
         final StringBuilder builder = new StringBuilder();
         builder.append('[');
-        for (;;) {
+        for (; ; ) {
             final Type thing = iterator.next();
             builder.append(thing == this ? "(this Collection)" : thing);
             if (!iterator.hasNext()) return builder.append(']').toString();

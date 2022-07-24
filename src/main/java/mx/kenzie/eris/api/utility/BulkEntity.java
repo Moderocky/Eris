@@ -3,7 +3,9 @@ package mx.kenzie.eris.api.utility;
 import mx.kenzie.eris.DiscordAPI;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -17,7 +19,9 @@ public abstract class BulkEntity<Type> implements Iterable<Type> {
     }
     
     protected abstract int limit();
+    
     protected abstract DiscordAPI api();
+    
     protected abstract Class<Type> getType();
     
     protected abstract CompletableFuture<List<?>> getEntities(List<?> list);
@@ -33,7 +37,9 @@ public abstract class BulkEntity<Type> implements Iterable<Type> {
             final MagicQueue<Type> queue = magic;
             transient Type current;
             
-            Entities(int limit) { this.limit = limit; }
+            Entities(int limit) {
+                this.limit = limit;
+            }
             
             public void close() {
                 this.queue.close();
@@ -75,6 +81,7 @@ public abstract class BulkEntity<Type> implements Iterable<Type> {
         return new DefaultImplementation<>(api, type, function);
     }
 }
+
 class DefaultImplementation<Type> extends BulkEntity<Type> {
     
     private final DiscordAPI api;

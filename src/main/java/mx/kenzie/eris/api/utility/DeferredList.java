@@ -33,7 +33,7 @@ public class DeferredList<Type> implements List<Object> {
     
     @Override
     public boolean add(Object object) {
-        if (object instanceof Map<?,?> map) {
+        if (object instanceof Map<?, ?> map) {
             final Type thing = helper.createObject(type);
             if (thing instanceof Entity entity) entity.api = api;
             this.helper.mapToObject(thing, type, map);

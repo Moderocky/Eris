@@ -6,15 +6,12 @@ import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.guild.CreateChannel;
 import mx.kenzie.eris.api.magic.ChannelType;
-import mx.kenzie.eris.api.utility.*;
+import mx.kenzie.eris.api.utility.BulkEntity;
+import mx.kenzie.eris.api.utility.RequestBuilder;
 import mx.kenzie.eris.data.Payload;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.SynchronousQueue;
-import java.util.function.Consumer;
 
 public class Channel extends CreateChannel {
     
@@ -22,7 +19,9 @@ public class Channel extends CreateChannel {
     public @Optional String guild_id, last_message_id, owner_id, application_id, last_pin_timestamp, permissions;
     public @Optional User[] recipients;
     
-    public Channel() {}
+    public Channel() {
+    }
+    
     public Channel(String name, int type) {
         this.name = name;
         this.type = type;
@@ -62,14 +61,16 @@ public class Channel extends CreateChannel {
             if (message instanceof Message m) ids.add(m.id);
             else ids.add(message.toString());
         }
-        class Body extends Payload { final String[] messages = ids.toArray(new String[0]); }
+        class Body extends Payload {
+            final String[] messages = ids.toArray(new String[0]);
+        }
         this.api.post("/channels/" + this + "/messages/bulk-delete", new Body().toJson(null), null);
     }
     
     public Channel modify() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
-        this.api.patch("/channels/" + this , Json.toJson(this, CreateChannel.class, null), this)
+        this.api.patch("/channels/" + this, Json.toJson(this, CreateChannel.class, null), this)
             .exceptionally(this::error).thenAccept(Lazy::finish);
         return this;
     }
@@ -98,42 +99,42 @@ public class Channel extends CreateChannel {
     public class ResultMessages extends BulkEntity<Message> {
         transient int limit = 50;
         transient String around, before, after;
-    
+        
         public ResultMessages limit(int limit) {
             this.limit = limit;
             return this;
         }
-    
+        
         public ResultMessages around(String around) {
             this.around = around;
             return this;
         }
-    
+        
         public ResultMessages before(String before) {
             this.before = before;
             return this;
         }
-    
+        
         public ResultMessages after(String after) {
             this.after = after;
             return this;
         }
-    
+        
         @Override
         protected int limit() {
             return this.limit;
         }
-    
+        
         @Override
         protected DiscordAPI api() {
             return api;
         }
-    
+        
         @Override
         protected Class<Message> getType() {
             return Message.class;
         }
-    
+        
         @Override
         protected CompletableFuture<List<?>> getEntities(List<?> list) {
             if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
@@ -154,5 +155,5 @@ public class Channel extends CreateChannel {
         if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
         return BulkEntity.of(api, Message.class, list -> this.api.get("/channels/" + id + "/pins", null, list));
     }
-
+    
 }

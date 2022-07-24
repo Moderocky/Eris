@@ -7,7 +7,7 @@ public class Ban extends Lazy {
     
     public int delete_message_days;
     public @Optional String reason;
-
+    
     public Ban() {
     }
     

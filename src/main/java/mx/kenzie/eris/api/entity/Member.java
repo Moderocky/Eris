@@ -1,6 +1,5 @@
 package mx.kenzie.eris.api.entity;
 
-import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.guild.ModifyMember;
 
 public class Member extends ModifyMember {

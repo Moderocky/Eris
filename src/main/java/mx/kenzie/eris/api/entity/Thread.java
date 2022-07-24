@@ -17,7 +17,7 @@ public class Thread extends Channel {
     public Thread join() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
-        this.api.request("PUT", "/channels/" + id +"/thread-members/@me", null, null)
+        this.api.request("PUT", "/channels/" + id + "/thread-members/@me", null, null)
             .exceptionally(this::error)
             .thenRun(this::finish);
         return this;
@@ -26,7 +26,7 @@ public class Thread extends Channel {
     public Thread leave() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
-        this.api.request("DELETE", "/channels/" + id +"/thread-members/@me", null, null)
+        this.api.request("DELETE", "/channels/" + id + "/thread-members/@me", null, null)
             .exceptionally(this::error)
             .thenRun(this::finish);
         return this;
@@ -36,7 +36,7 @@ public class Thread extends Channel {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final String id = api.getUserId(user);
         this.unready();
-        this.api.request("PUT", "/channels/" + id +"/thread-members/" + id, null, null)
+        this.api.request("PUT", "/channels/" + id + "/thread-members/" + id, null, null)
             .exceptionally(this::error)
             .thenRun(this::finish);
         return this;
@@ -46,7 +46,7 @@ public class Thread extends Channel {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final String id = api.getUserId(user);
         this.unready();
-        this.api.request("DELETE", "/channels/" + id +"/thread-members/" + id, null, null)
+        this.api.request("DELETE", "/channels/" + id + "/thread-members/" + id, null, null)
             .exceptionally(this::error)
             .thenRun(this::finish);
         return this;
@@ -57,25 +57,31 @@ public class Thread extends Channel {
         final String id = api.getUserId(user);
         final Member member = new Member();
         member.api = api;
-        this.api.request("GET", "/channels/" + id +"/thread-members/" + id, null, member)
+        this.api.request("GET", "/channels/" + id + "/thread-members/" + id, null, member)
             .exceptionally(member::error).thenAccept(Lazy::finish);
         return member;
     }
     
     public class ThreadMembers extends BulkEntity<Member> {
-    
+        
         @Override
-        protected int limit() {return 200;}
-    
+        protected int limit() {
+            return 200;
+        }
+        
         @Override
-        protected DiscordAPI api() {return api;}
-    
+        protected DiscordAPI api() {
+            return api;
+        }
+        
         @Override
-        protected Class<Member> getType() {return Member.class;}
-    
+        protected Class<Member> getType() {
+            return Member.class;
+        }
+        
         @Override
         protected CompletableFuture<List<?>> getEntities(List<?> list) {
-            return Thread.this.api.request("GET", "/channels/" + id +"/thread-members", null, list);
+            return Thread.this.api.request("GET", "/channels/" + id + "/thread-members", null, list);
         }
     }
     

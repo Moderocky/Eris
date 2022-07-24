@@ -21,7 +21,7 @@ public class AuditLog extends Entity {
         public @Optional Payload[] changes;
         public int action_type;
         public Payload options;
-    
+        
     }
     
 }

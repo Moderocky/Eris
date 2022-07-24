@@ -12,6 +12,7 @@ public class Role extends CreateRole {
     
     public Role() {
     }
+    
     public Role(String name) {
         this.name = name;
     }
@@ -47,10 +48,10 @@ public class Role extends CreateRole {
     }
     
     public Role icon(Payload icon) {
-        this.icon = icon;
+//        this.icon = icon; todo
         return this;
     }
-    
+
 //    name	string	role name
 //    color	integer	integer representation of hexadecimal color code
 //    hoist	boolean	if this role is pinned in the user listing
@@ -66,7 +67,8 @@ public class Role extends CreateRole {
         public @Optional String bot_id, integration_id;
         public @Optional Payload premium_subscriber;
         
-        public Tag() {}
+        public Tag() {
+        }
     }
     
 }

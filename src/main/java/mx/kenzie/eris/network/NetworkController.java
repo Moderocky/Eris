@@ -4,7 +4,6 @@ import mx.kenzie.argo.Json;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.Listener;
-import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.data.incoming.Incoming;
 import mx.kenzie.eris.data.incoming.gateway.Dispatch;
 import mx.kenzie.eris.data.incoming.gateway.Heartbeat;
@@ -19,10 +18,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.WebSocket;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -139,7 +135,16 @@ public class NetworkController {
         final HttpRequest.BodyPublisher publisher;
         if (body == null) publisher = HttpRequest.BodyPublishers.noBody();
         else publisher = HttpRequest.BodyPublishers.ofString(body);
-        final HttpRequest request = HttpRequest.newBuilder(uri).method(method, publisher).headers(headers).build();
+        final List<String> list = new ArrayList<>();
+        for (final String header : headers) list.add(header.trim());
+        if (body != null) {
+            list.add("Content-Type");
+            list.add("application/json");
+        }
+        final HttpRequest request = HttpRequest.newBuilder(uri).method(method, publisher)
+            .headers(list.toArray(new String[0])).build();
+        System.out.println(Arrays.toString(headers)); // todo
+        request.bodyPublisher().ifPresent(p -> System.out.println(p.contentLength()));// todo
         return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
     }
     
@@ -169,10 +174,10 @@ public class NetworkController {
         return this.patch(path, publisher, headers);
     }
     
-    public HttpResponse<InputStream> delete(String path, String... headers) throws IOException, InterruptedException {
+    public HttpResponse<Void> delete(String path, String... headers) throws IOException, InterruptedException {
         final URI uri = URI.create(base + path);
         final HttpRequest request = HttpRequest.newBuilder(uri).DELETE().headers(headers).build();
-        return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+        return client.send(request, HttpResponse.BodyHandlers.discarding());
     }
     
     protected HttpResponse<InputStream> post(String path, HttpRequest.BodyPublisher publisher, String... headers) throws IOException, InterruptedException {

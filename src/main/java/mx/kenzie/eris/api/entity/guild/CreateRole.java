@@ -2,14 +2,13 @@ package mx.kenzie.eris.api.entity.guild;
 
 import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.api.entity.Snowflake;
-import mx.kenzie.eris.data.Payload;
 
 public abstract class CreateRole extends Snowflake {
     public @Optional String name;
     public @Optional String permissions, unicode_emoji;
     public @Optional Integer color;
     public @Optional Boolean hoist, mentionable;
-    public @Optional Payload icon;
+//    public @Optional Payload icon; todo
     
     //    name	string	name of the role	"new role"
 //    permissions	string	bitwise value of the enabled/disabled permissions	@everyone permissions in guild
