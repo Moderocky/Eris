@@ -12,17 +12,16 @@ import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.event.Interaction;
 import mx.kenzie.eris.api.event.Ready;
 import mx.kenzie.eris.api.event.Resumed;
-import mx.kenzie.eris.api.event.guild.CreateGuildRole;
-import mx.kenzie.eris.api.event.guild.DeleteGuildRole;
-import mx.kenzie.eris.api.event.guild.IdentifyGuild;
-import mx.kenzie.eris.api.event.guild.UpdateGuildRole;
+import mx.kenzie.eris.api.event.guild.*;
 import mx.kenzie.eris.api.event.message.ReceiveMessage;
+import mx.kenzie.eris.api.event.thread.*;
 import mx.kenzie.eris.api.utility.WeakMap;
 import mx.kenzie.eris.data.Payload;
 import mx.kenzie.eris.data.incoming.Incoming;
 import mx.kenzie.eris.data.incoming.gateway.Dispatch;
 import mx.kenzie.eris.data.incoming.gateway.Hello;
 import mx.kenzie.eris.data.incoming.gateway.InvalidSession;
+import mx.kenzie.eris.data.incoming.gateway.Reconnect;
 import mx.kenzie.eris.data.incoming.http.GatewayConnection;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.data.outgoing.gateway.Heartbeat;
@@ -57,7 +56,14 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("GUILD_MEMBER_REMOVE", mx.kenzie.eris.api.event.guild.RemoveGuildMember.class);
         EVENT_LIST.put("GUILD_ROLE_CREATE", CreateGuildRole.class);
         EVENT_LIST.put("GUILD_ROLE_UPDATE", UpdateGuildRole.class);
-        EVENT_LIST.put("GUILD_ROLE_DELETE", DeleteGuildRole.class);
+        EVENT_LIST.put("GUILD_BAN_ADD", AddGuildBan.class);
+        EVENT_LIST.put("GUILD_BAN_REMOVE", RemoveGuildBan.class);
+        EVENT_LIST.put("THREAD_LIST_SYNC", ThreadListSync.class);
+        EVENT_LIST.put("THREAD_CREATE", CreateThread.class);
+        EVENT_LIST.put("THREAD_UPDATE", UpdateThread.class);
+        EVENT_LIST.put("THREAD_DELETE", DeleteThread.class);
+        EVENT_LIST.put("THREAD_UPDATE_MEMBER", UpdateThreadMember.class);
+        EVENT_LIST.put("THREAD_UPDATE_MEMBERS", UpdateThreadMembers.class);
     }
     
     final String token;
@@ -210,6 +216,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 helper.mapToObject(event, type, dispatch.data);
                 this.triggerEvent(event);
             });
+            this.registerPayloadListener(Reconnect.class, reconnect -> this.connect());
             this.registerPayloadListener(InvalidSession.class, session -> {
                 if (heartbeat != null) heartbeat.cancel(true);
                 this.firstStart = false;

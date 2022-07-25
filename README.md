@@ -16,6 +16,8 @@ The library is designed to be:
 3. Modifiable, so that users can access it at any level.
 4. Small, so that users do not need to shade megabytes of needless third-party libraries.
 
+*No third-party libraries were harmed in the making of this.*
+
 ## Maven Information
 ```xml
 <repository>

@@ -6,10 +6,7 @@ import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.Listener;
 import mx.kenzie.eris.api.utility.MultiBody;
 import mx.kenzie.eris.data.incoming.Incoming;
-import mx.kenzie.eris.data.incoming.gateway.Dispatch;
-import mx.kenzie.eris.data.incoming.gateway.Heartbeat;
-import mx.kenzie.eris.data.incoming.gateway.Hello;
-import mx.kenzie.eris.data.incoming.gateway.InvalidSession;
+import mx.kenzie.eris.data.incoming.gateway.*;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 
 import java.io.IOException;
@@ -33,6 +30,7 @@ public class NetworkController {
     
     static {
         NETWORK_CODES.put(0, Dispatch.class);
+        NETWORK_CODES.put(7, Reconnect.class);
         NETWORK_CODES.put(9, InvalidSession.class);
         NETWORK_CODES.put(10, Hello.class);
         NETWORK_CODES.put(11, Heartbeat.class);
