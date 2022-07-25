@@ -2,6 +2,8 @@ package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.eris.api.entity.guild.ModifyMember;
 
+import java.lang.reflect.Modifier;
+
 public class Member extends ModifyMember {
     
     public User user = new User();
@@ -10,6 +12,13 @@ public class Member extends ModifyMember {
     public String permissions;
     
     public transient String guild_id;
+    
+    private transient long permissions0;
+    public boolean hasPermission(long permission) {
+        if (permissions == null && permissions0 == 0) this.await();
+        if (permissions0 == 0) permissions0 = Long.parseLong(permissions);
+        return (permissions0 & permission) != 0;
+    }
     
     public boolean isValid() {
         return user != null && user.id != null;

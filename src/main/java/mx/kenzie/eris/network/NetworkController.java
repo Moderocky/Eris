@@ -4,6 +4,7 @@ import mx.kenzie.argo.Json;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.Listener;
+import mx.kenzie.eris.api.utility.MultiBody;
 import mx.kenzie.eris.data.incoming.Incoming;
 import mx.kenzie.eris.data.incoming.gateway.Dispatch;
 import mx.kenzie.eris.data.incoming.gateway.Heartbeat;
@@ -13,6 +14,8 @@ import mx.kenzie.eris.data.outgoing.Outgoing;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -130,6 +133,24 @@ public class NetworkController {
         return socket;
     }
     
+    public HttpResponse<InputStream> multiRequest(String method, String path, MultiBody body, String... headers) throws IOException, InterruptedException {
+        final URI uri = URI.create(base + path);
+        final HttpRequest.BodyPublisher publisher;
+        if (body == null) publisher = HttpRequest.BodyPublishers.noBody();
+        else publisher = HttpRequest.BodyPublishers.ofInputStream(body::stream);
+        final List<String> list = new ArrayList<>();
+        for (final String header : headers) list.add(header.trim());
+        list.add("Content-Type");
+        list.add("multipart/form-data; boundary=section");
+        if (body != null) {
+            list.add("Content-Type");
+            list.add("application/json");
+        }
+        final HttpRequest request = HttpRequest.newBuilder(uri).method(method, publisher)
+            .headers(list.toArray(new String[0])).build();
+        return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+    }
+    
     public HttpResponse<InputStream> request(String method, String path, String body, String... headers) throws IOException, InterruptedException {
         final URI uri = URI.create(base + path);
         final HttpRequest.BodyPublisher publisher;
@@ -143,8 +164,6 @@ public class NetworkController {
         }
         final HttpRequest request = HttpRequest.newBuilder(uri).method(method, publisher)
             .headers(list.toArray(new String[0])).build();
-        System.out.println(Arrays.toString(headers)); // todo
-        request.bodyPublisher().ifPresent(p -> System.out.println(p.contentLength()));// todo
         return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
     }
     

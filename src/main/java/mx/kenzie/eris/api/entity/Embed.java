@@ -128,6 +128,41 @@ public class Embed extends Entity {
         }
     }
     
+    public Embed title(String title) {
+        this.title = title;
+        return this;
+    }
+    
+    public Embed type(String type) {
+        this.type = type;
+        return this;
+    }
+    
+    public Embed description(String description) {
+        this.description = description;
+        return this;
+    }
+    
+    public Embed url(String url) {
+        this.url = url;
+        return this;
+    }
+    
+    public Embed timestamp(String timestamp) {
+        this.timestamp = timestamp;
+        return this;
+    }
+    
+    public Embed color(Integer color) {
+        this.color = color;
+        return this;
+    }
+    
+    public Embed color(int r, int g, int b) {
+        this.color = ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | ((b & 0xFF));
+        return this;
+    }
+    
     static class Media extends Payload {
         public @Optional String proxy_url;
         public @Optional Integer height, width;

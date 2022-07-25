@@ -59,8 +59,32 @@ public class Interaction extends Entity implements Event {
         final String application = api.getApplicationID();
         final Message message = new Message();
         this.api.get("/webhooks/" + application + "/" + token + "/messages/@original", message)
-            .thenAccept(Lazy::finish);
+            .exceptionally(message::error).thenAccept(Lazy::finish);
         return message;
+    }
+    
+    public Message editOriginalResponse(Message message) {
+        final String application = api.getApplicationID();
+        message.unready();
+        this.api.request("PATCH", "/webhooks/" + application + "/" + token + "/messages/@original", Json.toJson(message, InteractionMessage.class, null), message)
+            .exceptionally(message::error).thenAccept(Lazy::finish);
+        return message;
+    }
+    
+    private transient Message message0;
+    public synchronized Message getMessage() {
+        if (message0 != null) return message0;
+        if (!data.resolved.containsKey("messages")) return null;
+        final Object object = data.resolved.get("messages");
+        if (!(object instanceof Map<?, ?> child)) return null;
+        for (final Map.Entry<?, ?> entry : child.entrySet()) {
+            final Map<String, Object> value = (Map<String, Object>) entry.getValue();
+            final Message message = api.makeEntity(new Message(), value);
+            message.id = (String) entry.getKey();
+            message.api = api;
+            return message0 = message;
+        }
+        return null;
     }
     
     public static class Input extends Payload {
@@ -76,6 +100,7 @@ public class Interaction extends Entity implements Event {
     
     public class Data extends Payload {
         public String name, id, custom_id, guild_id, target_id;
+        public Integer type;
         public Option[] options;
         
         public Row[] components;
@@ -121,6 +146,8 @@ public class Interaction extends Entity implements Event {
             for (final Map.Entry<?, ?> entry : child.entrySet()) {
                 final Map<String, Object> value = (Map<String, Object>) entry.getValue();
                 final Message message = api.makeEntity(new Message(), value);
+                message.id = (String) entry.getKey();
+                message.api = api;
                 map.put(entry.getKey().toString(), message);
             }
             return map;
@@ -135,6 +162,8 @@ public class Interaction extends Entity implements Event {
             for (final Map.Entry<?, ?> entry : child.entrySet()) {
                 final Map<String, Object> value = (Map<String, Object>) entry.getValue();
                 final User user = api.makeEntity(new User(), value);
+                user.id = (String) entry.getKey();
+                user.api = api;
                 map.put(entry.getKey().toString(), user);
             }
             return map;

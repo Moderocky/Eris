@@ -21,15 +21,13 @@ import mx.kenzie.eris.data.incoming.http.GatewayConnection;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.data.outgoing.gateway.Heartbeat;
 import mx.kenzie.eris.data.outgoing.gateway.Identify;
+import mx.kenzie.eris.data.outgoing.gateway.Resume;
 import mx.kenzie.eris.error.APIException;
 import mx.kenzie.eris.network.NetworkController;
 
 import java.io.InputStream;
 import java.net.http.WebSocket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
@@ -51,7 +49,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     final String token;
     final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(A, B)"};
     public final Executor executor = Executors.newCachedThreadPool();
-    protected final NetworkController network;
+    protected NetworkController network;
     private volatile boolean running = true;
     private WebSocket socket;
     private final Object lock = new Object();
@@ -71,6 +69,21 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         this.network = new NetworkController(API_URL, this);
         this.api = new DiscordAPI(network, this);
         for (int intent : intents) this.intents |= intent;
+    }
+    
+    public String getSessionID() {
+        return session;
+    }
+    
+    public int getSequence() {
+        return network.sequence.getAcquire();
+    }
+    
+    public void resume() {
+        final Resume resume = new Resume();
+        resume.data.session_id = session;
+        resume.data.sequence = this.getSequence();
+        this.dispatch(resume);
     }
     
     public <Type extends Payload & Event> void registerListener(Class<Type> type, Listener<Type> listener) {
@@ -96,11 +109,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     }
     
     public <IGuild> void registerCommand(Command command, IGuild guild, CommandHandler handler) {
-        final String id;
-        if (guild == null) id = null;
-        else if (guild instanceof Guild value) id = value.id;
-        else if (guild instanceof String value) id = value;
-        else id = guild.toString();
+        final String id = (guild == null) ? null : api.getGuildId(guild);
         command.guild_id = id;
         this.api.registerCommand(command, id);
         this.commands.put(command, handler);
@@ -157,10 +166,18 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         return this.api;
     }
     
+    private void connect() {
+        try (final Json json = new Json(network.request("GET", "/gateway/bot", null, headers).body())) {
+            final GatewayConnection connection = json.toObject(new GatewayConnection());
+            this.socket = network.openSocket(connection.url + "/?v=10&encoding=json");
+        } catch (Throwable ex) {
+            Bot.handle(ex);
+        }
+    }
+    
     @Override
     public void run() {
         try {
-            final InputStream stream = network.request("GET", "/gateway/bot", null, headers).body();
             this.registerPayloadListener(Incoming.class, incoming -> incoming.network.notify(incoming.sequence));
             this.registerPayloadListener(Dispatch.class, dispatch -> {
                 final Json.JsonHelper helper = dispatch.network.helper;
@@ -171,17 +188,21 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 this.triggerEvent(event);
             });
             this.registerPayloadListener(Hello.class, hello -> {
-                final Identify identify = new Identify();
-                identify.data.intents = this.intents;
-                identify.data.token = this.token;
-                final int delay = hello.data.heartbeat_interval;
-                this.dispatch(identify);
-                this.scheduler.scheduleWithFixedDelay(() -> {
-                    final Heartbeat heartbeat = new Heartbeat();
-                    final int sequence = this.network.sequence.getAcquire();
-                    heartbeat.data = sequence < 1 ? null : sequence;
-                    this.dispatch(heartbeat);
-                }, (long) delay * ThreadLocalRandom.current().nextInt(0, 1), delay, TimeUnit.MILLISECONDS);
+                if (this.ready()) {
+                    final Identify identify = new Identify();
+                    identify.data.intents = this.intents;
+                    identify.data.token = this.token;
+                    final int delay = hello.data.heartbeat_interval;
+                    this.dispatch(identify);
+                    this.scheduler.scheduleWithFixedDelay(() -> {
+                        final Heartbeat heartbeat = new Heartbeat();
+                        final int sequence = this.network.sequence.getAcquire();
+                        heartbeat.data = sequence < 1 ? null : sequence;
+                        this.dispatch(heartbeat);
+                    }, (long) delay * ThreadLocalRandom.current().nextInt(0, 1), delay, TimeUnit.MILLISECONDS);
+                } else {
+                    this.resume();
+                }
             });
             this.registerListener(Ready.class, ready -> {
                 synchronized (this) {
@@ -193,14 +214,13 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             this.registerListener(Interaction.class, interaction -> {
                 for (final Map.Entry<Command, CommandHandler> entry : this.commands.entrySet()) {
                     final Command command = entry.getKey();
+                    if (interaction.data.type != null && interaction.data.type != command.type) continue;
                     if (!command.name.equals(interaction.data.name)) continue;
+                    if (command.guild_id != null && !Objects.equals(command.guild_id, interaction.guild_id)) continue;
                     entry.getValue().on(interaction);
                 }
             });
-            try (final Json json = new Json(stream)) {
-                final GatewayConnection connection = json.toObject(new GatewayConnection());
-                this.socket = network.openSocket(connection.url + "/?v=10&encoding=json");
-            }
+            this.connect();
             this.scheduler.schedule(this.api::cleanCache, 90, TimeUnit.SECONDS);
         } catch (Throwable ex) {
             ex.printStackTrace();

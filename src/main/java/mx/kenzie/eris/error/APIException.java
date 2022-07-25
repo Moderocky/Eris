@@ -2,6 +2,8 @@ package mx.kenzie.eris.error;
 
 import mx.kenzie.argo.meta.Name;
 
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.Map;
 
 public class APIException extends DiscordException {
@@ -20,7 +22,18 @@ public class APIException extends DiscordException {
     
     @Override
     public void printStackTrace() {
-        System.err.println("Errors from API: " + errors);
         super.printStackTrace();
+    }
+    
+    @Override
+    public void printStackTrace(PrintStream s) {
+        s.println("Errors from API: " + errors);
+        super.printStackTrace(s);
+    }
+    
+    @Override
+    public void printStackTrace(PrintWriter s) {
+        s.println("Errors from API: " + errors);
+        super.printStackTrace(s);
     }
 }

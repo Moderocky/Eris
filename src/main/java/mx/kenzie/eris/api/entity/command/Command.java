@@ -58,6 +58,11 @@ public class Command extends CreateCommand {
         return this;
     }
     
+    public Command permissions(long permissions) {
+        this.default_member_permissions = Long.toString(permissions);
+        return this;
+    }
+    
     public static Command slash(String name, String description, Option... options) {
         return new Command(name, description, options);
     }

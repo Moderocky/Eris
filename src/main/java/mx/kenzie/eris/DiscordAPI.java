@@ -64,7 +64,6 @@ public class DiscordAPI {
             final List<?> result;
             try {
                 final HttpResponse<InputStream> request = this.network.request(type, path, body, bot.headers);
-                System.out.println(request.toString());
                 try (final Json json = new CacheJson(request.body(), cache)) {
                     final boolean isMap = json.willBeMap();
                     if (isMap) map = json.toMap();
@@ -341,9 +340,10 @@ public class DiscordAPI {
         final String body = Json.toJson(command, CreateCommand.class, null);
         command.api = this;
         command.unready();
-        if (guild == null) this.post("/applications/" + id + "/commands", body, command).thenAccept(Lazy::finish);
+        if (guild == null) this.post("/applications/" + id + "/commands", body, command)
+            .exceptionally(command::error).thenAccept(Lazy::finish);
         else this.post("/applications/" + id + "/guilds/" + this.getGuildId(guild) + "/commands", body, command)
-            .thenAccept(Lazy::finish);
+            .exceptionally(command::error).thenAccept(Lazy::finish);
         return command;
     }
     
@@ -357,17 +357,28 @@ public class DiscordAPI {
         else this.delete("/applications/" + id + "/guilds/" + guild + "/commands/" + command);
     }
     
+    public <IGuild> LazyList<Command> getCommands(IGuild guild) {
+        final String id = this.getGuildId(guild), self = this.getSelf().id;
+        final LazyList<Command> commands = new LazyList<>(Command.class, new ArrayList<>());
+        final CompletableFuture<LazyList<Command>> future;
+        if (id == null) future = this.get("/applications/" + self + "/commands", commands);
+        else future = this.get("/applications/" + self + "/guilds/" + id + "/commands", commands);
+        future.exceptionally(commands::error).thenAccept(Lazy::finish);
+        return commands;
+    }
+    
     public void interactionResponse(Interaction interaction, Interaction.Response response) {
         final String body = Json.toJson(response);
         if (response.data() instanceof Lazy lazy)
             this.post("/interactions/" + interaction.id + "/" + interaction.token + "/callback", body, lazy)
-                .thenAccept(Lazy::finish);
+                .exceptionally(lazy::error).thenAccept(Lazy::finish);
         else this.post("/interactions/" + interaction.id + "/" + interaction.token + "/callback", body, null);
     }
     //</editor-fold>
     
     //<editor-fold desc="Helpers" defaultstate="collapsed">
     public String getUserId(Object object) {
+        if (object == null) return null;
         if (object instanceof String value) return value;
         if (object instanceof User value) return value.id;
         if (object instanceof Member value) return value.user.id;
@@ -375,6 +386,7 @@ public class DiscordAPI {
     }
     
     public String getGuildId(Object object) {
+        if (object == null) return null;
         if (object instanceof String value) return value;
         if (object instanceof Guild value) return value.id;
         if (object instanceof Guild.Preview value) return value.id;
