@@ -80,7 +80,7 @@ public class Message extends UnsentMessage {
     public void delete() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
-        this.api.delete("/channels/" + channel_id + "/messages/" + id).thenRun(this::finish);
+        this.api.delete("/channels/" + channel_id + "/messages/" + id).exceptionally(this::error0).thenRun(this::finish);
     }
     
     public Message withFlag(int flag) {

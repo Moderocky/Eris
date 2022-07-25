@@ -6,10 +6,11 @@ import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.Listener;
 import mx.kenzie.eris.api.command.CommandHandler;
 import mx.kenzie.eris.api.entity.Entity;
-import mx.kenzie.eris.api.entity.Guild;
 import mx.kenzie.eris.api.entity.Self;
 import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.event.*;
+import mx.kenzie.eris.api.event.guild.*;
+import mx.kenzie.eris.api.event.message.ReceiveMessage;
 import mx.kenzie.eris.data.Payload;
 import mx.kenzie.eris.data.incoming.Incoming;
 import mx.kenzie.eris.data.incoming.gateway.Dispatch;
@@ -23,7 +24,6 @@ import mx.kenzie.eris.data.outgoing.gateway.Resume;
 import mx.kenzie.eris.error.APIException;
 import mx.kenzie.eris.network.NetworkController;
 
-import java.io.InputStream;
 import java.net.http.WebSocket;
 import java.util.*;
 import java.util.concurrent.*;
@@ -40,12 +40,16 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     static {
         EVENT_LIST.put("READY", Ready.class);
-        EVENT_LIST.put("GUILD_CREATE", IdentifyGuild.class);
+        EVENT_LIST.put("RESUMED", Resumed.class);
         EVENT_LIST.put("MESSAGE_CREATE", ReceiveMessage.class);
         EVENT_LIST.put("INTERACTION_CREATE", Interaction.class);
+        EVENT_LIST.put("GUILD_CREATE", IdentifyGuild.class);
         EVENT_LIST.put("GUILD_MEMBER_UPDATE", UpdateGuildMember.class);
         EVENT_LIST.put("GUILD_MEMBER_ADD", AddGuildMember.class);
         EVENT_LIST.put("GUILD_MEMBER_REMOVE", RemoveGuildMember.class);
+        EVENT_LIST.put("GUILD_ROLE_CREATE", CreateGuildRole.class);
+        EVENT_LIST.put("GUILD_ROLE_UPDATE", UpdateGuildRole.class);
+        EVENT_LIST.put("GUILD_ROLE_DELETE", DeleteGuildRole.class);
     }
     
     final String token;

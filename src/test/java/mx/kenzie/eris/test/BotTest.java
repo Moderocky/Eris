@@ -3,16 +3,10 @@ package mx.kenzie.eris.test;
 import mx.kenzie.argo.Json;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.DiscordAPI;
-import mx.kenzie.eris.api.entity.Guild;
-import mx.kenzie.eris.api.event.IdentifyGuild;
 import mx.kenzie.eris.api.magic.Intents;
 
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.Thread;
-import java.util.ArrayList;
-import java.util.List;
 
 public class BotTest {
     

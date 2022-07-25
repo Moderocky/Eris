@@ -1,4 +1,4 @@
-package mx.kenzie.eris.api.event;
+package mx.kenzie.eris.api.event.guild;
 
 import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.entity.Channel;
