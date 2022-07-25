@@ -30,6 +30,7 @@ public class BasicFunctionalityTest {
     static DiscordAPI api;
     static Guild guild;
     static Channel channel;
+    
     @BeforeClass
     public static void start() {
         bot = new Bot(TOKEN, Intents.MESSAGE_CONTENT, Intents.DIRECT_MESSAGES, Intents.GUILDS, Intents.GUILD_BANS, Intents.GUILD_MEMBERS);

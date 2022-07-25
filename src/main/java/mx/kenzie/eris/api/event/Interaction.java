@@ -72,6 +72,7 @@ public class Interaction extends Entity implements Event {
     }
     
     private transient Message message0;
+    
     public synchronized Message getMessage() {
         if (message0 != null) return message0;
         if (!data.resolved.containsKey("messages")) return null;

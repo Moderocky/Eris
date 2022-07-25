@@ -265,6 +265,87 @@ The user-provided entity may supplant the cached version and be returned if:
 2. The cached version has no strong references and due to be garbage-collected.
 3. The cached version is implemented at a lower-level (e.g. raw `Channel` vs `Thread`.)
 
+## Chain Responses
+Discord's message component system encourages chaining multiple actions together. \
+E.g. `command -> modal -> message -> button press -> result`
+
+However, Discord's API is structured around regular listeners and callbacks. \
+To avoid users needing to create 5+ temporary listeners for a single interaction chain,
+the API provides a helper process for these "one-and-done" callbacks.
+
+### Appropriate Settings
+The one-and-done response system is not designed for regular or repeatable interactions like commands.
+It is appropriate for interactions which are:
+- Unique, such as a user's modal input.
+- Require data from the previous step, e.g. a 5-page form.
+
+It is not appropriate for interactions which are:
+- Not identifiably unique, such as commands.
+- Designed to be triggered more than once like a permanent button.
+
+### Preparing the Response
+
+Some interactive components have an `expectResult` method.
+This tells the API you are intending to use the component for a one-and-done response.
+
+Some components have a static `auto` creator method that will **pre-trigger** this.
+
+
+#### Button Example
+An example of responding to a button is below.
+```java 
+final Button button = Button.auto("My Button");
+final Message message; // store for later
+channel.send(message = new Message("Hello!", button);
+button.await(50000); // wait for somebody to press the button
+// a time-out is always appropriate
+// if the user does not press the button this would hang indefinitely
+    
+if (button.cancelled()) return; // the user didn't press the button or the interaction expired
+final Interaction press = button.result(); // this is the interaction event
+press.respond(new Message("You pressed the button!").withFlag(MessageFlags.EPHEMERAL));
+// this can be triggered only once
+
+message.delete(); // get rid of the button so nobody else presses it!
+```
+> In this example a button-message is sent to a channel.
+> The **first** time a user presses the button, the bot will respond.
+> After the bot has responded, the button will be deleted.
+> If nobody presses the button within the 50-second time window, the interaction will not respond.
+
+#### Modal Example
+This complex example shows creating a modal and processing its result.
+
+```java 
+bot.registerCommand(Command.slash("bean", "My bean command."), interaction -> {
+    final Modal modal = Modal.auto("My Modal", new TextInput("text", "Write something!"));
+    interaction.respond(modal);
+    
+    modal.await(30000);
+    if (modal.cancelled()) return;
+    final Interaction result = modal.result();
+    final String text = result.data.getInputValue("text");
+    final Button button = Button.auto("My Button");
+    result.respond(new Message("You wrote: `" + text + "`", button).withFlag(MessageFlags.EPHEMERAL));
+    
+    button.await(50000);
+    if (button.cancelled()) return;
+    final Interaction press = button.result();
+    press.respond(new Message("You pressed the button!").withFlag(MessageFlags.EPHEMERAL));
+});
+```
+
+> In this example, a global command is registered.
+> When the command is run, it sends a unique modal to the user asking for a text response.
+> The interaction waits 30 seconds for the user to fill in the text.
+> A message is sent to the user telling them what they wrote, with a button.
+> If the user presses the button it will respond with a new message.
+
+<img width="339" alt="image" src="https://user-images.githubusercontent.com/14147477/180742795-81b8abea-986d-4db2-9938-94414b2c9a85.png">
+
+
+
+
 ## Bypassing the API
 Users are not forced into using the provided API methods or even the `Entity` data objects.
 

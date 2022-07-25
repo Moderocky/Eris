@@ -6,7 +6,6 @@ import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.magic.Intents;
 
 import java.io.InputStream;
-import java.lang.Thread;
 
 public class BotTest {
     
@@ -24,9 +23,9 @@ public class BotTest {
     public static void main(String[] args) throws Throwable {
         final Bot bot = new Bot(TOKEN, Intents.MESSAGE_CONTENT, Intents.DIRECT_MESSAGES, Intents.GUILDS, Intents.GUILD_BANS, Intents.GUILD_MEMBERS);
         final DiscordAPI api = bot.getAPI();
-    
         bot.start();
         bot.await();
+        
         Thread.sleep(1000);
         bot.close();
         System.exit(0);

@@ -2,15 +2,22 @@ package mx.kenzie.eris;
 
 import mx.kenzie.argo.Json;
 import mx.kenzie.eris.api.Event;
+import mx.kenzie.eris.api.Expecting;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.Listener;
 import mx.kenzie.eris.api.command.CommandHandler;
 import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.api.entity.Self;
 import mx.kenzie.eris.api.entity.command.Command;
-import mx.kenzie.eris.api.event.*;
-import mx.kenzie.eris.api.event.guild.*;
+import mx.kenzie.eris.api.event.Interaction;
+import mx.kenzie.eris.api.event.Ready;
+import mx.kenzie.eris.api.event.Resumed;
+import mx.kenzie.eris.api.event.guild.CreateGuildRole;
+import mx.kenzie.eris.api.event.guild.DeleteGuildRole;
+import mx.kenzie.eris.api.event.guild.IdentifyGuild;
+import mx.kenzie.eris.api.event.guild.UpdateGuildRole;
 import mx.kenzie.eris.api.event.message.ReceiveMessage;
+import mx.kenzie.eris.api.utility.WeakMap;
 import mx.kenzie.eris.data.Payload;
 import mx.kenzie.eris.data.incoming.Incoming;
 import mx.kenzie.eris.data.incoming.gateway.Dispatch;
@@ -34,6 +41,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     public static String API_URL = "https://discord.com/api/v10";
     public static String CDN_URL = "https://cdn.discordapp.com";
     public static boolean DEBUG_MODE = false;
+    public static final WeakMap<String, Expecting<Interaction>> INLINE_CALLBACKS = new WeakMap<>();
     public static final Map<String, Class<? extends Event>> EVENT_LIST = new HashMap<>();
     
     public static Consumer<Throwable> exceptionHandler;
@@ -44,9 +52,9 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("MESSAGE_CREATE", ReceiveMessage.class);
         EVENT_LIST.put("INTERACTION_CREATE", Interaction.class);
         EVENT_LIST.put("GUILD_CREATE", IdentifyGuild.class);
-        EVENT_LIST.put("GUILD_MEMBER_UPDATE", UpdateGuildMember.class);
-        EVENT_LIST.put("GUILD_MEMBER_ADD", AddGuildMember.class);
-        EVENT_LIST.put("GUILD_MEMBER_REMOVE", RemoveGuildMember.class);
+        EVENT_LIST.put("GUILD_MEMBER_UPDATE", mx.kenzie.eris.api.event.guild.UpdateGuildMember.class);
+        EVENT_LIST.put("GUILD_MEMBER_ADD", mx.kenzie.eris.api.event.guild.AddGuildMember.class);
+        EVENT_LIST.put("GUILD_MEMBER_REMOVE", mx.kenzie.eris.api.event.guild.RemoveGuildMember.class);
         EVENT_LIST.put("GUILD_ROLE_CREATE", CreateGuildRole.class);
         EVENT_LIST.put("GUILD_ROLE_UPDATE", UpdateGuildRole.class);
         EVENT_LIST.put("GUILD_ROLE_DELETE", DeleteGuildRole.class);
@@ -112,6 +120,10 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     public void unregisterListener(Listener<?> listener) {
         this.listeners.remove(listener);
         this.network.unregisterListener(listener);
+    }
+    
+    public void registerCommand(Command command, CommandHandler handler) {
+        this.registerCommand(command, null, handler);
     }
     
     public <IGuild> void registerCommand(Command command, IGuild guild, CommandHandler handler) {
@@ -184,6 +196,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     private ScheduledFuture<?> heartbeat;
     private transient boolean firstStart = true;
+    
     @Override
     public void run() {
         try {
@@ -236,9 +249,17 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                     if (command.guild_id != null && !Objects.equals(command.guild_id, interaction.guild_id)) continue;
                     entry.getValue().on(interaction);
                 }
+                if (interaction.data.custom_id != null) {
+                    final Expecting<Interaction> expecting = Bot.INLINE_CALLBACKS.getValue(interaction.data.custom_id);
+                    if (expecting == null) return;
+                    Bot.INLINE_CALLBACKS.remove(interaction.data.custom_id);
+                    expecting.setResult(interaction);
+                    expecting.finish();
+                }
             });
             this.connect();
             this.scheduler.schedule(this.api::cleanCache, 90, TimeUnit.SECONDS);
+            this.scheduler.schedule(Bot.INLINE_CALLBACKS::cleanAsync, 120, TimeUnit.SECONDS);
         } catch (Throwable ex) {
             ex.printStackTrace();
         }

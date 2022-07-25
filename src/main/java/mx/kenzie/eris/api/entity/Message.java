@@ -5,6 +5,8 @@ import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.message.ActionRow;
+import mx.kenzie.eris.api.entity.message.Button;
+import mx.kenzie.eris.api.entity.message.Component;
 import mx.kenzie.eris.api.entity.message.UnsentMessage;
 import mx.kenzie.eris.api.utility.RequestBuilder;
 import mx.kenzie.eris.data.Payload;
@@ -28,6 +30,21 @@ public class Message extends UnsentMessage {
     
     public Message(String content) {
         this.content = content;
+    }
+    
+    public Message(String content, Embed... embeds) {
+        this.content = content;
+        this.embeds = embeds;
+    }
+    
+    public Message(String content, ActionRow... rows) {
+        this.content = content;
+        this.components = rows;
+    }
+    
+    public Message(String content, Button... buttons) {
+        this.content = content;
+        this.components = new Component[]{new ActionRow(buttons)};
     }
     
     public Message(Embed... embeds) {
@@ -80,7 +97,8 @@ public class Message extends UnsentMessage {
     public void delete() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
-        this.api.delete("/channels/" + channel_id + "/messages/" + id).exceptionally(this::error0).thenRun(this::finish);
+        this.api.delete("/channels/" + channel_id + "/messages/" + id).exceptionally(this::error0)
+            .thenRun(this::finish);
     }
     
     public Message withFlag(int flag) {

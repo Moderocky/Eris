@@ -1,7 +1,10 @@
 package mx.kenzie.eris.api.entity.message;
 
 import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.eris.api.magic.ButtonStyle;
 import mx.kenzie.eris.data.Payload;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Button extends Component {
     
@@ -50,4 +53,22 @@ public class Button extends Component {
         this.disabled = disabled;
         return this;
     }
+    
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+    
+    public static Button auto(String label) {
+        return Button.auto(null, label, ButtonStyle.PRIMARY);
+    }
+    
+    public static Button auto(String label, int type) {
+        return Button.auto(null, label, type);
+    }
+    
+    public static Button auto(String id, String label, int type) {
+        if (id == null) id = "auto_button_id_" + COUNTER.incrementAndGet();
+        final Button button = new Button(id, label, type);
+        button.expectResult();
+        return button;
+    }
+    
 }
