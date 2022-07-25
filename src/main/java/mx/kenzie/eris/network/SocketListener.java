@@ -17,6 +17,7 @@ public class SocketListener implements WebSocket.Listener { // TODO
     
     @Override
     public void onOpen(WebSocket socket) {
+        if (Bot.DEBUG_MODE) System.out.println("Opening");
         this.network.socket = socket;
         WebSocket.Listener.super.onOpen(socket);
     }
@@ -29,6 +30,7 @@ public class SocketListener implements WebSocket.Listener { // TODO
         this.builder.append(data);
         if (last) try {
             final Incoming payload = this.network.getPayload(builder.toString());
+            if (Bot.DEBUG_MODE) System.out.println("Incoming: " + payload.op + "/" + payload.key);
             this.builder = null;
             payload.network = network;
             this.network.triggerEvent(payload);
@@ -40,6 +42,7 @@ public class SocketListener implements WebSocket.Listener { // TODO
     
     @Override
     public CompletionStage<?> onClose(WebSocket socket, int statusCode, String reason) {
+        if (Bot.DEBUG_MODE) System.out.println("Closing: " + statusCode + "/" + reason);
         final SocketClose close = new SocketClose(statusCode, reason);
         this.network.triggerEvent(close);
         return WebSocket.Listener.super.onClose(socket, statusCode, reason);

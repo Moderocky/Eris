@@ -9,14 +9,12 @@ import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.api.entity.Guild;
 import mx.kenzie.eris.api.entity.Self;
 import mx.kenzie.eris.api.entity.command.Command;
-import mx.kenzie.eris.api.event.IdentifyGuild;
-import mx.kenzie.eris.api.event.Interaction;
-import mx.kenzie.eris.api.event.Ready;
-import mx.kenzie.eris.api.event.ReceiveMessage;
+import mx.kenzie.eris.api.event.*;
 import mx.kenzie.eris.data.Payload;
 import mx.kenzie.eris.data.incoming.Incoming;
 import mx.kenzie.eris.data.incoming.gateway.Dispatch;
 import mx.kenzie.eris.data.incoming.gateway.Hello;
+import mx.kenzie.eris.data.incoming.gateway.InvalidSession;
 import mx.kenzie.eris.data.incoming.http.GatewayConnection;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.data.outgoing.gateway.Heartbeat;
@@ -35,6 +33,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     public static String API_URL = "https://discord.com/api/v10";
     public static String CDN_URL = "https://cdn.discordapp.com";
+    public static boolean DEBUG_MODE = false;
     public static final Map<String, Class<? extends Event>> EVENT_LIST = new HashMap<>();
     
     public static Consumer<Throwable> exceptionHandler;
@@ -44,6 +43,9 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("GUILD_CREATE", IdentifyGuild.class);
         EVENT_LIST.put("MESSAGE_CREATE", ReceiveMessage.class);
         EVENT_LIST.put("INTERACTION_CREATE", Interaction.class);
+        EVENT_LIST.put("GUILD_MEMBER_UPDATE", UpdateGuildMember.class);
+        EVENT_LIST.put("GUILD_MEMBER_ADD", AddGuildMember.class);
+        EVENT_LIST.put("GUILD_MEMBER_REMOVE", RemoveGuildMember.class);
     }
     
     final String token;
@@ -139,6 +141,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     @SuppressWarnings({"unchecked", "RawUseOfParameterized"})
     public void triggerEvent(Event event) {
         assert event instanceof Payload : "Event was not a payload.";
+        if (Bot.DEBUG_MODE) System.out.println("Event: " + event.getClass().getSimpleName());
         for (final Map.Entry<Listener<?>, Class<? extends Event>> entry : this.listeners.entrySet()) {
             final Class<?> type = entry.getValue();
             if (!type.isInstance(event)) continue;
@@ -175,31 +178,41 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         }
     }
     
+    private ScheduledFuture<?> heartbeat;
+    private transient boolean firstStart = true;
     @Override
     public void run() {
         try {
             this.registerPayloadListener(Incoming.class, incoming -> incoming.network.notify(incoming.sequence));
             this.registerPayloadListener(Dispatch.class, dispatch -> {
                 final Json.JsonHelper helper = dispatch.network.helper;
+                if (Bot.DEBUG_MODE) System.out.println("Preparing: " + dispatch.key + " " + dispatch.data.keySet());
                 final Class<? extends Event> type = EVENT_LIST.getOrDefault(dispatch.key, Event.Unknown.class);
                 final Event event = helper.createObject(type);
                 if (event instanceof Entity entity) entity.api = this.api;
                 helper.mapToObject(event, type, dispatch.data);
                 this.triggerEvent(event);
             });
+            this.registerPayloadListener(InvalidSession.class, session -> {
+                if (heartbeat != null) heartbeat.cancel(true);
+                this.firstStart = false;
+                Thread.sleep(4000L); // required pause before reconnect
+                this.connect();
+            });
             this.registerPayloadListener(Hello.class, hello -> {
-                if (this.ready()) {
+                if (firstStart) {
                     final Identify identify = new Identify();
                     identify.data.intents = this.intents;
                     identify.data.token = this.token;
                     final int delay = hello.data.heartbeat_interval;
                     this.dispatch(identify);
-                    this.scheduler.scheduleWithFixedDelay(() -> {
+                    this.heartbeat = scheduler.scheduleWithFixedDelay(() -> {
                         final Heartbeat heartbeat = new Heartbeat();
                         final int sequence = this.network.sequence.getAcquire();
                         heartbeat.data = sequence < 1 ? null : sequence;
                         this.dispatch(heartbeat);
                     }, (long) delay * ThreadLocalRandom.current().nextInt(0, 1), delay, TimeUnit.MILLISECONDS);
+                    this.firstStart = false;
                 } else {
                     this.resume();
                 }
