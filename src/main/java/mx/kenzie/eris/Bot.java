@@ -12,6 +12,7 @@ import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.event.Interaction;
 import mx.kenzie.eris.api.event.Ready;
 import mx.kenzie.eris.api.event.Resumed;
+import mx.kenzie.eris.api.event.SocketClose;
 import mx.kenzie.eris.api.event.guild.*;
 import mx.kenzie.eris.api.event.message.ReceiveMessage;
 import mx.kenzie.eris.api.event.thread.*;
@@ -216,11 +217,14 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 helper.mapToObject(event, type, dispatch.data);
                 this.triggerEvent(event);
             });
+            this.registerListener(SocketClose.class, close -> {
+                if (close.code == 1000 || close.code == 1001) this.firstStart = true;
+            });
             this.registerPayloadListener(Reconnect.class, reconnect -> this.connect());
             this.registerPayloadListener(InvalidSession.class, session -> {
                 if (heartbeat != null) heartbeat.cancel(true);
-                this.firstStart = false;
-                Thread.sleep(4000L); // required pause before reconnect
+                this.firstStart = true;
+                Thread.sleep(6000L); // required pause before reconnect
                 this.connect();
             });
             this.registerPayloadListener(Hello.class, hello -> {
