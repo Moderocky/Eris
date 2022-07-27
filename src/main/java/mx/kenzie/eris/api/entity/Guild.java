@@ -8,6 +8,7 @@ import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.entity.guild.Ban;
 import mx.kenzie.eris.api.entity.guild.CreateChannel;
 import mx.kenzie.eris.api.entity.guild.CreateRole;
+import mx.kenzie.eris.api.entity.guild.Rule;
 import mx.kenzie.eris.api.utility.BulkEntity;
 import mx.kenzie.eris.api.utility.LazyList;
 import mx.kenzie.eris.data.Payload;
@@ -34,6 +35,20 @@ public class Guild extends Snowflake {
     public final GuildHashes guild_hashes = new GuildHashes();
     
     private transient LazyList<Role> roles0;
+    
+    public BulkEntity<Rule> getRules() {
+        return BulkEntity.of(api, Rule.class, list -> this.api.get("/guilds/" + id + "/auto-moderation/rules", null, list));
+    }
+    
+    public <IRule> Rule getRule(IRule id) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        final String string = id.toString();
+        final Rule rule = new Rule();
+        rule.id = string;
+        this.api.get("/guilds/" + id + "/auto-moderation/rules/" + string, null, rule)
+            .exceptionally(rule::error).thenAccept(Lazy::finish);
+        return rule;
+    }
     
     public Command registerCommand(Command command) {
         assert id != null;

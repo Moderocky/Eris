@@ -13,6 +13,10 @@ import mx.kenzie.eris.api.event.Interaction;
 import mx.kenzie.eris.api.event.Ready;
 import mx.kenzie.eris.api.event.Resumed;
 import mx.kenzie.eris.api.event.SocketClose;
+import mx.kenzie.eris.api.event.channel.CreateChannel;
+import mx.kenzie.eris.api.event.channel.DeleteChannel;
+import mx.kenzie.eris.api.event.channel.UpdateChannel;
+import mx.kenzie.eris.api.event.channel.UpdateChannelPins;
 import mx.kenzie.eris.api.event.guild.*;
 import mx.kenzie.eris.api.event.message.ReceiveMessage;
 import mx.kenzie.eris.api.event.thread.*;
@@ -51,7 +55,10 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("RESUMED", Resumed.class);
         EVENT_LIST.put("MESSAGE_CREATE", ReceiveMessage.class);
         EVENT_LIST.put("INTERACTION_CREATE", Interaction.class);
+        EVENT_LIST.put("GUILD_JOIN_REQUEST_UPDATE", UpdateJoinRequest.class);
         EVENT_LIST.put("GUILD_CREATE", IdentifyGuild.class);
+        EVENT_LIST.put("GUILD_UPDATE", UpdateGuild.class);
+        EVENT_LIST.put("GUILD_DELETE", DeleteGuild.class);
         EVENT_LIST.put("GUILD_MEMBER_UPDATE", mx.kenzie.eris.api.event.guild.UpdateGuildMember.class);
         EVENT_LIST.put("GUILD_MEMBER_ADD", mx.kenzie.eris.api.event.guild.AddGuildMember.class);
         EVENT_LIST.put("GUILD_MEMBER_REMOVE", mx.kenzie.eris.api.event.guild.RemoveGuildMember.class);
@@ -59,6 +66,14 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("GUILD_ROLE_UPDATE", UpdateGuildRole.class);
         EVENT_LIST.put("GUILD_BAN_ADD", AddGuildBan.class);
         EVENT_LIST.put("GUILD_BAN_REMOVE", RemoveGuildBan.class);
+        EVENT_LIST.put("AUTO_MODERATION_RULE_CREATE", CreateModerationRule.class);
+        EVENT_LIST.put("AUTO_MODERATION_RULE_UPDATE", UpdateModerationRule.class);
+        EVENT_LIST.put("AUTO_MODERATION_RULE_DELETE", DeleteModerationRule.class);
+        EVENT_LIST.put("AUTO_MODERATION_ACTION_EXECUTION", ExecuteRule.class);
+        EVENT_LIST.put("CHANNEL_CREATE", CreateChannel.class);
+        EVENT_LIST.put("CHANNEL_UPDATE", UpdateChannel.class);
+        EVENT_LIST.put("CHANNEL_DELETE", DeleteChannel.class);
+        EVENT_LIST.put("CHANNEL_PINS_UPDATE", UpdateChannelPins.class);
         EVENT_LIST.put("THREAD_LIST_SYNC", ThreadListSync.class);
         EVENT_LIST.put("THREAD_CREATE", CreateThread.class);
         EVENT_LIST.put("THREAD_UPDATE", UpdateThread.class);
@@ -192,6 +207,10 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         return this.api;
     }
     
+    private void reconnect() throws Throwable {
+        Thread.sleep(6000L); // required pause before reconnect
+        this.connect();
+    }
     private void connect() {
         try (final Json json = new Json(network.request("GET", "/gateway/bot", null, headers).body())) {
             final GatewayConnection connection = json.toObject(new GatewayConnection());
@@ -218,14 +237,14 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 this.triggerEvent(event);
             });
             this.registerListener(SocketClose.class, close -> {
-                if (close.code == 1000 || close.code == 1001) this.firstStart = true;
+                if (close.code >= 1000 && close.code < 2000) this.firstStart = true;
+                if (close.code == 1006) this.reconnect();
             });
             this.registerPayloadListener(Reconnect.class, reconnect -> this.connect());
             this.registerPayloadListener(InvalidSession.class, session -> {
                 if (heartbeat != null) heartbeat.cancel(true);
                 this.firstStart = true;
-                Thread.sleep(6000L); // required pause before reconnect
-                this.connect();
+                this.reconnect();
             });
             this.registerPayloadListener(Hello.class, hello -> {
                 if (firstStart) {

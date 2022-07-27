@@ -5,9 +5,9 @@ import mx.kenzie.eris.DiscordAPI;
 
 public class User extends Snowflake {
     
-    public volatile boolean verified, mfa_enabled, bot, system;
-    public volatile String username, email, discriminator, avatar, banner, locale;
-    public volatile int flags, accent_color, premium_type, public_flags;
+    public boolean verified, mfa_enabled, bot, system;
+    public String username, email, discriminator, avatar, banner, locale;
+    public int flags, accent_color, premium_type, public_flags;
     private transient int discriminator0;
     
     public int discriminator() {

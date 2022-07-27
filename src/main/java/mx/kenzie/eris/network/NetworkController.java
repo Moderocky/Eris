@@ -73,7 +73,7 @@ public class NetworkController {
     }
     
     public CompletableFuture<?> sendPayload(Outgoing payload) {
-        if (Bot.DEBUG_MODE) System.out.println("Dispatch: " + payload.getClass().getSimpleName());
+        if (Bot.DEBUG_MODE && !(payload instanceof mx.kenzie.eris.data.outgoing.gateway.Heartbeat)) System.out.println("Dispatch: " + payload.getClass().getSimpleName());
         assert socket != null;
         assert payload != null;
         return this.socket.sendText(Json.toJson(payload), true);
