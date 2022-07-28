@@ -7,7 +7,7 @@ import mx.kenzie.eris.data.Payload;
 public class Rule extends Snowflake {
     public String guild_id, name, creator_id;
     public int event_type, trigger_type;
-    public Payload trigger_metadata;
+    public Trigger trigger_metadata;
     public Action[] actions; // todo
     public boolean enabled;
     public String[] exempt_roles, exempt_channels;

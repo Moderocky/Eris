@@ -45,9 +45,21 @@ public class Guild extends Snowflake {
         final String string = id.toString();
         final Rule rule = new Rule();
         rule.id = string;
-        this.api.get("/guilds/" + id + "/auto-moderation/rules/" + string, null, rule)
+        this.api.get("/guilds/" + this.id + "/auto-moderation/rules/" + string, null, rule)
             .exceptionally(rule::error).thenAccept(Lazy::finish);
         return rule;
+    }
+    
+    public BulkEntity<Emoji> getEmojis() {
+        return BulkEntity.of(api, Emoji.class, list -> this.api.get("/guilds/" + id + "/emojis", null, list));
+    }
+    
+    public <IEmoji> Emoji getEmoji(IEmoji id) {
+        final Emoji emoji = new Emoji();
+        emoji.id = id + "";
+        this.api.get("/guilds/" + this.id + "/emojis/" + emoji.id, null, emoji)
+            .exceptionally(emoji::error).thenAccept(Lazy::finish);
+        return emoji;
     }
     
     public Command registerCommand(Command command) {
