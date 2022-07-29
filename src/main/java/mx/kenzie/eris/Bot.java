@@ -9,10 +9,7 @@ import mx.kenzie.eris.api.command.CommandHandler;
 import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.api.entity.Self;
 import mx.kenzie.eris.api.entity.command.Command;
-import mx.kenzie.eris.api.event.Interaction;
-import mx.kenzie.eris.api.event.Ready;
-import mx.kenzie.eris.api.event.Resumed;
-import mx.kenzie.eris.api.event.SocketClose;
+import mx.kenzie.eris.api.event.*;
 import mx.kenzie.eris.api.event.channel.CreateChannel;
 import mx.kenzie.eris.api.event.channel.DeleteChannel;
 import mx.kenzie.eris.api.event.channel.UpdateChannel;
@@ -59,13 +56,17 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("GUILD_CREATE", IdentifyGuild.class);
         EVENT_LIST.put("GUILD_UPDATE", UpdateGuild.class);
         EVENT_LIST.put("GUILD_DELETE", DeleteGuild.class);
-        EVENT_LIST.put("GUILD_MEMBER_UPDATE", mx.kenzie.eris.api.event.guild.UpdateGuildMember.class);
-        EVENT_LIST.put("GUILD_MEMBER_ADD", mx.kenzie.eris.api.event.guild.AddGuildMember.class);
-        EVENT_LIST.put("GUILD_MEMBER_REMOVE", mx.kenzie.eris.api.event.guild.RemoveGuildMember.class);
         EVENT_LIST.put("GUILD_ROLE_CREATE", CreateGuildRole.class);
         EVENT_LIST.put("GUILD_ROLE_UPDATE", UpdateGuildRole.class);
         EVENT_LIST.put("GUILD_BAN_ADD", AddGuildBan.class);
         EVENT_LIST.put("GUILD_BAN_REMOVE", RemoveGuildBan.class);
+        EVENT_LIST.put("GUILD_EMOJIS_UPDATE", UpdateGuildEmojis.class);
+        EVENT_LIST.put("GUILD_STICKERS_UPDATE", UpdateGuildStickers.class);
+        EVENT_LIST.put("GUILD_INTEGRATIONS_UPDATE", UpdateGuildIntegrations.class);
+        EVENT_LIST.put("GUILD_MEMBER_ADD", AddGuildMember.class);
+        EVENT_LIST.put("GUILD_MEMBER_UPDATE", UpdateGuildMember.class);
+        EVENT_LIST.put("GUILD_MEMBER_REMOVE", RemoveGuildMember.class);
+        EVENT_LIST.put("GUILD_MEMBERS_CHUNK", IdentifyGuildMembers.class);
         EVENT_LIST.put("AUTO_MODERATION_RULE_CREATE", CreateModerationRule.class);
         EVENT_LIST.put("AUTO_MODERATION_RULE_UPDATE", UpdateModerationRule.class);
         EVENT_LIST.put("AUTO_MODERATION_RULE_DELETE", DeleteModerationRule.class);
@@ -80,6 +81,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("THREAD_DELETE", DeleteThread.class);
         EVENT_LIST.put("THREAD_UPDATE_MEMBER", UpdateThreadMember.class);
         EVENT_LIST.put("THREAD_UPDATE_MEMBERS", UpdateThreadMembers.class);
+        EVENT_LIST.put("PRESENCE_UPDATE", UpdatePresence.class);
     }
     
     final String token;
