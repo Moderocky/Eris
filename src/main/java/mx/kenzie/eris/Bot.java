@@ -170,7 +170,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         this.network.codes.clear();
         this.network.listeners.clear();
         this.process.cancel(true);
-//        this.socket.sendClose(100, "Shutting down.");
+        this.socket.sendClose(1000, "Shutting down.");
         synchronized (lock) {
             this.lock.notifyAll();
         }
