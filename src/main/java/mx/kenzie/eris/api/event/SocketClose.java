@@ -7,7 +7,7 @@ public class SocketClose extends Payload implements Event {
 
     public final int code;
     public final String message;
-    private Reason cachedReason = null;
+    private transient Reason reason = null;
 
     public SocketClose(int code, String message) {
         this.code = code;
@@ -15,15 +15,12 @@ public class SocketClose extends Payload implements Event {
     }
 
     public boolean shouldReconnect() {
-        return Reason.forCode(code).shouldReconnect();
+        return this.getReason().shouldReconnect();
     }
 
     public Reason getReason() {
-        if (cachedReason == null) {
-            cachedReason = Reason.forCode(code);
-        }
-
-        return cachedReason;
+        if (reason == null) reason = Reason.forCode(code);
+        return reason;
     }
 
     public enum Reason {
@@ -72,15 +69,9 @@ public class SocketClose extends Payload implements Event {
         }
 
         public static Reason forCode(final int code) {
-            for (final Reason reason : Reason.values()) {
-                if (reason.code == code)
-                    return reason;
-            }
-
+            for (final Reason reason : Reason.values()) if (reason.code == code) return reason;
             throw new IllegalArgumentException("No reason exists for unknown code " + code);
         }
-
-
 
         public int code() {
             return code;
