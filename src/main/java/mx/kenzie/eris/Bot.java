@@ -278,8 +278,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                     final Command command = entry.getKey();
                     if (interaction.data.type != null && interaction.data.type != command.type) continue;
                     if (!command.name.equals(interaction.data.name)) continue;
-                    if (command.guild_id != null && !Objects.equals(command.guild_id, interaction.guild_id)) continue;
-                    entry.getValue().on(interaction);
+                    if (command.guild_id == null || command.guild_id.equals(interaction.guild_id)) entry.getValue().on(interaction);
                 }
                 if (interaction.data.custom_id != null) {
                     final Expecting<Interaction> expecting = Bot.INLINE_CALLBACKS.getValue(interaction.data.custom_id);
