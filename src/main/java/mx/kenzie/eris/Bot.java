@@ -35,7 +35,8 @@ import mx.kenzie.eris.data.outgoing.gateway.Resume;
 import mx.kenzie.eris.error.APIException;
 import mx.kenzie.eris.network.NetworkController;
 
-import java.net.http.WebSocket;
+import java.io.IOException;
+import java.net.http.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -84,7 +85,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     final String token;
     final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(A, B)"};
-    public final Executor executor = Executors.newCachedThreadPool();
+    public final ExecutorService executor = Executors.newCachedThreadPool();
     protected NetworkController network;
     private volatile boolean running = true;
     private WebSocket socket;
@@ -98,7 +99,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     protected volatile String session;
     protected final DiscordAPI api;
     private CompletableFuture<?> process;
-    
+
     public Bot(String token, int... intents) {
         this.token = token;
         this.headers[1] = "Bot " + token;
@@ -167,10 +168,20 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     public void close() {
         for (final Command command : commands.keySet()) this.api.deleteCommand(command);
         this.running = false;
-        this.network.codes.clear();
-        this.network.listeners.clear();
+        this.network.close();
         this.process.cancel(true);
-        this.socket.sendClose(1000, "Shutting down.");
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Bot.handle(e);
+        }
+
+        heartbeat.cancel(true);
+        scheduler.shutdownNow();
         synchronized (lock) {
             this.lock.notifyAll();
         }
@@ -207,15 +218,33 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         return this.api;
     }
     
-    private void reconnect() throws Throwable {
-        Thread.sleep(6000L); // required pause before reconnect
-        this.connect();
+    private void reconnect() {
+        while (true) {
+            try {
+                Thread.sleep(6000L); // required pause before reconnect
+                connect0();
+            } catch (InterruptedException interrupt) {
+                Thread.currentThread().interrupt();
+                continue;
+            } catch (Exception ignored) {
+                continue;
+            }
+
+            break;
+        }
     }
-    private void connect() {
+
+    private void connect0() throws IOException, InterruptedException {
         try (final Json json = new Json(network.request("GET", "/gateway/bot", null, headers).body())) {
             final GatewayConnection connection = json.toObject(new GatewayConnection());
             this.socket = network.openSocket(connection.url + "/?v=10&encoding=json");
-        } catch (Throwable ex) {
+        }
+    }
+
+    private void connect() {
+        try {
+            connect0();
+        } catch (Exception ex) { // Errors shouldn't be caught
             Bot.handle(ex);
         }
     }
