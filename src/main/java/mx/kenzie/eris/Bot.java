@@ -86,7 +86,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     final String token;
     final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(A, B)"};
-    public final Executor executor = Executors.newCachedThreadPool();
+    public final Executor executor = ForkJoinPool.commonPool();
     protected NetworkController network;
     private volatile boolean running = true;
     private WebSocket socket;
@@ -171,6 +171,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         this.running = false;
         this.network.codes.clear();
         this.network.listeners.clear();
+        this.scheduler.shutdownNow();
         this.process.cancel(true);
         this.socket.sendClose(1000, "Shutting down.");
         synchronized (lock) {
