@@ -18,6 +18,24 @@ public class Command extends CreateCommand {
         this.options = options;
     }
     
+    public static Command slash(String name, String description, Option... options) {
+        return new Command(name, description, options);
+    }
+    
+    public static Command user(String name) {
+        final Command command = new Command();
+        command.name = name;
+        command.type = CommandType.USER;
+        return command;
+    }
+    
+    public static Command message(String name) {
+        final Command command = new Command();
+        command.name = name;
+        command.type = CommandType.MESSAGE;
+        return command;
+    }
+    
     public Command name(String name) {
         this.name = name;
         return this;
@@ -61,24 +79,6 @@ public class Command extends CreateCommand {
     public Command permissions(long permissions) {
         this.default_member_permissions = Long.toString(permissions);
         return this;
-    }
-    
-    public static Command slash(String name, String description, Option... options) {
-        return new Command(name, description, options);
-    }
-    
-    public static Command user(String name) {
-        final Command command = new Command();
-        command.name = name;
-        command.type = CommandType.USER;
-        return command;
-    }
-    
-    public static Command message(String name) {
-        final Command command = new Command();
-        command.name = name;
-        command.type = CommandType.MESSAGE;
-        return command;
     }
     
     @Override

@@ -78,14 +78,6 @@ public class Message extends UnsentMessage {
         return builder;
     }
     
-    public Message reply(Message message) {
-        message.message_reference = new Reference();
-        message.message_reference.message_id = id;
-//        message.message_reference.channel_id = channel_id;
-        if (api == null) throw DiscordAPI.unlinkedEntity(this);
-        return api.sendMessage(channel_id, message);
-    }
-    
     public Message edit() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
@@ -113,6 +105,14 @@ public class Message extends UnsentMessage {
     
     public Message reply(String message) {
         return this.reply(new Message(message));
+    }
+    
+    public Message reply(Message message) {
+        message.message_reference = new Reference();
+        message.message_reference.message_id = id;
+//        message.message_reference.channel_id = channel_id;
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        return api.sendMessage(channel_id, message);
     }
     
     public boolean isFromSelf() {

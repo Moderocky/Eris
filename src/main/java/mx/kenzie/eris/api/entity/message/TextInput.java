@@ -9,14 +9,14 @@ public class TextInput extends Component {
     public @Optional String value, placeholder;
     public boolean required = true;
     
-    public TextInput() {
-        this.type = 4;
-    }
-    
     public TextInput(String custom_id, String label) {
         this();
         this.custom_id = custom_id;
         this.label = label;
+    }
+    
+    public TextInput() {
+        this.type = 4;
     }
     
     public TextInput style(int style) {

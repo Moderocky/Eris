@@ -11,15 +11,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Modal extends Expecting<Interaction> implements Callback {
     
+    private static final AtomicInteger COUNTER = new AtomicInteger();
     public String custom_id, title;
     public @Any Component[] components;
     
     public Modal() {
-    }
-    
-    @Override
-    public int interactionResponseType() {
-        return 9;
     }
     
     public Modal(String id, String title, Component... components) {
@@ -28,14 +24,6 @@ public class Modal extends Expecting<Interaction> implements Callback {
         this.title = title;
         this.components = components;
     }
-    
-    @Override
-    public void expectResult() {
-        Bot.INLINE_CALLBACKS.set(custom_id, this);
-        this.trigger();
-    }
-    
-    private static final AtomicInteger COUNTER = new AtomicInteger();
     
     public static Modal auto(String title, Component... components) {
         return Modal.auto(null, title, components);
@@ -55,5 +43,16 @@ public class Modal extends Expecting<Interaction> implements Callback {
         modal.components = components;
         modal.expectResult();
         return modal;
+    }
+    
+    @Override
+    public void expectResult() {
+        Bot.INLINE_CALLBACKS.set(custom_id, this);
+        this.trigger();
+    }
+    
+    @Override
+    public int interactionResponseType() {
+        return 9;
     }
 }

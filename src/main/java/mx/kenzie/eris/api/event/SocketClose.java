@@ -4,30 +4,27 @@ import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.data.Payload;
 
 public class SocketClose extends Payload implements Event {
-
+    
     public final int code;
     public final String message;
-    private Reason cachedReason = null;
-
+    private transient Reason reason = null;
+    
     public SocketClose(int code, String message) {
         this.code = code;
         this.message = message;
     }
-
+    
     public boolean shouldReconnect() {
-        return Reason.forCode(code).shouldReconnect();
+        return this.getReason().shouldReconnect();
     }
-
+    
     public Reason getReason() {
-        if (cachedReason == null) {
-            cachedReason = Reason.forCode(code);
-        }
-
-        return cachedReason;
+        if (reason == null) reason = Reason.forCode(code);
+        return reason;
     }
-
+    
     public enum Reason {
-
+        
         /*
          Discord does not document WebSocket closing codes, but they are still used.
          See https://web.archive.org/web/20220728102833/https://www.rfc-editor.org/rfc/rfc6455#section-7.4.1.
@@ -45,8 +42,8 @@ public class SocketClose extends Payload implements Event {
         WS_EXPECTED_EXTENSIONS(1010, false),
         WS_FAILED_TO_FULFILL(1011, true),
         WS_TLS_HANDSHAKE_FAILED(1015, true),
-
-
+        
+        
         // Documented at https://discord.com/developers/docs/topics/opcodes-and-status-codes#gateway-gateway-close-event-codes.
         UNKNOWN_ERROR(4000, true),
         UNKNOWN_OPCODE(4001, true),
@@ -62,30 +59,24 @@ public class SocketClose extends Payload implements Event {
         INVALID_API_VERSION(4012, false),
         INVALID_INTENTS(4013, false),
         DISALLOWED_INTENTS(4014, false);
-
+        
         private final int code;
         private final boolean shouldReconnect;
-
+        
         Reason(int code, boolean shouldReconnect) {
             this.code = code;
             this.shouldReconnect = shouldReconnect;
         }
-
+        
         public static Reason forCode(final int code) {
-            for (final Reason reason : Reason.values()) {
-                if (reason.code == code)
-                    return reason;
-            }
-
+            for (final Reason reason : Reason.values()) if (reason.code == code) return reason;
             throw new IllegalArgumentException("No reason exists for unknown code " + code);
         }
-
-
-
+        
         public int code() {
             return code;
         }
-
+        
         public boolean shouldReconnect() {
             return shouldReconnect;
         }

@@ -1,7 +1,5 @@
 package mx.kenzie.eris.api.magic;
 
-import static mx.kenzie.eris.api.magic.Internal.CODE;
-
 public interface Ansi {
     Ansi RESET = new Internal("0");
     Ansi
@@ -36,7 +34,7 @@ public interface Ansi {
 }
 
 record Internal(String code) implements Ansi {
-//    static final char CODE = ''; // 
+    //    static final char CODE = ''; // 
     static final String CODE = "\\u001b";
     
     @Override

@@ -8,15 +8,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Button extends Component {
     
+    private static final AtomicInteger COUNTER = new AtomicInteger();
     public int style = 1;
     public @Optional String label, url;
     public @Optional Payload emoji;
     public boolean disabled;
-    
-    
-    public Button() {
-        this.type = 2;
-    }
     
     public Button(String id, String label) {
         this(id, label, 1);
@@ -27,6 +23,25 @@ public class Button extends Component {
         this.style = style;
         this.custom_id = id;
         this.label = label;
+    }
+    
+    public Button() {
+        this.type = 2;
+    }
+    
+    public static Button auto(String label) {
+        return Button.auto(null, label, ButtonStyle.PRIMARY);
+    }
+    
+    public static Button auto(String id, String label, int type) {
+        if (id == null) id = "auto_button_id_" + COUNTER.incrementAndGet();
+        final Button button = new Button(id, label, type);
+        button.expectResult();
+        return button;
+    }
+    
+    public static Button auto(String label, int type) {
+        return Button.auto(null, label, type);
     }
     
     public Button style(int style) {
@@ -52,23 +67,6 @@ public class Button extends Component {
     public Button disabled(boolean disabled) {
         this.disabled = disabled;
         return this;
-    }
-    
-    private static final AtomicInteger COUNTER = new AtomicInteger();
-    
-    public static Button auto(String label) {
-        return Button.auto(null, label, ButtonStyle.PRIMARY);
-    }
-    
-    public static Button auto(String label, int type) {
-        return Button.auto(null, label, type);
-    }
-    
-    public static Button auto(String id, String label, int type) {
-        if (id == null) id = "auto_button_id_" + COUNTER.incrementAndGet();
-        final Button button = new Button(id, label, type);
-        button.expectResult();
-        return button;
     }
     
 }
