@@ -22,18 +22,15 @@ import java.util.concurrent.CompletableFuture;
 
 public class Guild extends Snowflake {
     
+    public final GuildHashes guild_hashes = new GuildHashes();
     public boolean widget_enabled, premium_progress_bar_enabled, lazy;
     public @Name("owner") boolean is_owner;
     public int afk_timeout, verification_level, default_message_notifications, explicit_content_filter, mfa_level, system_channel_flags, premium_tier, nsfw_level;
     public Integer max_presences, max_members, premium_subscription_count, max_video_channel_users, approximate_member_count, approximate_presence_count, hub_type;
     public String name, icon, icon_hash, splash, discovery_splash, owner_id, permissions, region, afk_channel_id, widget_channel_id, application_id, system_channel_id, rules_channel_id, vanity_url_code, description, banner, preferred_locale, public_updates_channel_id;
-    
     public String[] features;
     public Payload[] roles, emojis, stickers, embedded_activities;
-    
     public Payload welcome_screen, application_command_counts;
-    public final GuildHashes guild_hashes = new GuildHashes();
-    
     private transient LazyList<Role> roles0;
     
     public BulkEntity<Rule> getRules() {
@@ -127,37 +124,6 @@ public class Guild extends Snowflake {
         return this;
     }
     
-    public class ResultChannels extends BulkEntity<Channel> {
-        
-        public int limit = 1000;
-        
-        @Override
-        protected int limit() {
-            return limit;
-        }
-        
-        @Override
-        protected DiscordAPI api() {
-            return api;
-        }
-        
-        @Override
-        protected Class<Channel> getType() {
-            return Channel.class;
-        }
-        
-        public ResultChannels limit(int limit) {
-            this.limit = limit;
-            return this;
-        }
-        
-        @Override
-        protected CompletableFuture<List<?>> getEntities(List<?> list) {
-            if (api == null) throw DiscordAPI.unlinkedEntity(Guild.this);
-            return api.get("/guilds/" + id + "/channels", list);
-        }
-    }
-    
     public ResultChannels getChannels() {
         return new ResultChannels();
     }
@@ -219,6 +185,37 @@ public class Guild extends Snowflake {
             return this.api.getGuild(this.id);
         }
         
+    }
+    
+    public class ResultChannels extends BulkEntity<Channel> {
+        
+        public int limit = 1000;
+        
+        @Override
+        protected int limit() {
+            return limit;
+        }
+        
+        @Override
+        protected DiscordAPI api() {
+            return api;
+        }
+        
+        @Override
+        protected Class<Channel> getType() {
+            return Channel.class;
+        }
+        
+        @Override
+        protected CompletableFuture<List<?>> getEntities(List<?> list) {
+            if (api == null) throw DiscordAPI.unlinkedEntity(Guild.this);
+            return api.get("/guilds/" + id + "/channels", list);
+        }
+        
+        public ResultChannels limit(int limit) {
+            this.limit = limit;
+            return this;
+        }
     }
     
 }

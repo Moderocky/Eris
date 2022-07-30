@@ -96,6 +96,15 @@ public class Channel extends CreateChannel {
         return api.sendMessage(this, message);
     }
     
+    public ResultMessages getMessages() {
+        return new ResultMessages();
+    }
+    
+    public BulkEntity<Message> getPinnedMessages() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
+        return BulkEntity.of(api, Message.class, list -> this.api.get("/channels/" + id + "/pins", null, list));
+    }
+    
     public class ResultMessages extends BulkEntity<Message> {
         transient int limit = 50;
         transient String around, before, after;
@@ -145,15 +154,6 @@ public class Channel extends CreateChannel {
             else if (after != null) query.put("after", after);
             return Channel.this.api.get("/channels/" + id + "/messages", query, list);
         }
-    }
-    
-    public ResultMessages getMessages() {
-        return new ResultMessages();
-    }
-    
-    public BulkEntity<Message> getPinnedMessages() {
-        if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
-        return BulkEntity.of(api, Message.class, list -> this.api.get("/channels/" + id + "/pins", null, list));
     }
     
 }

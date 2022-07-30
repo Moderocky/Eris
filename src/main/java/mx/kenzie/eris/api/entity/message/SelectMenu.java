@@ -11,15 +11,15 @@ public class SelectMenu extends Component {
     public Option[] options;
     public boolean disabled;
     
-    public SelectMenu() {
-        this.type = 3;
-        this.options = new Option[0];
-    }
-    
     public SelectMenu(String id, Option... options) {
         this();
         this.custom_id = id;
         this.options = options;
+    }
+    
+    public SelectMenu() {
+        this.type = 3;
+        this.options = new Option[0];
     }
     
     public SelectMenu(String id, String placeholder, Option... options) {
@@ -38,6 +38,20 @@ public class SelectMenu extends Component {
         this.options = options;
     }
     
+    public static Option option() {
+        return new Option();
+    }
+    
+    public static Option option(String label, String value) {
+        return new Option(label, value);
+    }
+    
+    public static Option option(String label, String value, String description) {
+        final Option option = new Option(label, value);
+        option.description = description;
+        return option;
+    }
+    
     public SelectMenu min_values(int min_values) {
         this.min_values = min_values;
         return this;
@@ -53,7 +67,7 @@ public class SelectMenu extends Component {
         return this;
     }
     
-    public SelectMenu options(Option[] options) {
+    public SelectMenu options(Option... options) {
         this.options = options;
         return this;
     }
@@ -61,20 +75,6 @@ public class SelectMenu extends Component {
     public SelectMenu disabled(boolean disabled) {
         this.disabled = disabled;
         return this;
-    }
-    
-    public static Option option() {
-        return new Option();
-    }
-    
-    public static Option option(String label, String value) {
-        return new Option(label, value);
-    }
-    
-    public static Option option(String label, String value, String description) {
-        final Option option = new Option(label, value);
-        option.description = description;
-        return option;
     }
     
     public static class Option extends Payload {

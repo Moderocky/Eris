@@ -62,6 +62,16 @@ public class Thread extends Channel {
         return member;
     }
     
+    public BulkEntity<Member> getMembers() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        return new ThreadMembers();
+    }
+    
+    public static class Member extends Lazy {
+        public String id, user_id, join_timestamp;
+        public int flags;
+    }
+    
     public class ThreadMembers extends BulkEntity<Member> {
         
         @Override
@@ -83,16 +93,6 @@ public class Thread extends Channel {
         protected CompletableFuture<List<?>> getEntities(List<?> list) {
             return Thread.this.api.request("GET", "/channels/" + id + "/thread-members", null, list);
         }
-    }
-    
-    public BulkEntity<Member> getMembers() {
-        if (api == null) throw DiscordAPI.unlinkedEntity(this);
-        return new ThreadMembers();
-    }
-    
-    public static class Member extends Lazy {
-        public String id, user_id, join_timestamp;
-        public int flags;
     }
     
     

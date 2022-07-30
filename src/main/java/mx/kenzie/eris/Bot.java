@@ -33,7 +33,10 @@ import mx.kenzie.eris.error.APIException;
 import mx.kenzie.eris.network.NetworkController;
 
 import java.net.http.WebSocket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
@@ -214,6 +217,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         Thread.sleep(6000L); // required pause before reconnect
         this.connect();
     }
+    
     private void connect() {
         try (final Json json = new Json(network.request("GET", "/gateway/bot", null, headers).body())) {
             final GatewayConnection connection = json.toObject(new GatewayConnection());
@@ -279,7 +283,8 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                     final Command command = entry.getKey();
                     if (interaction.data.type != null && interaction.data.type != command.type) continue;
                     if (!command.name.equals(interaction.data.name)) continue;
-                    if (command.guild_id == null || command.guild_id.equals(interaction.guild_id)) entry.getValue().on(interaction);
+                    if (command.guild_id == null || command.guild_id.equals(interaction.guild_id))
+                        entry.getValue().on(interaction);
                 }
                 if (interaction.data.custom_id != null) {
                     final Expecting<Interaction> expecting = Bot.INLINE_CALLBACKS.getValue(interaction.data.custom_id);

@@ -27,6 +27,20 @@ public class Option extends Entity {
         this.choices = choices;
     }
     
+    public static <Type> Choice<Type> choice(String name, Type value) {
+        return new Choice<>(name, value);
+    }
+    
+    @SafeVarargs
+    public static Option ofBooleans(String name, String description, Choice<Boolean>... choices) {
+        return new Option(name, description, OptionType.BOOLEAN, choices);
+    }
+    
+    @SafeVarargs
+    public static Option ofStrings(String name, String description, Choice<String>... choices) {
+        return new Option(name, description, OptionType.STRING, choices);
+    }
+    
     public Option type(int type) {
         this.type = type;
         return this;
@@ -85,20 +99,6 @@ public class Option extends Entity {
     public Option autocomplete(boolean autocomplete) {
         this.autocomplete = autocomplete;
         return this;
-    }
-    
-    public static <Type> Choice<Type> choice(String name, Type value) {
-        return new Choice<>(name, value);
-    }
-    
-    @SafeVarargs
-    public static Option ofBooleans(String name, String description, Choice<Boolean>... choices) {
-        return new Option(name, description, OptionType.BOOLEAN, choices);
-    }
-    
-    @SafeVarargs
-    public static Option ofStrings(String name, String description, Choice<String>... choices) {
-        return new Option(name, description, OptionType.STRING, choices);
     }
 
 //    type	one of application command option type	Type of option

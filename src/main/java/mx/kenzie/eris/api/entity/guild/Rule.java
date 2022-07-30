@@ -13,7 +13,6 @@ public class Rule extends Snowflake {
     public String[] exempt_roles, exempt_channels;
     
     
-    
     public static class Trigger extends Payload {
         public String[] keyword_filter, allow_list;
         public int[] presets;

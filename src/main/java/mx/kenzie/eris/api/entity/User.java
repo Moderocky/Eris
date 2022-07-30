@@ -2,8 +2,6 @@ package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.DiscordAPI;
-import mx.kenzie.eris.data.Payload;
-import mx.kenzie.eris.data.outgoing.self.Presence;
 
 public class User extends Snowflake {
     
