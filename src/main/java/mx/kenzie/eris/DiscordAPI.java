@@ -9,9 +9,11 @@ import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.entity.command.CreateCommand;
 import mx.kenzie.eris.api.entity.guild.Ban;
 import mx.kenzie.eris.api.entity.guild.ModifyMember;
+import mx.kenzie.eris.api.entity.message.Attachment;
 import mx.kenzie.eris.api.entity.message.UnsentMessage;
 import mx.kenzie.eris.api.event.Interaction;
 import mx.kenzie.eris.api.utility.LazyList;
+import mx.kenzie.eris.api.utility.MultiBody;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.error.APIException;
 import mx.kenzie.eris.error.DiscordException;
@@ -22,10 +24,7 @@ import mx.kenzie.eris.network.NetworkController;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -57,34 +56,59 @@ public class DiscordAPI {
         });
     }
     
+    protected <Type> Type handle(HttpResponse<InputStream> request, Type object) {
+        final Map<String, Object> map = new HashMap<>();
+        try (final Json json = new CacheJson(request.body(), cache)) {
+            final boolean isMap = json.willBeMap();
+            if (isMap) map.putAll(json.toMap());
+            if (isMap && map.containsKey("code") && map.containsKey("message")) {
+                final APIException error = new APIException(map.get("message") + "");
+                this.network.helper.mapToObject(error, APIException.class, map);
+                throw error;
+            }
+            if (object == null) return null;
+            else if (object instanceof LazyList<?> list && !isMap)
+                list.update(this.network.helper, json.toList(), this);
+            else if (object instanceof List list && !isMap) json.toList(list);
+            else if (object instanceof Map source && isMap) source.putAll(map);
+            else if (isMap) this.network.helper.mapToObject(object, object.getClass(), map);
+            return object;
+        } catch (JsonException ignored) {
+            return object;
+        }
+    }
+    
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> request(String type, String path, String body, Type object) {
         return CompletableFuture.supplyAsync(() -> {
-            final Map<?, ?> map;
-            final List<?> result;
             try {
                 final HttpResponse<InputStream> request = this.network.request(type, path, body, bot.headers);
-                try (final Json json = new CacheJson(request.body(), cache)) {
-                    final boolean isMap = json.willBeMap();
-                    if (isMap) map = json.toMap();
-                    else {map = null;}
-                    if (isMap && map.containsKey("code") && map.containsKey("message")) {
-                        final APIException error = new APIException(map.get("message") + "");
-                        this.network.helper.mapToObject(error, APIException.class, map);
-                        throw error;
-                    }
-                    if (object == null) return null;
-                    else if (object instanceof LazyList<?> list && !isMap)
-                        list.update(this.network.helper, json.toList(), this);
-                    else if (object instanceof List list && !isMap) json.toList(list);
-                    else if (object instanceof Map source && isMap) source.putAll(map);
-                    else if (isMap) this.network.helper.mapToObject(object, object.getClass(), map);
-                    return object;
-                } catch (JsonException ignored) {
-                    return object;
-                }
+                return this.handle(request, object);
             } catch (IOException | InterruptedException ex) {
                 throw new DiscordException("Error in request.", ex);
+            }
+        }).exceptionally(throwable -> {
+            if (throwable instanceof CompletionException ex) throwable = ex.getCause();
+            if (object instanceof Lazy lazy) lazy.error(throwable);
+            else Bot.handle(throwable);
+            return object;
+        });
+    }
+    
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> multiRequest(String type, String path, MultiBody body, Type object) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                final HttpResponse<InputStream> request = this.network.multiRequest(type, path, body, bot.headers);
+                return this.handle(request, object);
+            } catch (IOException | InterruptedException ex) {
+                throw new DiscordException("Error in request.", ex);
+            } finally {
+                try {
+                    body.close();
+                } catch (Throwable ex) {
+                    throw new DiscordException("Error while closing resources.", ex);
+                }
             }
         }).exceptionally(throwable -> {
             if (throwable instanceof CompletionException ex) throwable = ex.getCause();
@@ -148,9 +172,24 @@ public class DiscordAPI {
     }
     
     public Message sendMessage(String channel, Message message) {
-        final String body = Json.toJson(message, UnsentMessage.class, null);
         message.unready();
-        this.post("/channels/" + channel + "/messages", body, message).thenAccept(Lazy::finish);
+        if (message.attachments != null && message.attachments.length > 0) {
+            final MultiBody body = new MultiBody();
+            body.sectionMessage(Json.toJson(message, UnsentMessage.class, null));
+            for (final Attachment attachment : message.attachments) {
+                if (attachment.filename != null)
+                    body.section("files[" + attachment.id + "]", attachment.filename, attachment.content);
+                else
+                    body.section("files[" + attachment.id + "]", attachment.content.toString());
+            }
+            body.finish();
+            this.multiRequest("POST", "/channels/" + channel + "/messages", body, message)
+                .exceptionally(message::error).thenAccept(Lazy::finish);
+        } else {
+            final String body = Json.toJson(message, UnsentMessage.class, null);
+            this.post("/channels/" + channel + "/messages", body, message)
+                .exceptionally(message::error).thenAccept(Lazy::finish);
+        }
         if (message.api == null) message.api = this;
         return message;
     }

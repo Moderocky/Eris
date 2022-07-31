@@ -75,16 +75,6 @@ public class Thread extends Channel {
     public class ThreadMembers extends BulkEntity<Member> {
         
         @Override
-        protected int limit() {
-            return 200;
-        }
-        
-        @Override
-        protected DiscordAPI api() {
-            return api;
-        }
-        
-        @Override
         protected Class<Member> getType() {
             return Member.class;
         }
@@ -92,6 +82,16 @@ public class Thread extends Channel {
         @Override
         protected CompletableFuture<List<?>> getEntities(List<?> list) {
             return Thread.this.api.request("GET", "/channels/" + id + "/thread-members", null, list);
+        }
+        
+        @Override
+        protected int limit() {
+            return 200;
+        }
+        
+        @Override
+        protected DiscordAPI api() {
+            return api;
         }
     }
     

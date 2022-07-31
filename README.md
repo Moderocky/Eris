@@ -345,8 +345,22 @@ bot.registerCommand(Command.slash("bean", "My bean command."), interaction -> {
 
 <img width="339" alt="image" src="https://user-images.githubusercontent.com/14147477/180742795-81b8abea-986d-4db2-9938-94414b2c9a85.png">
 
+## Files and Attachments
+Some Discord API endpoints support attachments.
+As the file sizes could be greater than 100mb (with increased file limits) these files cannot be read normally.
 
+1. The 'multipart' message data is read into off-heap memory (java arrays are simply not equipped to hold the data.) \
+    If you add multiple attachments to the message the off-heap datastore will be natively resized to fit these.
+2. The network client then requests this data in small, N-kilobyte chunks.
+3. Each chunk is copied directly from the off-heap memory into the correct heap address.
+4. That chunk is dispatched and then freed up and the next is requested, until no more remain.
+5. The off-heap memory store is freed.
 
+This is a dangerous process since there are no limits or security checks on off-heap memory.
+Currently, you may read files only if they are smaller than your available RAM. \
+Accidentally reading a multi-gigabyte file would crash your application since it cannot allocate that much memory.
+
+Since Discord's file limit is fairly small, there is no reason to add an artificial restriction.
 
 ## Bypassing the API
 Users are not forced into using the provided API methods or even the `Entity` data objects.
@@ -359,3 +373,4 @@ You may also unregister the payload-listener that creates wrapped events and int
 ## Dependencies
 
 - **Argo** by me, found [here](https://github.com/Moderocky/Argo).
+- **Jupiter** by me, found [here](https://github.com/Moderocky/Jupiter).

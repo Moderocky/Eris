@@ -192,16 +192,6 @@ public class Guild extends Snowflake {
         public int limit = 1000;
         
         @Override
-        protected int limit() {
-            return limit;
-        }
-        
-        @Override
-        protected DiscordAPI api() {
-            return api;
-        }
-        
-        @Override
         protected Class<Channel> getType() {
             return Channel.class;
         }
@@ -210,6 +200,16 @@ public class Guild extends Snowflake {
         protected CompletableFuture<List<?>> getEntities(List<?> list) {
             if (api == null) throw DiscordAPI.unlinkedEntity(Guild.this);
             return api.get("/guilds/" + id + "/channels", list);
+        }
+        
+        @Override
+        protected int limit() {
+            return limit;
+        }
+        
+        @Override
+        protected DiscordAPI api() {
+            return api;
         }
         
         public ResultChannels limit(int limit) {

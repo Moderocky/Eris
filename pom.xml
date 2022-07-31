@@ -38,6 +38,12 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>mx.kenzie</groupId>
+            <artifactId>jupiter</artifactId>
+            <version>1.0.5</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
             <version>23.0.0</version>

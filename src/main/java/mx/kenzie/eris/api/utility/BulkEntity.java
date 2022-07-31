@@ -95,16 +95,6 @@ class DefaultImplementation<Type> extends BulkEntity<Type> {
     }
     
     @Override
-    protected int limit() {
-        return 200;
-    }
-    
-    @Override
-    protected DiscordAPI api() {
-        return api;
-    }
-    
-    @Override
     protected Class<Type> getType() {
         return type;
     }
@@ -112,5 +102,15 @@ class DefaultImplementation<Type> extends BulkEntity<Type> {
     @Override
     protected CompletableFuture<List<?>> getEntities(List<?> list) {
         return function.apply(list);
+    }
+    
+    @Override
+    protected int limit() {
+        return 200;
+    }
+    
+    @Override
+    protected DiscordAPI api() {
+        return api;
     }
 }

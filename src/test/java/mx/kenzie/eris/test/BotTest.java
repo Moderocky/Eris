@@ -3,7 +3,6 @@ package mx.kenzie.eris.test;
 import mx.kenzie.argo.Json;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.DiscordAPI;
-import mx.kenzie.eris.api.entity.Message;
 import mx.kenzie.eris.api.magic.Intents;
 
 import java.io.InputStream;

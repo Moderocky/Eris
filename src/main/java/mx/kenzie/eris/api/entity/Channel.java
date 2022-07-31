@@ -130,16 +130,6 @@ public class Channel extends CreateChannel {
         }
         
         @Override
-        protected int limit() {
-            return this.limit;
-        }
-        
-        @Override
-        protected DiscordAPI api() {
-            return api;
-        }
-        
-        @Override
         protected Class<Message> getType() {
             return Message.class;
         }
@@ -153,6 +143,16 @@ public class Channel extends CreateChannel {
             else if (before != null) query.put("before", before);
             else if (after != null) query.put("after", after);
             return Channel.this.api.get("/channels/" + id + "/messages", query, list);
+        }
+        
+        @Override
+        protected int limit() {
+            return this.limit;
+        }
+        
+        @Override
+        protected DiscordAPI api() {
+            return api;
         }
     }
     

@@ -4,12 +4,14 @@ import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
-import mx.kenzie.eris.api.entity.message.ActionRow;
-import mx.kenzie.eris.api.entity.message.Button;
-import mx.kenzie.eris.api.entity.message.Component;
-import mx.kenzie.eris.api.entity.message.UnsentMessage;
+import mx.kenzie.eris.api.entity.message.*;
 import mx.kenzie.eris.api.utility.RequestBuilder;
 import mx.kenzie.eris.data.Payload;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Message extends UnsentMessage {
     public String channel_id, timestamp, edited_timestamp, webhook_id, application_id;
@@ -53,6 +55,32 @@ public class Message extends UnsentMessage {
     
     public Message(ActionRow... rows) {
         this.components = rows;
+    }
+    
+    public void addAttachment(String filename, String content) {
+        final List<Attachment> list;
+        final boolean has = attachments != null;
+        if (has) list = new ArrayList<>(Arrays.asList(attachments));
+        else list = new ArrayList<>();
+        final Attachment attachment = new Attachment();
+        attachment.id = has ? attachments.length + "" : "0";
+        attachment.filename = filename;
+        attachment.content = content;
+        list.add(attachment);
+        this.attachments = list.toArray(new Attachment[0]);
+    }
+    
+    public void addAttachment(File file) {
+        final List<Attachment> list;
+        final boolean has = attachments != null;
+        if (has) list = new ArrayList<>(Arrays.asList(attachments));
+        else list = new ArrayList<>();
+        final Attachment attachment = new Attachment();
+        attachment.id = has ? attachments.length + "" : "0";
+        attachment.filename = file.getName();
+        attachment.content = file;
+        list.add(attachment);
+        this.attachments = list.toArray(new Attachment[0]);
     }
     
     public Message pin() {

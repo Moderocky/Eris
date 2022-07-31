@@ -14,7 +14,7 @@ public abstract class InteractionMessage extends Snowflake implements Callback {
     public @Optional String content;
     public @Optional
     @Any Component[] components;
-    public @Optional Payload[] attachments;
+    public @Optional Attachment[] attachments;
     public @Optional Payload allowed_mentions;
     public @Optional Embed[] embeds;
     

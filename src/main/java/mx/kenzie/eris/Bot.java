@@ -29,12 +29,14 @@ import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.data.outgoing.gateway.Heartbeat;
 import mx.kenzie.eris.data.outgoing.gateway.Identify;
 import mx.kenzie.eris.data.outgoing.gateway.Resume;
-import mx.kenzie.eris.error.APIException;
 import mx.kenzie.eris.network.NetworkController;
 
 import java.io.IOException;
-import java.net.http.*;
-import java.util.*;
+import java.net.http.WebSocket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
@@ -101,7 +103,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     protected volatile String session;
     protected final DiscordAPI api;
     private CompletableFuture<?> process;
-
+    
     public Bot(String token, int... intents) {
         this.token = token;
         this.headers[1] = "Bot " + token;
@@ -238,7 +240,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             this.socket = network.openSocket(connection.url + "/?v=10&encoding=json");
         }
     }
-
+    
     private void connect() {
         try {
             this.connect0();
