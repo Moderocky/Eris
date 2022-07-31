@@ -50,12 +50,11 @@ public class NetworkController implements Closeable {
 
     @Override
     public void close() {
-        client = null; // Null the client to allow termination
+        this.client = null; // Null the client to allow termination
         if (socket != null && !socket.isOutputClosed())
-            socket.sendClose(1000, "Network controller forcibly closed socket.");
-
-        codes.clear();
-        listeners.clear();
+            this.socket.sendClose(1000, "Network controller forcibly closed socket.");
+        this.codes.clear();
+        this.listeners.clear();
     }
 
     void triggerEvent(Event event) {
@@ -219,6 +218,5 @@ public class NetworkController implements Closeable {
         final HttpRequest request = HttpRequest.newBuilder(uri).method("PATCH", publisher).headers(headers).build();
         return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
     }
-
 
 }
