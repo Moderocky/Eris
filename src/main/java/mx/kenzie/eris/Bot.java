@@ -172,18 +172,15 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         this.running = false;
         this.network.close();
         this.process.cancel(true);
-        executor.shutdown();
+        this.executor.shutdown();
         try {
-            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
-            }
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) this.executor.shutdownNow();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             Bot.handle(e);
         }
-
-        heartbeat.cancel(true);
-        scheduler.shutdownNow();
+        this.heartbeat.cancel(true);
+        this.scheduler.shutdownNow();
         synchronized (lock) {
             this.lock.notifyAll();
         }
@@ -223,15 +220,14 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     private void reconnect() {
         while (true) {
             try {
-                Thread.sleep(6000L); // required pause before reconnect
-                connect0();
+                Thread.sleep(5000L); // required pause before reconnect
+                this.connect0();
             } catch (InterruptedException interrupt) {
                 Thread.currentThread().interrupt();
                 continue;
             } catch (Exception ignored) {
                 continue;
             }
-
             break;
         }
     }
@@ -245,7 +241,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
 
     private void connect() {
         try {
-            connect0();
+            this.connect0();
         } catch (Exception ex) { // Errors shouldn't be caught
             Bot.handle(ex);
         }
@@ -333,9 +329,6 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     public static void handle(Throwable throwable) {
         if (exceptionHandler != null) exceptionHandler.accept(throwable);
-        else if (throwable instanceof APIException api) {
-            throwable.printStackTrace();
-            System.err.println(api.getErrors());
-        } else throwable.printStackTrace();
+        else throwable.printStackTrace();
     }
 }

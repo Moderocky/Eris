@@ -23,8 +23,8 @@ import java.util.function.Consumer;
  * The methods of a lazy object are safe to use outside synchronization.
  */
 public abstract class Lazy extends Entity {
-    private transient volatile boolean ready0;
     private transient final Object lock = new Object();
+    private transient volatile boolean ready0;
     private transient DiscordException exception;
     
     @Contract(pure = true)
@@ -40,15 +40,8 @@ public abstract class Lazy extends Entity {
     }
     
     @Contract(pure = true)
-    public void await() {
-        try {
-            synchronized (lock) {
-                if (this.ready()) return;
-                this.lock.wait();
-            }
-        } catch (Throwable ex) {
-            this.exception = new DiscordException(ex);
-        }
+    public synchronized boolean ready() {
+        return this.ready0;
     }
     
     @Contract(pure = true)
@@ -67,6 +60,14 @@ public abstract class Lazy extends Entity {
         }
     }
     
+    /**
+     * Exists purely for use in CompletableFuture chains.
+     */
+    public Void error0(Throwable ex) {
+        this.error(ex);
+        return null;
+    }
+    
     @SuppressWarnings("unchecked")
     public <Type extends Lazy> Type error(Throwable ex) {
         synchronized (this) {
@@ -80,16 +81,13 @@ public abstract class Lazy extends Entity {
         return (Type) this;
     }
     
-    /**
-     * Exists purely for use in CompletableFuture chains.
-     */
-    public Void error0(Throwable ex) {
-        this.error(ex);
-        return null;
-    }
-    
-    public synchronized DiscordException error() {
-        return exception;
+    @Contract(pure = true)
+    @SuppressWarnings("unchecked")
+    public <Type extends Lazy> CompletableFuture<Void> whenReady(Consumer<Type> consumer, Consumer<DiscordException> error) {
+        return CompletableFuture.runAsync(() -> {
+            if (this.successful()) consumer.accept((Type) this);
+            else error.accept(this.error());
+        });
     }
     
     @Contract(pure = true)
@@ -100,18 +98,20 @@ public abstract class Lazy extends Entity {
         }
     }
     
-    @Contract(pure = true)
-    public synchronized boolean ready() {
-        return this.ready0;
+    public synchronized DiscordException error() {
+        return exception;
     }
     
     @Contract(pure = true)
-    @SuppressWarnings("unchecked")
-    public <Type extends Lazy> CompletableFuture<Void> whenReady(Consumer<Type> consumer, Consumer<DiscordException> error) {
-        return CompletableFuture.runAsync(() -> {
-            if (this.successful()) consumer.accept((Type) this);
-            else error.accept(this.error());
-        });
+    public void await() {
+        try {
+            synchronized (lock) {
+                if (this.ready()) return;
+                this.lock.wait();
+            }
+        } catch (Throwable ex) {
+            this.exception = new DiscordException(ex);
+        }
     }
     
     @Contract(pure = true)

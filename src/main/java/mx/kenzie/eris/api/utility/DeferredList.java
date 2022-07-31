@@ -31,18 +31,6 @@ public class DeferredList<Type> implements List<Object> {
         this.api = api;
     }
     
-    @Override
-    public boolean add(Object object) {
-        if (object instanceof Map<?, ?> map) {
-            final Type thing = helper.createObject(type);
-            if (thing instanceof Entity entity) entity.api = api;
-            this.helper.mapToObject(thing, type, map);
-            if (thing instanceof Lazy lazy) lazy.finish();
-            this.consumer.accept(thing);
-        }
-        return true;
-    }
-    
     //<editor-fold desc="Fake Methods" defaultstate="collapsed">
     @Override
     public int size() {
@@ -75,6 +63,18 @@ public class DeferredList<Type> implements List<Object> {
     @Override
     public <T> T[] toArray(@NotNull T[] a) {
         return null;
+    }
+    
+    @Override
+    public boolean add(Object object) {
+        if (object instanceof Map<?, ?> map) {
+            final Type thing = helper.createObject(type);
+            if (thing instanceof Entity entity) entity.api = api;
+            this.helper.mapToObject(thing, type, map);
+            if (thing instanceof Lazy lazy) lazy.finish();
+            this.consumer.accept(thing);
+        }
+        return true;
     }
     
     @Override

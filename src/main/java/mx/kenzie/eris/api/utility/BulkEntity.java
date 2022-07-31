@@ -12,15 +12,15 @@ import java.util.function.Function;
 
 public abstract class BulkEntity<Type> implements Iterable<Type> {
     
+    public static <Type> BulkEntity<Type> of(DiscordAPI api, Class<Type> type, Function<List<?>, CompletableFuture<List<?>>> function) {
+        return new DefaultImplementation<>(api, type, function);
+    }
+    
     public LazyList<Type> get() {
         final LazyList<Type> list = LazyList.of(this.getType());
         this.getEntities(list);
         return list;
     }
-    
-    protected abstract int limit();
-    
-    protected abstract DiscordAPI api();
     
     protected abstract Class<Type> getType();
     
@@ -32,9 +32,9 @@ public abstract class BulkEntity<Type> implements Iterable<Type> {
         final MagicQueue<Type> magic = new MagicQueue<>();
         class Entities implements Iterator<Type> {
             final int limit;
+            final MagicQueue<Type> queue = magic;
             transient int count;
             boolean closed;
-            final MagicQueue<Type> queue = magic;
             transient Type current;
             
             Entities(int limit) {
@@ -66,6 +66,10 @@ public abstract class BulkEntity<Type> implements Iterable<Type> {
         return messages;
     }
     
+    protected abstract int limit();
+    
+    protected abstract DiscordAPI api();
+    
     @Override
     public void forEach(Consumer<? super Type> action) {
         final DeferredList<Type> list = new DeferredList<>(this.getType(), action, this.api());
@@ -75,10 +79,6 @@ public abstract class BulkEntity<Type> implements Iterable<Type> {
     @Override
     public Spliterator<Type> spliterator() {
         return Iterable.super.spliterator();
-    }
-    
-    public static <Type> BulkEntity<Type> of(DiscordAPI api, Class<Type> type, Function<List<?>, CompletableFuture<List<?>>> function) {
-        return new DefaultImplementation<>(api, type, function);
     }
 }
 

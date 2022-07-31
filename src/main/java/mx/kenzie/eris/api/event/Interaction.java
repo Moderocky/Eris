@@ -26,6 +26,7 @@ public class Interaction extends Entity implements Event {
     public Member member;
     public User user;
     public Data data = new Data();
+    private transient Message message0;
     
     public Message sendMessage(Message message) {
         final String application = api.getApplicationID();
@@ -71,8 +72,6 @@ public class Interaction extends Entity implements Event {
         return message;
     }
     
-    private transient Message message0;
-    
     public synchronized Message getMessage() {
         if (message0 != null) return message0;
         if (!data.resolved.containsKey("messages")) return null;
@@ -97,81 +96,6 @@ public class Interaction extends Entity implements Event {
     public static class Row extends Payload {
         public int type = 1;
         public Input[] components;
-    }
-    
-    public class Data extends Payload {
-        public String name, id, custom_id, guild_id, target_id;
-        public Integer type;
-        public Option[] options;
-        
-        public Row[] components;
-        public Map<String, Object> resolved;
-        
-        private transient Input[] inputs0;
-        
-        public String getInputValue(String id) {
-            final Input[] inputs = this.getInputs();
-            for (final Input input : inputs) {
-                if (!id.equals(input.custom_id)) continue;
-                if (input.value != null) return input.value;
-                if (input.values != null && input.values.length > 0) return input.values[0];
-                return null;
-            }
-            return null;
-        }
-        
-        public String[] getInputValues(String id) {
-            final Input[] inputs = this.getInputs();
-            for (final Input input : inputs) {
-                if (!id.equals(input.custom_id)) continue;
-                if (input.values != null) return input.values;
-                if (input.value != null) return new String[]{input.value};
-                return new String[0];
-            }
-            return new String[0];
-        }
-        
-        public Input[] getInputs() {
-            if (inputs0 != null) return inputs0;
-            final List<Input> list = new ArrayList<>();
-            for (final Row row : components) Collections.addAll(list, row.components);
-            return inputs0 = list.toArray(new Input[0]);
-        }
-        
-        @SuppressWarnings("unchecked")
-        public SnowflakeMap<Message> getMessages() {
-            final SnowflakeMap<Message> map = new SnowflakeMap<>();
-            if (!resolved.containsKey("messages")) return map;
-            final Object object = resolved.get("messages");
-            if (!(object instanceof Map<?, ?> child)) return map;
-            for (final Map.Entry<?, ?> entry : child.entrySet()) {
-                final Map<String, Object> value = (Map<String, Object>) entry.getValue();
-                final Message message = api.makeEntity(new Message(), value);
-                message.id = (String) entry.getKey();
-                message.api = api;
-                map.put(entry.getKey().toString(), message);
-            }
-            return map;
-        }
-        
-        @SuppressWarnings("unchecked")
-        public SnowflakeMap<User> getUsers() {
-            final SnowflakeMap<User> map = new SnowflakeMap<>();
-            if (!resolved.containsKey("users")) return map;
-            final Object object = resolved.get("users");
-            if (!(object instanceof Map<?, ?> child)) return map;
-            for (final Map.Entry<?, ?> entry : child.entrySet()) {
-                final Map<String, Object> value = (Map<String, Object>) entry.getValue();
-                final User user = api.makeEntity(new User(), value);
-                user.id = (String) entry.getKey();
-                user.api = api;
-                map.put(entry.getKey().toString(), user);
-            }
-            return map;
-        }
-        
-        // todo members
-        
     }
     
     public static class Option extends Payload {
@@ -213,6 +137,81 @@ public class Interaction extends Entity implements Event {
         public int type;
         
         public abstract Object data();
+    }
+    
+    public class Data extends Payload {
+        public String name, id, custom_id, guild_id, target_id;
+        public Integer type;
+        public Option[] options;
+        
+        public Row[] components;
+        public Map<String, Object> resolved;
+        
+        private transient Input[] inputs0;
+        
+        public String getInputValue(String id) {
+            final Input[] inputs = this.getInputs();
+            for (final Input input : inputs) {
+                if (!id.equals(input.custom_id)) continue;
+                if (input.value != null) return input.value;
+                if (input.values != null && input.values.length > 0) return input.values[0];
+                return null;
+            }
+            return null;
+        }
+        
+        public Input[] getInputs() {
+            if (inputs0 != null) return inputs0;
+            final List<Input> list = new ArrayList<>();
+            for (final Row row : components) Collections.addAll(list, row.components);
+            return inputs0 = list.toArray(new Input[0]);
+        }
+        
+        public String[] getInputValues(String id) {
+            final Input[] inputs = this.getInputs();
+            for (final Input input : inputs) {
+                if (!id.equals(input.custom_id)) continue;
+                if (input.values != null) return input.values;
+                if (input.value != null) return new String[]{input.value};
+                return new String[0];
+            }
+            return new String[0];
+        }
+        
+        @SuppressWarnings("unchecked")
+        public SnowflakeMap<Message> getMessages() {
+            final SnowflakeMap<Message> map = new SnowflakeMap<>();
+            if (!resolved.containsKey("messages")) return map;
+            final Object object = resolved.get("messages");
+            if (!(object instanceof Map<?, ?> child)) return map;
+            for (final Map.Entry<?, ?> entry : child.entrySet()) {
+                final Map<String, Object> value = (Map<String, Object>) entry.getValue();
+                final Message message = api.makeEntity(new Message(), value);
+                message.id = (String) entry.getKey();
+                message.api = api;
+                map.put(entry.getKey().toString(), message);
+            }
+            return map;
+        }
+        
+        @SuppressWarnings("unchecked")
+        public SnowflakeMap<User> getUsers() {
+            final SnowflakeMap<User> map = new SnowflakeMap<>();
+            if (!resolved.containsKey("users")) return map;
+            final Object object = resolved.get("users");
+            if (!(object instanceof Map<?, ?> child)) return map;
+            for (final Map.Entry<?, ?> entry : child.entrySet()) {
+                final Map<String, Object> value = (Map<String, Object>) entry.getValue();
+                final User user = api.makeEntity(new User(), value);
+                user.id = (String) entry.getKey();
+                user.api = api;
+                map.put(entry.getKey().toString(), user);
+            }
+            return map;
+        }
+        
+        // todo members
+        
     }
     
 }
