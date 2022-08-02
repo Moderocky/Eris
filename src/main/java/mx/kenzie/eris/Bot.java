@@ -266,7 +266,13 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 this.triggerEvent(event);
             });
             this.registerListener(SocketClose.class, close -> {
-                if (close.code >= 1000 && close.code < 2000) this.firstStart = true;
+                if (close.code >= 1000 && close.code < 2000) this.shouldResume = false;
+
+                if (close.getReason() == SocketClose.Reason.INVALID_SEQUENCE) {
+                    this.network.sequence.set(0);
+                    this.shouldResume = false;
+                }
+
                 if (close.shouldReconnect()) this.reconnect();
             });
             this.registerPayloadListener(Reconnect.class, reconnect -> this.reconnect());
