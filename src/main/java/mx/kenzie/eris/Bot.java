@@ -153,11 +153,11 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         this.registerCommand(command, null, handler);
     }
     
-    public <IGuild> void registerCommand(Command command, IGuild guild, CommandHandler handler) {
+    public <IGuild> Command registerCommand(Command command, IGuild guild, CommandHandler handler) {
         final String id = (guild == null) ? null : api.getGuildId(guild);
         command.guild_id = id;
-        this.api.registerCommand(command, id);
         this.commands.put(command, handler);
+        return this.api.registerCommand(command, id);
     }
     
     public Listener<?>[] getPayloadListeners(Class<? extends Incoming> type) {
@@ -269,7 +269,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 if (close.code >= 1000 && close.code < 2000) this.firstStart = true;
                 if (close.shouldReconnect()) this.reconnect();
             });
-            this.registerPayloadListener(Reconnect.class, reconnect -> this.connect());
+            this.registerPayloadListener(Reconnect.class, reconnect -> this.reconnect());
             this.registerPayloadListener(InvalidSession.class, session -> {
                 if (heartbeat != null) heartbeat.cancel(true);
                 this.firstStart = true;

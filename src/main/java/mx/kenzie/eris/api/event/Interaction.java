@@ -30,8 +30,7 @@ public class Interaction extends Entity implements Event {
     
     public Message sendMessage(Message message) {
         final String application = api.getApplicationID();
-        this.api.post("/webhooks/" + application + "/" + token, Json.toJson(message, InteractionMessage.class, null), message)
-            .thenAccept(Lazy::finish);
+        this.api.sendMessagePoint("/webhooks/" + application + "/" + token, message, InteractionMessage.class);
         return message;
     }
     

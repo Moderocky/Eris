@@ -3,9 +3,9 @@ package mx.kenzie.eris.api.entity.message;
 import mx.kenzie.argo.meta.Any;
 import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.api.entity.Embed;
+import mx.kenzie.eris.api.entity.Message;
 import mx.kenzie.eris.api.entity.Snowflake;
 import mx.kenzie.eris.api.entity.command.callback.Callback;
-import mx.kenzie.eris.data.Payload;
 
 public abstract class InteractionMessage extends Snowflake implements Callback {
     
@@ -15,7 +15,7 @@ public abstract class InteractionMessage extends Snowflake implements Callback {
     public @Optional
     @Any Component[] components;
     public @Optional Attachment[] attachments;
-    public @Optional Payload allowed_mentions;
+    public @Optional Message.Mentions allowed_mentions;
     public @Optional Embed[] embeds;
     
     protected transient boolean sent0;

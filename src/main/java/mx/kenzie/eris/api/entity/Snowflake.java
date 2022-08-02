@@ -17,6 +17,12 @@ public class Snowflake extends Lazy {
         return id0;
     }
     
+    public String mention() {
+        if (this instanceof Role) return "<@&" + id + ">";
+        if (this instanceof Channel) return "<#" + id + ">";
+        return "<@" + id + ">";
+    }
+    
     @Override
     public String debugName() {
         return "[" + this.getClass().getSimpleName() + ":" + this.id + "]";

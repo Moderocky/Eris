@@ -18,7 +18,7 @@ public class Message extends UnsentMessage {
     public User author;
     public boolean mention_everyone, pinned;
     public User[] mentions;
-    public Role[] mention_roles;
+    public String[] mention_roles;
     public Channel[] mention_channels;
     public Payload[] reactions, sticker_items;
     public Object nonce;
@@ -121,6 +121,12 @@ public class Message extends UnsentMessage {
             .thenRun(this::finish);
     }
     
+    public Message denyAllMentions() {
+        this.allowed_mentions = new Mentions();
+        this.allowed_mentions.parse = new String[0];
+        return this;
+    }
+    
     public Message withFlag(int flag) {
         this.flags |= flag;
         return this;
@@ -151,6 +157,10 @@ public class Message extends UnsentMessage {
     public static class Reference extends Payload {
         public boolean fail_if_not_exists;
         public @Optional String message_id, channel_id, guild_id;
+    }
+    
+    public static class Mentions extends Payload {
+        public @Optional String[] parse, users;
     }
     
 }

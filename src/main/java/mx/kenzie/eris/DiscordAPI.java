@@ -193,6 +193,29 @@ public class DiscordAPI {
         if (message.api == null) message.api = this;
         return message;
     }
+    
+    public Message sendMessagePoint(String path, Message message, Class<?> type) {
+        message.unready();
+        if (message.attachments != null && message.attachments.length > 0) {
+            final MultiBody body = new MultiBody();
+            body.sectionMessage(Json.toJson(message, UnsentMessage.class, null));
+            for (final Attachment attachment : message.attachments) {
+                if (attachment.filename != null)
+                    body.section("files[" + attachment.id + "]", attachment.filename, attachment.content);
+                else
+                    body.section("files[" + attachment.id + "]", attachment.content.toString());
+            }
+            body.finish();
+            this.multiRequest("POST", path, body, message)
+                .exceptionally(message::error).thenAccept(Lazy::finish);
+        } else {
+            final String body = Json.toJson(message, type, null);
+            this.post(path, body, message)
+                .exceptionally(message::error).thenAccept(Lazy::finish);
+        }
+        if (message.api == null) message.api = this;
+        return message;
+    }
     //</editor-fold>
     
     //<editor-fold desc="Channels" defaultstate="collapsed">
