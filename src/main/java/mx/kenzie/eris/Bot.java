@@ -250,7 +250,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     }
     
     private ScheduledFuture<?> heartbeat;
-    private transient boolean firstStart = true;
+    private transient boolean shouldResume = false;
     
     @Override
     public void run() {
@@ -272,11 +272,11 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             this.registerPayloadListener(Reconnect.class, reconnect -> this.reconnect());
             this.registerPayloadListener(InvalidSession.class, session -> {
                 if (heartbeat != null) heartbeat.cancel(true);
-                this.firstStart = true;
+                this.shouldResume = false;
                 this.reconnect();
             });
             this.registerPayloadListener(Hello.class, hello -> {
-                if (firstStart) {
+                if (!shouldResume) {
                     final Identify identify = new Identify();
                     identify.data.intents = this.intents;
                     identify.data.token = this.token;
@@ -287,8 +287,8 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                         final int sequence = this.network.sequence.getAcquire();
                         heartbeat.data = sequence < 1 ? null : sequence;
                         this.dispatch(heartbeat);
-                    }, (long) delay * ThreadLocalRandom.current().nextInt(0, 1), delay, TimeUnit.MILLISECONDS);
-                    this.firstStart = false;
+                    }, (long) (delay * ThreadLocalRandom.current().nextDouble(0, 1)), delay, TimeUnit.MILLISECONDS);
+                    this.shouldResume = true;
                 } else {
                     this.resume();
                 }
