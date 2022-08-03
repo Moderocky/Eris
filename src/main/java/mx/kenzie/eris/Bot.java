@@ -250,7 +250,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     }
     
     private ScheduledFuture<?> heartbeat;
-    private transient boolean firstStart = true;
+    private transient boolean shouldResume = false;
     
     @Override
     public void run() {
@@ -266,17 +266,29 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 this.triggerEvent(event);
             });
             this.registerListener(SocketClose.class, close -> {
-                if (close.code >= 1000 && close.code < 2000) this.firstStart = true;
+                // Don't resume for RFC spec. closing codes
+                if (close.code >= 1000 && close.code < 2000) this.shouldResume = false;
+
+                if (close.getReason() == SocketClose.Reason.INVALID_SEQUENCE) {
+                    this.network.sequence.set(0);
+                    this.shouldResume = false;
+                }
+
                 if (close.shouldReconnect()) this.reconnect();
             });
             this.registerPayloadListener(Reconnect.class, reconnect -> this.reconnect());
             this.registerPayloadListener(InvalidSession.class, session -> {
+                /*
+                * We never attempt a resume here, even if the payload suggests one
+                * may be possible — This is done to keep the code simple; keeping track
+                * of when to identify AND resume would result in code spaghetti.
+                * */
                 if (heartbeat != null) heartbeat.cancel(true);
-                this.firstStart = true;
+                this.shouldResume = false;
                 this.reconnect();
             });
             this.registerPayloadListener(Hello.class, hello -> {
-                if (firstStart) {
+                if (!shouldResume) {
                     final Identify identify = new Identify();
                     identify.data.intents = this.intents;
                     identify.data.token = this.token;
@@ -287,8 +299,8 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                         final int sequence = this.network.sequence.getAcquire();
                         heartbeat.data = sequence < 1 ? null : sequence;
                         this.dispatch(heartbeat);
-                    }, (long) delay * ThreadLocalRandom.current().nextInt(0, 1), delay, TimeUnit.MILLISECONDS);
-                    this.firstStart = false;
+                    }, (long) (delay * ThreadLocalRandom.current().nextDouble(0, 1)), delay, TimeUnit.MILLISECONDS);
+                    this.shouldResume = true;
                 } else {
                     this.resume();
                 }
