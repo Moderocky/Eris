@@ -91,8 +91,8 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(A, B)"};
     public final ExecutorService executor = Executors.newCachedThreadPool();
     protected NetworkController network;
-    private volatile boolean running = true;
-    private WebSocket socket;
+    private boolean running = true;
+    private transient WebSocket socket;
     private final Object lock = new Object();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
     protected final Map<Listener<?>, Class<? extends Event>> listeners = new HashMap<>();
@@ -171,7 +171,9 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     @Override
     public void close() {
         for (final Command command : commands.keySet()) this.api.deleteCommand(command);
-        this.running = false;
+        synchronized (this) {
+            this.running = false;
+        }
         this.network.close();
         this.process.cancel(true);
         this.executor.shutdown();
@@ -266,44 +268,42 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 this.triggerEvent(event);
             });
             this.registerListener(SocketClose.class, close -> {
-                // Don't resume for RFC spec. closing codes
-                if (close.code >= 1000 && close.code < 2000) this.shouldResume = false;
-
+                if (close.code >= 1000 && close.code < 2000)
+                    this.shouldResume = false; // Don't resume for RFC spec. closing codes
                 if (close.getReason() == SocketClose.Reason.INVALID_SEQUENCE) {
                     this.network.sequence.set(0);
                     this.shouldResume = false;
                 }
-
                 if (close.shouldReconnect()) this.reconnect();
             });
             this.registerPayloadListener(Reconnect.class, reconnect -> this.reconnect());
             this.registerPayloadListener(InvalidSession.class, session -> {
                 /*
-                * We never attempt a resume here, even if the payload suggests one
-                * may be possible — This is done to keep the code simple; keeping track
-                * of when to identify AND resume would result in code spaghetti.
-                * */
+                 * We never attempt a resume here, even if the payload suggests one
+                 * may be possible — This is done to keep the code simple; keeping track
+                 * of when to identify AND resume would result in code spaghetti.
+                 * */
                 if (heartbeat != null) heartbeat.cancel(true);
                 this.shouldResume = false;
                 this.reconnect();
             });
             this.registerPayloadListener(Hello.class, hello -> {
-                if (!shouldResume) {
-                    final Identify identify = new Identify();
-                    identify.data.intents = this.intents;
-                    identify.data.token = this.token;
-                    final int delay = hello.data.heartbeat_interval;
-                    this.dispatch(identify);
-                    this.heartbeat = scheduler.scheduleWithFixedDelay(() -> {
-                        final Heartbeat heartbeat = new Heartbeat();
-                        final int sequence = this.network.sequence.getAcquire();
-                        heartbeat.data = sequence < 1 ? null : sequence;
-                        this.dispatch(heartbeat);
-                    }, (long) (delay * ThreadLocalRandom.current().nextDouble(0, 1)), delay, TimeUnit.MILLISECONDS);
-                    this.shouldResume = true;
-                } else {
+                if (shouldResume) {
                     this.resume();
+                    return;
                 }
+                final Identify identify = new Identify();
+                identify.data.intents = this.intents;
+                identify.data.token = this.token;
+                final int delay = hello.data.heartbeat_interval;
+                this.dispatch(identify);
+                this.heartbeat = scheduler.scheduleWithFixedDelay(() -> {
+                    final Heartbeat heartbeat = new Heartbeat();
+                    final int sequence = this.network.sequence.getAcquire();
+                    heartbeat.data = sequence < 1 ? null : sequence;
+                    this.dispatch(heartbeat);
+                }, (long) (delay * ThreadLocalRandom.current().nextDouble(0, 1)), delay, TimeUnit.MILLISECONDS);
+                this.shouldResume = true;
             });
             this.registerListener(Ready.class, ready -> {
                 synchronized (this) {
