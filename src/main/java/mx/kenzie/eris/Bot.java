@@ -39,6 +39,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 public class Bot extends Lazy implements Runnable, AutoCloseable {
     
@@ -184,6 +187,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             Bot.handle(e);
         }
         this.heartbeat.cancel(true);
+        this.heartbeat = null;
         this.scheduler.shutdownNow();
         synchronized (lock) {
             this.lock.notifyAll();
@@ -268,9 +272,15 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 this.triggerEvent(event);
             });
             this.registerListener(SocketClose.class, close -> {
-                if (close.code >= 1000 && close.code < 2000)
+                if (close.code >= 1000 && close.code < 2000) {
+                    if (heartbeat != null) heartbeat.cancel(true);
+                    this.heartbeat = null;
+                    this.network.sequence.set(0);
                     this.shouldResume = false; // Don't resume for RFC spec. closing codes
+                }
                 if (close.getReason() == SocketClose.Reason.INVALID_SEQUENCE) {
+                    if (heartbeat != null) heartbeat.cancel(true);
+                    this.heartbeat = null;
                     this.network.sequence.set(0);
                     this.shouldResume = false;
                 }
@@ -284,7 +294,9 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                  * of when to identify AND resume would result in code spaghetti.
                  * */
                 if (heartbeat != null) heartbeat.cancel(true);
+                this.heartbeat = null;
                 this.shouldResume = false;
+                this.network.sequence.set(0);
                 this.reconnect();
             });
             this.registerPayloadListener(Hello.class, hello -> {
@@ -310,6 +322,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                     this.self = ready.user;
                     this.session = ready.session_id;
                 }
+                if (heartbeat == null) throw new Error("No heartbeat monitor set up.");
                 this.finish();
             });
             this.registerListener(Interaction.class, interaction -> {
