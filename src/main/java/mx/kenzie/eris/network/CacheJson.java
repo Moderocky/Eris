@@ -26,6 +26,11 @@ public class CacheJson extends Json {
     }
     
     @Override
+    public <Type> Type createObject(Class<Type> type) {
+        return super.createObject(type);
+    }
+    
+    @Override
     @SuppressWarnings("unchecked")
     public <Type> Type toObject(Type object, Class<?> type, Map<?, ?> map) {
         if (!(object instanceof Snowflake source)) return super.toObject(object, type, map);
@@ -47,11 +52,6 @@ public class CacheJson extends Json {
             result = super.toObject(snowflake, type, map);
         }
         return (Type) result;
-    }
-    
-    @Override
-    public <Type> Type createObject(Class<Type> type) {
-        return super.createObject(type);
     }
     
 }

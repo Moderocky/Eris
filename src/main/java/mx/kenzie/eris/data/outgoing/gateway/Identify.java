@@ -12,9 +12,9 @@ public class Identify extends Outgoing {
     public final @Name("d") Data data = new Data();
     
     public static class Data extends Payload {
+        public final Properties properties = new Properties();
         public String token;
         public int intents;
-        public final Properties properties = new Properties();
         public @Optional Presence presence;
     }
     

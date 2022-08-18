@@ -39,18 +39,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 
 public class Bot extends Lazy implements Runnable, AutoCloseable {
     
+    public static final WeakMap<String, Expecting<Interaction>> INLINE_CALLBACKS = new WeakMap<>();
+    public static final Map<String, Class<? extends Event>> EVENT_LIST = new HashMap<>();
     public static String API_URL = "https://discord.com/api/v10";
     public static String CDN_URL = "https://cdn.discordapp.com";
     public static boolean DEBUG_MODE = false;
-    public static final WeakMap<String, Expecting<Interaction>> INLINE_CALLBACKS = new WeakMap<>();
-    public static final Map<String, Class<? extends Event>> EVENT_LIST = new HashMap<>();
-    
     public static Consumer<Throwable> exceptionHandler;
     
     static {
@@ -90,22 +86,23 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("PRESENCE_UPDATE", UpdatePresence.class);
     }
     
-    final String token;
-    final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(A, B)"};
     public final ExecutorService executor = Executors.newCachedThreadPool();
-    protected NetworkController network;
-    private boolean running = true;
-    private transient WebSocket socket;
-    private final Object lock = new Object();
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
     protected final Map<Listener<?>, Class<? extends Event>> listeners = new HashMap<>();
     protected final Map<Command, CommandHandler> commands = new HashMap<>();
+    protected final DiscordAPI api;
+    final String token;
+    final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(A, B)"};
+    private final Object lock = new Object();
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
+    protected NetworkController network;
     protected int intents;
-    
     protected volatile Self self;
     protected volatile String session;
-    protected final DiscordAPI api;
+    private boolean running = true;
+    private transient WebSocket socket;
     private CompletableFuture<?> process;
+    private ScheduledFuture<?> heartbeat;
+    private transient boolean shouldResume = false;
     
     public Bot(String token, int... intents) {
         this.token = token;
@@ -119,21 +116,6 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         return session;
     }
     
-    public int getSequence() {
-        return network.sequence.getAcquire();
-    }
-    
-    public void resume() {
-        final Resume resume = new Resume();
-        resume.data.session_id = session;
-        resume.data.sequence = this.getSequence();
-        this.dispatch(resume);
-    }
-    
-    public <Type extends Payload & Event> void registerListener(Class<Type> type, Listener<Type> listener) {
-        this.listeners.put(listener, type);
-    }
-    
     public Listener<?>[] getListeners(Class<? extends Event> type) {
         final List<Listener<?>> list = new ArrayList<>();
         for (final Map.Entry<Listener<?>, Class<? extends Event>> entry : listeners.entrySet()) {
@@ -141,10 +123,6 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             if (type.isAssignableFrom(value)) list.add(entry.getKey());
         }
         return list.toArray(new Listener[0]);
-    }
-    
-    public <Event extends Incoming> void registerPayloadListener(Class<Event> type, Listener<Event> listener) {
-        this.network.registerListener(type, listener);
     }
     
     public void unregisterListener(Listener<?> listener) {
@@ -165,10 +143,6 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     public Listener<?>[] getPayloadListeners(Class<? extends Incoming> type) {
         return this.network.getListeners(type);
-    }
-    
-    protected void dispatch(Outgoing payload) {
-        this.network.sendPayload(payload);
     }
     
     @Override
@@ -194,22 +168,9 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         }
     }
     
-    @SuppressWarnings({"unchecked", "RawUseOfParameterized"})
-    public void triggerEvent(Event event) {
-        assert event instanceof Payload : "Event was not a payload.";
-        if (Bot.DEBUG_MODE) System.out.println("Event: " + event.getClass().getSimpleName());
-        for (final Map.Entry<Listener<?>, Class<? extends Event>> entry : this.listeners.entrySet()) {
-            final Class<?> type = entry.getValue();
-            if (!type.isInstance(event)) continue;
-            final Listener listener = entry.getKey();
-            CompletableFuture.runAsync(() -> {
-                try {
-                    listener.on((Payload) event);
-                } catch (Throwable ex) {
-                    Bot.handle(ex);
-                }
-            }, executor);
-        }
+    public static void handle(Throwable throwable) {
+        if (exceptionHandler != null) exceptionHandler.accept(throwable);
+        else throwable.printStackTrace();
     }
     
     public void start() {
@@ -224,39 +185,6 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     public DiscordAPI getAPI() {
         return this.api;
     }
-    
-    private void reconnect() {
-        while (true) {
-            try {
-                Thread.sleep(5000L); // required pause before reconnect
-                this.connect0();
-            } catch (InterruptedException interrupt) {
-                Thread.currentThread().interrupt();
-                continue;
-            } catch (Exception ignored) {
-                continue;
-            }
-            break;
-        }
-    }
-    
-    private void connect0() throws IOException, InterruptedException {
-        try (final Json json = new Json(network.request("GET", "/gateway/bot", null, headers).body())) {
-            final GatewayConnection connection = json.toObject(new GatewayConnection());
-            this.socket = network.openSocket(connection.url + "/?v=10&encoding=json");
-        }
-    }
-    
-    private void connect() {
-        try {
-            this.connect0();
-        } catch (Exception ex) { // Errors shouldn't be caught
-            Bot.handle(ex);
-        }
-    }
-    
-    private ScheduledFuture<?> heartbeat;
-    private transient boolean shouldResume = false;
     
     @Override
     public void run() {
@@ -283,11 +211,12 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                     this.heartbeat = null;
                     this.network.sequence.set(0);
                     this.shouldResume = false;
-                }
-                if (close.shouldReconnect()) this.reconnect();
+                    this.connect(true);
+                } else if (close.shouldReconnect()) this.connect(true);
             });
-            this.registerPayloadListener(Reconnect.class, reconnect -> this.reconnect());
+            this.registerPayloadListener(Reconnect.class, reconnect -> this.connect(true));
             this.registerPayloadListener(InvalidSession.class, session -> {
+                if (DEBUG_MODE) System.out.println("Received Invalid Session (9)");
                 /*
                  * We never attempt a resume here, even if the payload suggests one
                  * may be possible — This is done to keep the code simple; keeping track
@@ -297,7 +226,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 this.heartbeat = null;
                 this.shouldResume = false;
                 this.network.sequence.set(0);
-                this.reconnect();
+//                this.connect(true); // connect moved to socket close
             });
             this.registerPayloadListener(Hello.class, hello -> {
                 if (shouldResume) {
@@ -341,7 +270,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                     expecting.finish();
                 }
             });
-            this.connect();
+            this.connect(false);
             this.scheduler.schedule(this.api::cleanCache, 90, TimeUnit.SECONDS);
             this.scheduler.schedule(Bot.INLINE_CALLBACKS::cleanAsync, 120, TimeUnit.SECONDS);
         } catch (Throwable ex) {
@@ -349,13 +278,67 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         }
     }
     
+    public <Event extends Incoming> void registerPayloadListener(Class<Event> type, Listener<Event> listener) {
+        this.network.registerListener(type, listener);
+    }
+    
+    @SuppressWarnings({"unchecked", "RawUseOfParameterized"})
+    public void triggerEvent(Event event) {
+        assert event instanceof Payload : "Event was not a payload.";
+        if (Bot.DEBUG_MODE) System.out.println("Event: " + event.getClass().getSimpleName());
+        for (final Map.Entry<Listener<?>, Class<? extends Event>> entry : this.listeners.entrySet()) {
+            final Class<?> type = entry.getValue();
+            if (!type.isInstance(event)) continue;
+            final Listener listener = entry.getKey();
+            CompletableFuture.runAsync(() -> {
+                try {
+                    listener.on((Payload) event);
+                } catch (Throwable ex) {
+                    Bot.handle(ex);
+                }
+            }, executor);
+        }
+    }
+    
+    public <Type extends Payload & Event> void registerListener(Class<Type> type, Listener<Type> listener) {
+        this.listeners.put(listener, type);
+    }
+    
+    private void connect(boolean wait) {
+        if (wait) try {
+            Thread.sleep(5000L); // required pause before reconnect
+        } catch (InterruptedException ignored) {
+        }
+        this.openSocket();
+    }
+    
+    public void resume() {
+        final Resume resume = new Resume();
+        resume.data.session_id = session;
+        resume.data.sequence = this.getSequence();
+        this.dispatch(resume);
+    }
+
+    protected void dispatch(Outgoing payload) {
+        this.network.sendPayload(payload);
+    }
+    
+    private void openSocket() {
+        try (final Json json = new Json(network.request("GET", "/gateway/bot", null, headers).body())) {
+            if (DEBUG_MODE) System.out.println("Opening socket.");
+            final GatewayConnection connection = json.toObject(new GatewayConnection());
+            this.socket = network.openSocket(connection.url + "/?v=10&encoding=json");
+        } catch (IOException | InterruptedException ex) {
+            Bot.handle(ex);
+        }
+    }
+    
+    public int getSequence() {
+        return network.sequence.getAcquire();
+    }
+    
     @Override
     public String toString() {
         return "Bot " + this.self;
-    }
-    
-    public static void handle(Throwable throwable) {
-        if (exceptionHandler != null) exceptionHandler.accept(throwable);
-        else throwable.printStackTrace();
     }
 }

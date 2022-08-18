@@ -10,6 +10,11 @@ public class Presence extends Outgoing {
     
     public final @Name("d") Data data = new Data();
     
+    @Override
+    public boolean verify() {
+        return data.status != null;
+    }
+    
     public static class Data extends Payload {
         public Integer since;
         public Activity[] activities = new Activity[0];
@@ -22,10 +27,5 @@ public class Presence extends Outgoing {
         public String name;
         public int type;
         public @Optional String url;
-    }
-    
-    @Override
-    public boolean verify() {
-        return data.status != null;
     }
 }

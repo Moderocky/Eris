@@ -10,6 +10,7 @@ import java.util.concurrent.CompletionStage;
 public class SocketListener implements WebSocket.Listener { // TODO
     
     protected final NetworkController network;
+    private volatile StringBuilder builder = new StringBuilder();
     
     public SocketListener(NetworkController network) {
         this.network = network;
@@ -21,8 +22,6 @@ public class SocketListener implements WebSocket.Listener { // TODO
         this.network.socket = socket;
         WebSocket.Listener.super.onOpen(socket);
     }
-    
-    private volatile StringBuilder builder = new StringBuilder();
     
     @Override
     public CompletionStage<?> onText(WebSocket socket, CharSequence data, boolean last) {
@@ -44,7 +43,7 @@ public class SocketListener implements WebSocket.Listener { // TODO
     public CompletionStage<?> onClose(WebSocket socket, int statusCode, String reason) {
         if (Bot.DEBUG_MODE) System.out.println("Closing: " + statusCode + "/" + reason);
         final SocketClose close = new SocketClose(statusCode, reason);
-        this.network.triggerEvent(close);
+        if (network.socket == socket) this.network.triggerEvent(close); // don't dispatch events if socket was replaced
         return WebSocket.Listener.super.onClose(socket, statusCode, reason);
     }
 }

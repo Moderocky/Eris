@@ -16,7 +16,11 @@ import java.io.InputStream;
 public class BasicFunctionalityTest {
     
     private static final String TOKEN;
-    
+    static Bot bot;
+    static DiscordAPI api;
+    static Guild guild;
+    static Channel channel;
+
     static {
         final InputStream stream = BasicFunctionalityTest.class.getClassLoader().getResourceAsStream("token.json");
         assert stream != null;
@@ -25,11 +29,6 @@ public class BasicFunctionalityTest {
             TOKEN = tokens[0];
         }
     }
-    
-    static Bot bot;
-    static DiscordAPI api;
-    static Guild guild;
-    static Channel channel;
     
     @BeforeClass
     public static void start() {
@@ -41,6 +40,11 @@ public class BasicFunctionalityTest {
         channel = api.getChannel(1001024258140540938L);
         guild.await();
         channel.await();
+    }
+    
+    @AfterClass
+    public static void stop() {
+        bot.close();
     }
     
     @Test
@@ -70,12 +74,6 @@ public class BasicFunctionalityTest {
         message.delete();
         message.await();
         assert message.successful();
-    }
-    
-    
-    @AfterClass
-    public static void stop() {
-        bot.close();
     }
     
     

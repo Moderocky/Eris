@@ -40,6 +40,10 @@ public class DiscordAPI {
         this.bot = bot;
     }
     
+    public static DiscordException unlinkedEntity(Entity entity) {
+        return new DiscordException("The object " + entity.debugName() + " is not linked to a DiscordAPI.");
+    }
+    
     public CompletableFuture<?> dispatch(Outgoing payload) {
         return this.network.sendPayload(payload);
     }
@@ -51,8 +55,37 @@ public class DiscordAPI {
             try {
                 return this.network.request(type, path, body, bot.headers).body();
             } catch (IOException | InterruptedException ex) {
+                if (Bot.DEBUG_MODE) ex.printStackTrace();
                 throw new DiscordException(ex);
             }
+        });
+    }
+    
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> get(String path, Map<?, ?> query, Type object) {
+        if (query != null && !query.isEmpty()) {
+            final List<String> parts = new ArrayList<>();
+            for (final Map.Entry<?, ?> entry : query.entrySet()) parts.add(entry.getKey() + "=" + entry.getValue());
+            path += "?" + String.join("&", parts);
+        }
+        return this.request("GET", path, null, object);
+    }
+    
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> request(String type, String path, String body, Type object) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                final HttpResponse<InputStream> request = this.network.request(type, path, body, bot.headers);
+                return this.handle(request, object);
+            } catch (IOException | InterruptedException ex) {
+                throw new DiscordException("Error in request.", ex);
+            }
+        }).exceptionally(throwable -> {
+            if (Bot.DEBUG_MODE) throwable.printStackTrace();
+            if (throwable instanceof CompletionException ex) throwable = ex.getCause();
+            if (object instanceof Lazy lazy) lazy.error(throwable);
+            else Bot.handle(throwable);
+            return object;
         });
     }
     
@@ -62,6 +95,7 @@ public class DiscordAPI {
             final boolean isMap = json.willBeMap();
             if (isMap) map.putAll(json.toMap());
             if (isMap && map.containsKey("code") && map.containsKey("message")) {
+                if (Bot.DEBUG_MODE) System.err.println("Error " + map.get("code") + ": " + map);
                 final APIException error = new APIException(map.get("message") + "");
                 this.network.helper.mapToObject(error, APIException.class, map);
                 throw error;
@@ -78,82 +112,6 @@ public class DiscordAPI {
         }
     }
     
-    @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> request(String type, String path, String body, Type object) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                final HttpResponse<InputStream> request = this.network.request(type, path, body, bot.headers);
-                return this.handle(request, object);
-            } catch (IOException | InterruptedException ex) {
-                throw new DiscordException("Error in request.", ex);
-            }
-        }).exceptionally(throwable -> {
-            if (throwable instanceof CompletionException ex) throwable = ex.getCause();
-            if (object instanceof Lazy lazy) lazy.error(throwable);
-            else Bot.handle(throwable);
-            return object;
-        });
-    }
-    
-    @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> multiRequest(String type, String path, MultiBody body, Type object) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                final HttpResponse<InputStream> request = this.network.multiRequest(type, path, body, bot.headers);
-                return this.handle(request, object);
-            } catch (IOException | InterruptedException ex) {
-                throw new DiscordException("Error in request.", ex);
-            } finally {
-                try {
-                    body.close();
-                } catch (Throwable ex) {
-                    throw new DiscordException("Error while closing resources.", ex);
-                }
-            }
-        }).exceptionally(throwable -> {
-            if (throwable instanceof CompletionException ex) throwable = ex.getCause();
-            if (object instanceof Lazy lazy) lazy.error(throwable);
-            else Bot.handle(throwable);
-            return object;
-        });
-    }
-    
-    @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> get(String path, Type object) {
-        return this.request("GET", path, null, object);
-    }
-    
-    @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> get(String path, Map<?, ?> query, Type object) {
-        if (query != null && !query.isEmpty()) {
-            final List<String> parts = new ArrayList<>();
-            for (final Map.Entry<?, ?> entry : query.entrySet()) parts.add(entry.getKey() + "=" + entry.getValue());
-            path += "?" + String.join("&", parts);
-        }
-        return this.request("GET", path, null, object);
-    }
-    
-    @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> patch(String path, String body, Type object) {
-        return this.request("PATCH", path, body, object);
-    }
-    
-    public CompletableFuture<Void> delete(String path) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return this.network.delete(path, bot.headers).body();
-            } catch (IOException | InterruptedException ex) {
-                throw new DiscordException(ex);
-            }
-        });
-    }
-    
-    @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> post(String path, String body, Type object) {
-        return this.request("POST", path, body, object);
-    }
-    //</editor-fold>
-    
     //<editor-fold desc="Messages" defaultstate="collapsed">
     public Message write(String content) {
         final Message message = new Message();
@@ -165,10 +123,6 @@ public class DiscordAPI {
     public Message sendMessage(Channel channel, Message message) {
         if (channel.api == null) channel.api = this;
         return this.sendMessage(channel.id, message);
-    }
-    
-    public Message sendMessage(long channel, Message message) {
-        return this.sendMessage(Long.toString(channel), message);
     }
     
     public Message sendMessage(String channel, Message message) {
@@ -194,6 +148,41 @@ public class DiscordAPI {
         return message;
     }
     
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> multiRequest(String type, String path, MultiBody body, Type object) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                final HttpResponse<InputStream> request = this.network.multiRequest(type, path, body, bot.headers);
+                return this.handle(request, object);
+            } catch (IOException | InterruptedException ex) {
+                if (Bot.DEBUG_MODE) ex.printStackTrace();
+                throw new DiscordException("Error in request.", ex);
+            } finally {
+                try {
+                    body.close();
+                } catch (Throwable ex) {
+                    throw new DiscordException("Error while closing resources.", ex);
+                }
+            }
+        }).exceptionally(throwable -> {
+            if (Bot.DEBUG_MODE) throwable.printStackTrace();
+            if (throwable instanceof CompletionException ex) throwable = ex.getCause();
+            if (object instanceof Lazy lazy) lazy.error(throwable);
+            else Bot.handle(throwable);
+            return object;
+        });
+    }
+    //</editor-fold>
+    
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> post(String path, String body, Type object) {
+        return this.request("POST", path, body, object);
+    }
+    
+    public Message sendMessage(long channel, Message message) {
+        return this.sendMessage(Long.toString(channel), message);
+    }
+    
     public Message sendMessagePoint(String path, Message message, Class<?> type) {
         message.unready();
         if (message.attachments != null && message.attachments.length > 0) {
@@ -216,7 +205,6 @@ public class DiscordAPI {
         if (message.api == null) message.api = this;
         return message;
     }
-    //</editor-fold>
     
     //<editor-fold desc="Channels" defaultstate="collapsed">
     public Channel createDirectChannel(long id) {
@@ -229,6 +217,7 @@ public class DiscordAPI {
         this.post("/users/@me/channels", "{\"recipient_id\":" + id + "}", channel).thenAccept(Lazy::finish);
         return channel;
     }
+    //</editor-fold>
     
     public Channel getChannel(long id) {
         return this.getChannel(Long.toString(id));
@@ -242,17 +231,16 @@ public class DiscordAPI {
         this.get("/channels/" + id, channel).thenAccept(Lazy::finish);
         return channel;
     }
-    //</editor-fold>
     
-    //<editor-fold desc="Users" defaultstate="collapsed">
-    public Self getSelf() {
-        assert bot.session != null : "Bot has not connected";
-        return bot.self;
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> get(String path, Type object) {
+        return this.request("GET", path, null, object);
     }
     
     public User getUser(long id) {
         return this.getUser(Long.toString(id));
     }
+    //</editor-fold>
     
     public User getUser(String id) {
         final User user = cache.getOrUse(id, new User());
@@ -269,7 +257,6 @@ public class DiscordAPI {
         if (user instanceof Self self) this.get("/users/@me", self).thenAccept(Lazy::finish);
         else this.get("/users/" + user.id, user).thenAccept(Lazy::finish);
     }
-    //</editor-fold>
     
     //<editor-fold desc="Guilds" defaultstate="collapsed">
     public Guild getGuild(long id) {
@@ -283,6 +270,7 @@ public class DiscordAPI {
         this.get("/guilds/" + id, guild).thenAccept(Lazy::finish);
         return guild;
     }
+    //</editor-fold>
     
     public Guild.Preview getGuildPreview(long id) {
         return this.getGuildPreview(Long.toString(id));
@@ -339,6 +327,23 @@ public class DiscordAPI {
         return member;
     }
     
+    //<editor-fold desc="Helpers" defaultstate="collapsed">
+    public String getUserId(Object object) {
+        if (object == null) return null;
+        if (object instanceof String value) return value;
+        if (object instanceof User value) return value.id;
+        if (object instanceof Member value) return value.user.id;
+        return Objects.toString(object);
+    }
+    
+    public String getGuildId(Object object) {
+        if (object == null) return null;
+        if (object instanceof String value) return value;
+        if (object instanceof Guild value) return value.id;
+        if (object instanceof Guild.Preview value) return value.id;
+        return Objects.toString(object);
+    }
+    
     public <IGuild, IUser> Member modifyMember(IGuild guild, IUser user, ModifyMember member) {
         final String gid = this.getGuildId(guild), uid = this.getUserId(user);
         final Member result;
@@ -349,6 +354,12 @@ public class DiscordAPI {
         return result;
     }
     
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> patch(String path, String body, Type object) {
+        return this.request("PATCH", path, body, object);
+    }
+    //</editor-fold>
+    
     public void update(Member member) {
         if (!member.isValid()) throw new DiscordException("Unable to update member - user ID unknown.");
         if (member.guild_id == null) throw new DiscordException("Unable to update member - guild ID unknown.");
@@ -357,7 +368,6 @@ public class DiscordAPI {
         this.get("/guilds/" + member.guild_id + "/members/" + member.user.id, member)
             .exceptionally(member::error).thenAccept(Lazy::finish);
     }
-    //</editor-fold>
     
     //<editor-fold desc="Bans" defaultstate="collapsed">
     public <IGuild, IUser> Ban getBan(IGuild guild, IUser user) {
@@ -372,6 +382,9 @@ public class DiscordAPI {
         this.request("PUT", "/guilds/" + gid + "/bans/" + uid, Json.toJson(ban), null).thenRun(ban::finish);
     }
     
+    
+    //</editor-fold>
+    
     public <
         @Accept({long.class, String.class, Guild.class}) IGuild,
         @Accept({long.class, String.class, User.class}) IUser
@@ -379,8 +392,6 @@ public class DiscordAPI {
         final String gid = this.getGuildId(guild), uid = this.getUserId(user);
         this.request("DELETE", "/guilds/" + gid + "/bans/" + uid, null, null);
     }
-    
-    
     //</editor-fold>
     
     public void update(Guild guild) {
@@ -390,7 +401,6 @@ public class DiscordAPI {
         this.get("/guilds/" + guild.id, guild)
             .exceptionally(guild::error).thenAccept(Lazy::finish);
     }
-    //</editor-fold>
     
     //<editor-fold desc="Interactions" defaultstate="collapsed">
     public Command registerCommand(Command command) {
@@ -419,6 +429,17 @@ public class DiscordAPI {
         else this.delete("/applications/" + id + "/guilds/" + guild + "/commands/" + command);
     }
     
+    public CompletableFuture<Void> delete(String path) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return this.network.delete(path, bot.headers).body();
+            } catch (IOException | InterruptedException ex) {
+                throw new DiscordException(ex);
+            }
+        });
+    }
+    //</editor-fold>
+    
     public <IGuild> LazyList<Command> getCommands(IGuild guild) {
         final String id = this.getGuildId(guild), self = this.getSelf().id;
         final LazyList<Command> commands = new LazyList<>(Command.class, new ArrayList<>());
@@ -429,30 +450,18 @@ public class DiscordAPI {
         return commands;
     }
     
+    //<editor-fold desc="Users" defaultstate="collapsed">
+    public Self getSelf() {
+        assert bot.session != null : "Bot has not connected";
+        return bot.self;
+    }
+    
     public void interactionResponse(Interaction interaction, Interaction.Response response) {
         final String body = Json.toJson(response);
         if (response.data() instanceof Lazy lazy)
             this.post("/interactions/" + interaction.id + "/" + interaction.token + "/callback", body, lazy)
                 .exceptionally(lazy::error).thenAccept(Lazy::finish);
         else this.post("/interactions/" + interaction.id + "/" + interaction.token + "/callback", body, null);
-    }
-    //</editor-fold>
-    
-    //<editor-fold desc="Helpers" defaultstate="collapsed">
-    public String getUserId(Object object) {
-        if (object == null) return null;
-        if (object instanceof String value) return value;
-        if (object instanceof User value) return value.id;
-        if (object instanceof Member value) return value.user.id;
-        return Objects.toString(object);
-    }
-    
-    public String getGuildId(Object object) {
-        if (object == null) return null;
-        if (object instanceof String value) return value;
-        if (object instanceof Guild value) return value.id;
-        if (object instanceof Guild.Preview value) return value.id;
-        return Objects.toString(object);
     }
     
     @SuppressWarnings("unchecked")
@@ -474,6 +483,10 @@ public class DiscordAPI {
         }
         this.cache.store(snowflake);
         return template;
+    }
+    
+    protected boolean shouldCache(Object entity) {
+        return (entity instanceof User || entity instanceof Guild || entity instanceof Channel);
     }
     
     @SuppressWarnings("unchecked")
@@ -500,20 +513,12 @@ public class DiscordAPI {
         this.cache.clean();
     }
     
-    protected boolean shouldCache(Object entity) {
-        return (entity instanceof User || entity instanceof Guild || entity instanceof Channel);
-    }
-    
     public String getApplicationID() {
         if (application == null) {
             bot.await();
             this.application = bot.self.id;
         }
         return application;
-    }
-    
-    public static DiscordException unlinkedEntity(Entity entity) {
-        return new DiscordException("The object " + entity.debugName() + " is not linked to a DiscordAPI.");
     }
     //</editor-fold>
     

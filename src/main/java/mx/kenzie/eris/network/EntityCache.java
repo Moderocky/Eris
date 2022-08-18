@@ -13,10 +13,10 @@ import java.util.Set;
 
 public class EntityCache {
     
-    public Set<Class<? extends Snowflake>> permitted = new HashSet<>();
-    protected final Map<String, WeakReference<Snowflake>> map;
-    protected boolean shouldCache;
     public final Json.JsonHelper helper = new Json.JsonHelper();
+    protected final Map<String, WeakReference<Snowflake>> map;
+    public Set<Class<? extends Snowflake>> permitted = new HashSet<>();
+    protected boolean shouldCache;
     
     public EntityCache() {
         this(new HashMap<>());
@@ -39,6 +39,14 @@ public class EntityCache {
             return thing;
         }
         return (Type) reference.get();
+    }
+    
+    public void store(Snowflake entity) {
+        if (!shouldCache) return;
+        if (entity == null || entity.id == null) throw new DiscordException("Unable to handle entity: " + entity);
+        synchronized (map) {
+            this.map.put(entity.id, new WeakReference<>(entity));
+        }
     }
     
     @SuppressWarnings("unchecked")
@@ -65,14 +73,6 @@ public class EntityCache {
         if (reference == null) return null;
         final Entity entity = reference.get();
         return (Type) entity;
-    }
-    
-    public void store(Snowflake entity) {
-        if (!shouldCache) return;
-        if (entity == null || entity.id == null) throw new DiscordException("Unable to handle entity: " + entity);
-        synchronized (map) {
-            this.map.put(entity.id, new WeakReference<>(entity));
-        }
     }
     
     public void clean() {

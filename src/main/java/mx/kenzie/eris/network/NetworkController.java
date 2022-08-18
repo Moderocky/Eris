@@ -44,9 +44,9 @@ public class NetworkController implements Closeable {
     public final AtomicInteger sequence = new AtomicInteger();
     
     public final Json.JsonHelper helper = new Json.JsonHelper();
+    protected final Bot bot;
     protected WebSocket socket;
     private HttpClient client = HttpClient.newHttpClient();
-    protected final Bot bot;
     
     public NetworkController(String base, Bot bot) {
         this.base = base;
@@ -120,6 +120,15 @@ public class NetworkController implements Closeable {
         }
     }
     
+    private Incoming getPayload(Json json) {
+        final Map<String, Object> map = json.toMap();
+        final Integer code = (Integer) map.get("op");
+        final Class<? extends Incoming> type = codes.getOrDefault(code, Incoming.class);
+        final Incoming payload = helper.createObject(type);
+        this.helper.mapToObject(payload, type, map);
+        return payload;
+    }
+    
     public Incoming getPayload(InputStream data) {
         try (final Json json = new Json(data)) {
             return this.getPayload(json);
@@ -132,15 +141,6 @@ public class NetworkController implements Closeable {
             if (sequence < this.sequence.get()) return;
             this.sequence.set(sequence);
         }
-    }
-    
-    private Incoming getPayload(Json json) {
-        final Map<String, Object> map = json.toMap();
-        final Integer code = (Integer) map.get("op");
-        final Class<? extends Incoming> type = codes.getOrDefault(code, Incoming.class);
-        final Incoming payload = helper.createObject(type);
-        this.helper.mapToObject(payload, type, map);
-        return payload;
     }
     
     public WebSocket openSocket(String url) {
@@ -190,6 +190,12 @@ public class NetworkController implements Closeable {
         return this.post(path, publisher, headers);
     }
     
+    protected HttpResponse<InputStream> post(String path, HttpRequest.BodyPublisher publisher, String... headers) throws IOException, InterruptedException {
+        final URI uri = URI.create(base + path);
+        final HttpRequest request = HttpRequest.newBuilder(uri).POST(publisher).headers(headers).build();
+        return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+    }
+    
     public HttpResponse<InputStream> post(String path, Path file, String... headers) throws IOException, InterruptedException {
         final HttpRequest.BodyPublisher publisher = HttpRequest.BodyPublishers.ofFile(file);
         return this.post(path, publisher, headers);
@@ -205,22 +211,16 @@ public class NetworkController implements Closeable {
         return this.patch(path, publisher, headers);
     }
     
-    public HttpResponse<Void> delete(String path, String... headers) throws IOException, InterruptedException {
-        final URI uri = URI.create(base + path);
-        final HttpRequest request = HttpRequest.newBuilder(uri).DELETE().headers(headers).build();
-        return client.send(request, HttpResponse.BodyHandlers.discarding());
-    }
-    
-    protected HttpResponse<InputStream> post(String path, HttpRequest.BodyPublisher publisher, String... headers) throws IOException, InterruptedException {
-        final URI uri = URI.create(base + path);
-        final HttpRequest request = HttpRequest.newBuilder(uri).POST(publisher).headers(headers).build();
-        return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
-    }
-    
     protected HttpResponse<InputStream> patch(String path, HttpRequest.BodyPublisher publisher, String... headers) throws IOException, InterruptedException {
         final URI uri = URI.create(base + path);
         final HttpRequest request = HttpRequest.newBuilder(uri).method("PATCH", publisher).headers(headers).build();
         return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+    }
+    
+    public HttpResponse<Void> delete(String path, String... headers) throws IOException, InterruptedException {
+        final URI uri = URI.create(base + path);
+        final HttpRequest request = HttpRequest.newBuilder(uri).DELETE().headers(headers).build();
+        return client.send(request, HttpResponse.BodyHandlers.discarding());
     }
     
 }

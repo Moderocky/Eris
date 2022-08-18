@@ -171,7 +171,7 @@ public class Interaction extends Entity implements Event {
             for (final Input input : inputs) {
                 if (!id.equals(input.custom_id)) continue;
                 if (input.values != null) return input.values;
-                if (input.value != null) return new String[]{input.value};
+                if (input.value != null) return new String[] {input.value};
                 return new String[0];
             }
             return new String[0];

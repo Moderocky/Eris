@@ -46,7 +46,7 @@ public class Message extends UnsentMessage {
     
     public Message(String content, Button... buttons) {
         this.content = content;
-        this.components = new Component[]{new ActionRow(buttons)};
+        this.components = new Component[] {new ActionRow(buttons)};
     }
     
     public Message(Embed... embeds) {
