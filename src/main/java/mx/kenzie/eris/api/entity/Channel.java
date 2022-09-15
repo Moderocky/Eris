@@ -27,6 +27,22 @@ public class Channel extends CreateChannel {
         this.type = type;
     }
     
+    public ThreadRequest getPublicArchivedThreads() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
+        final ThreadRequest request = new ThreadRequest();
+        this.api.get("/channels/" + id + "/threads/archived/public", request)
+            .exceptionally(request::error).thenAccept(Lazy::finish);
+        return request;
+    }
+    
+    public ThreadRequest getPrivateArchivedThreads() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
+        final ThreadRequest request = new ThreadRequest();
+        this.api.get("/channels/" + id + "/threads/archived/private", request)
+            .exceptionally(request::error).thenAccept(Lazy::finish);
+        return request;
+    }
+    
     public RequestBuilder<Thread> createThread(String name) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final Thread thread = new Thread();
@@ -85,7 +101,8 @@ public class Channel extends CreateChannel {
     public boolean isText() {
         if (name == null) this.await();
         return switch (type) {
-            case ChannelType.DM, ChannelType.GROUP_DM, ChannelType.GUILD_TEXT, ChannelType.GUILD_NEWS, ChannelType.GUILD_NEWS_THREAD, ChannelType.GUILD_PUBLIC_THREAD, ChannelType.GUILD_PRIVATE_THREAD ->
+            case ChannelType.DM, ChannelType.GROUP_DM, ChannelType.GUILD_TEXT, ChannelType.GUILD_NEWS,
+                ChannelType.GUILD_NEWS_THREAD, ChannelType.GUILD_PUBLIC_THREAD, ChannelType.GUILD_PRIVATE_THREAD ->
                 true;
             default -> false;
         };
@@ -103,6 +120,16 @@ public class Channel extends CreateChannel {
     public BulkEntity<Message> getPinnedMessages() {
         if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
         return BulkEntity.of(api, Message.class, list -> this.api.get("/channels/" + id + "/pins", null, list));
+    }
+    
+    public class ThreadRequest extends Lazy {
+        public Thread[] threads = new Thread[0];
+        public Thread.Member[] members = new Thread.Member[0];
+        public boolean has_more;
+        
+        public Channel getOwner() {
+            return Channel.this;
+        }
     }
     
     public class ResultMessages extends BulkEntity<Message> {

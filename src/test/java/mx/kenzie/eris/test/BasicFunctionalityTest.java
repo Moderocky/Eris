@@ -20,7 +20,7 @@ public class BasicFunctionalityTest {
     static DiscordAPI api;
     static Guild guild;
     static Channel channel;
-
+    
     static {
         final InputStream stream = BasicFunctionalityTest.class.getClassLoader().getResourceAsStream("token.json");
         assert stream != null;

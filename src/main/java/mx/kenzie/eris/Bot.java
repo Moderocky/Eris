@@ -318,7 +318,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         resume.data.sequence = this.getSequence();
         this.dispatch(resume);
     }
-
+    
     protected void dispatch(Outgoing payload) {
         this.network.sendPayload(payload);
     }

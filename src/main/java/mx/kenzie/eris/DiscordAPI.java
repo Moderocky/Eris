@@ -4,6 +4,7 @@ import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.JsonException;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.annotation.Accept;
+import mx.kenzie.eris.api.entity.Thread;
 import mx.kenzie.eris.api.entity.*;
 import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.entity.command.CreateCommand;
@@ -519,6 +520,15 @@ public class DiscordAPI {
             this.application = bot.self.id;
         }
         return application;
+    }
+    
+    public <IGuild> LazyList<Thread> getActiveThreads(IGuild guild) {
+        final String id = this.getGuildId(guild);
+        final LazyList<Thread> threads = new LazyList<>(Thread.class, new ArrayList<>());
+        final CompletableFuture<LazyList<Thread>> future;
+        future = this.get("/guilds/" + id + "/threads/active", threads);
+        future.exceptionally(threads::error).thenAccept(Lazy::finish);
+        return threads;
     }
     //</editor-fold>
     

@@ -110,6 +110,11 @@ public class Guild extends Snowflake {
         return roles0;
     }
     
+    public LazyList<Thread> getActiveThreads() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        return this.api.getActiveThreads(this);
+    }
+    
     public LazyList<Role> getRoles() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return this.api.getRoles(this);
