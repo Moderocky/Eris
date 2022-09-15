@@ -15,6 +15,7 @@ import mx.kenzie.eris.api.entity.message.UnsentMessage;
 import mx.kenzie.eris.api.event.Interaction;
 import mx.kenzie.eris.api.utility.LazyList;
 import mx.kenzie.eris.api.utility.MultiBody;
+import mx.kenzie.eris.data.Payload;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.error.APIException;
 import mx.kenzie.eris.error.DiscordException;
@@ -524,10 +525,24 @@ public class DiscordAPI {
     
     public <IGuild> LazyList<Thread> getActiveThreads(IGuild guild) {
         final String id = this.getGuildId(guild);
-        final LazyList<Thread> threads = new LazyList<>(Thread.class, new ArrayList<>());
-        final CompletableFuture<LazyList<Thread>> future;
-        future = this.get("/guilds/" + id + "/threads/active", threads);
-        future.exceptionally(threads::error).thenAccept(Lazy::finish);
+        final ArrayList<Thread> list = new ArrayList<>();
+        final LazyList<Thread> threads = new LazyList<>(Thread.class, list);
+        class Result extends Payload {
+            public Thread[] threads = new Thread[0];
+        }
+        final CompletableFuture<Result> future;
+        final Result result = new Result();
+        future = this.get("/guilds/" + id + "/threads/active", result);
+        future.exceptionally(throwable -> {
+            threads.error(throwable);
+            return new Result();
+        }).thenAccept(thing -> {
+            for (final Thread thread : result.threads) {
+                thread.api = this;
+                list.add(thread);
+            }
+            threads.finish();
+        });
         return threads;
     }
     //</editor-fold>

@@ -23,16 +23,21 @@ import java.util.function.Consumer;
  * The methods of a lazy object are safe to use outside synchronization.
  */
 public abstract class Lazy extends Entity {
-    private transient final Object lock = new Object();
+    private transient Object lock = new Object();
     private transient volatile boolean ready0;
     private transient DiscordException exception;
+    
+    private Object lock() { // may get written into heap memory so field is not set :(
+        if (lock == null) lock = new Object();
+        return lock;
+    }
     
     @Contract(pure = true)
     public void await(long timeout) {
         try {
-            synchronized (lock) {
+            synchronized (this.lock()) {
                 if (this.ready()) return;
-                this.lock.wait(timeout);
+                this.lock().wait(timeout);
             }
         } catch (Throwable ex) {
             this.exception = new DiscordException(ex);
@@ -55,8 +60,8 @@ public abstract class Lazy extends Entity {
         synchronized (this) {
             this.ready0 = true;
         }
-        synchronized (lock) {
-            this.lock.notifyAll();
+        synchronized (this.lock()) {
+            this.lock().notifyAll();
         }
     }
     
@@ -75,8 +80,8 @@ public abstract class Lazy extends Entity {
             else exception = new DiscordException(ex);
             this.ready0 = true;
         }
-        synchronized (lock) {
-            this.lock.notifyAll();
+        synchronized (this.lock()) {
+            this.lock().notifyAll();
         }
         return (Type) this;
     }
@@ -105,9 +110,9 @@ public abstract class Lazy extends Entity {
     @Contract(pure = true)
     public void await() {
         try {
-            synchronized (lock) {
+            synchronized (this.lock()) {
                 if (this.ready()) return;
-                this.lock.wait();
+                this.lock().wait();
             }
         } catch (Throwable ex) {
             this.exception = new DiscordException(ex);

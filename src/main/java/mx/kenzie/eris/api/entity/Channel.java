@@ -31,7 +31,11 @@ public class Channel extends CreateChannel {
         if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
         final ThreadRequest request = new ThreadRequest();
         this.api.get("/channels/" + id + "/threads/archived/public", request)
-            .exceptionally(request::error).thenAccept(Lazy::finish);
+            .exceptionally(request::error).thenApply(result -> {
+                for (final Thread thread : result.threads) thread.api = api;
+                for (final Thread.Member member : result.members) member.api = api;
+                return result;
+            }).thenAccept(Lazy::finish);
         return request;
     }
     
@@ -39,7 +43,11 @@ public class Channel extends CreateChannel {
         if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
         final ThreadRequest request = new ThreadRequest();
         this.api.get("/channels/" + id + "/threads/archived/private", request)
-            .exceptionally(request::error).thenAccept(Lazy::finish);
+            .exceptionally(request::error).thenApply(result -> {
+                for (final Thread thread : result.threads) thread.api = api;
+                for (final Thread.Member member : result.members) member.api = api;
+                return result;
+            }).thenAccept(Lazy::finish);
         return request;
     }
     

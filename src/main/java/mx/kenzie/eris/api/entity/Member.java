@@ -15,6 +15,7 @@ public class Member extends ModifyMember {
     
     public boolean hasPermission(long permission) {
         if (permissions == null && permissions0 == 0) this.await();
+        if (permissions == null) permissions = "0"; // solve null during conversion
         if (permissions0 == 0) permissions0 = Long.parseLong(permissions);
         return (permissions0 & permission) != 0;
     }
