@@ -528,7 +528,7 @@ public class DiscordAPI {
         final ArrayList<Thread> list = new ArrayList<>();
         final LazyList<Thread> threads = new LazyList<>(Thread.class, list);
         class Result extends Payload {
-            public Thread[] threads = new Thread[0];
+            public final Thread[] threads = new Thread[0];
         }
         final CompletableFuture<Result> future;
         final Result result = new Result();

@@ -1,6 +1,7 @@
 package mx.kenzie.eris.api.utility;
 
 import mx.kenzie.argo.Json;
+import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.Entity;
@@ -8,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 @SuppressWarnings("unchecked")
 public class LazyList<Type> extends Lazy implements List<Type> {
@@ -187,6 +190,10 @@ public class LazyList<Type> extends Lazy implements List<Type> {
     public List<Type> subList(int fromIndex, int toIndex) {
         this.await();
         return list.subList(fromIndex, toIndex);
+    }
+    
+    public void forEachAsync(Consumer<? super Type> action, Bot bot) {
+        for (final Type thing : this) CompletableFuture.runAsync(() -> action.accept(thing), bot.executor);
     }
     
     @Override

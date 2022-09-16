@@ -27,11 +27,6 @@ public abstract class Lazy extends Entity {
     private transient volatile boolean ready0;
     private transient DiscordException exception;
     
-    private Object lock() { // may get written into heap memory so field is not set :(
-        if (lock == null) lock = new Object();
-        return lock;
-    }
-    
     @Contract(pure = true)
     public void await(long timeout) {
         try {
@@ -42,6 +37,11 @@ public abstract class Lazy extends Entity {
         } catch (Throwable ex) {
             this.exception = new DiscordException(ex);
         }
+    }
+    
+    private Object lock() { // may get written into heap memory so field is not set :(
+        if (lock == null) lock = new Object();
+        return lock;
     }
     
     @Contract(pure = true)
@@ -86,7 +86,7 @@ public abstract class Lazy extends Entity {
         return (Type) this;
     }
     
-    @Contract(pure = true)
+    @Contract(pure = false)
     @SuppressWarnings("unchecked")
     public <Type extends Lazy> CompletableFuture<Void> whenReady(Consumer<Type> consumer, Consumer<DiscordException> error) {
         return CompletableFuture.runAsync(() -> {
@@ -119,7 +119,7 @@ public abstract class Lazy extends Entity {
         }
     }
     
-    @Contract(pure = true)
+    @Contract(pure = false)
     public <Type extends Lazy> CompletableFuture<Void> whenReady(Consumer<Type> consumer) {
         return this.<Type>whenReady().thenAccept(consumer);
     }
