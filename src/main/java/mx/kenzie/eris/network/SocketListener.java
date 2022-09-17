@@ -7,7 +7,7 @@ import mx.kenzie.eris.data.incoming.Incoming;
 import java.net.http.WebSocket;
 import java.util.concurrent.CompletionStage;
 
-public class SocketListener implements WebSocket.Listener { // TODO
+public class SocketListener implements WebSocket.Listener {
     
     protected final NetworkController network;
     private volatile StringBuilder builder = new StringBuilder();

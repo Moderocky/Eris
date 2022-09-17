@@ -1,5 +1,6 @@
 package mx.kenzie.eris.api.entity;
 
+import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.utility.BulkEntity;
@@ -13,6 +14,14 @@ public class Thread extends Channel {
     public int message_count, member_count, default_auto_archive_duration;
     public Payload thread_metadata;
     public Payload member;
+    public @Optional String[] member_ids_preview;
+    public String[] applied_tags = new String[0];
+    
+    public boolean isForumThread() {
+        if (applied_tags.length > 0) return true;
+        this.await();
+        return this.api.getChannel(parent_id).isForum();
+    }
     
     public Thread join() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);

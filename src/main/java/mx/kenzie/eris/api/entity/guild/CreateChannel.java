@@ -6,7 +6,6 @@ import mx.kenzie.eris.api.entity.User;
 import mx.kenzie.eris.data.Payload;
 
 public abstract class CreateChannel extends Snowflake {
-    
     public int type;
     public String name;
     public @Optional Integer position, bitrate, user_limit, rate_limit_per_user, video_quality_mode, default_auto_archive_duration;

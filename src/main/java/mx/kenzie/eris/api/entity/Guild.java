@@ -5,10 +5,7 @@ import mx.kenzie.argo.meta.Name;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.command.Command;
-import mx.kenzie.eris.api.entity.guild.Ban;
-import mx.kenzie.eris.api.entity.guild.CreateChannel;
-import mx.kenzie.eris.api.entity.guild.CreateRole;
-import mx.kenzie.eris.api.entity.guild.Rule;
+import mx.kenzie.eris.api.entity.guild.*;
 import mx.kenzie.eris.api.utility.BulkEntity;
 import mx.kenzie.eris.api.utility.LazyList;
 import mx.kenzie.eris.data.Payload;
@@ -57,6 +54,14 @@ public class Guild extends Snowflake {
         this.api.get("/guilds/" + this.id + "/emojis/" + emoji.id, null, emoji)
             .exceptionally(emoji::error).thenAccept(Lazy::finish);
         return emoji;
+    }
+    
+    public <IChannel> Channel getChannel(IChannel id) {
+        return api.getChannel(id + "");
+    }
+    
+    public <IChannel> Forum getForum(IChannel id) {
+        return api.getForumChannel(id + "");
     }
     
     public Command registerCommand(Command command) {

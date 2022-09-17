@@ -119,6 +119,10 @@ public abstract class Lazy extends Entity {
         }
     }
     
+    public void report() {
+        if (!this.successful()) this.error().printStackTrace();
+    }
+    
     @Contract(pure = false)
     public <Type extends Lazy> CompletableFuture<Void> whenReady(Consumer<Type> consumer) {
         return this.<Type>whenReady().thenAccept(consumer);

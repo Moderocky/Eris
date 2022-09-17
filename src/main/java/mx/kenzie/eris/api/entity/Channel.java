@@ -116,6 +116,11 @@ public class Channel extends CreateChannel {
         };
     }
     
+    public boolean isForum() {
+        if (name == null) this.await();
+        return type == ChannelType.GUILD_FORUM;
+    }
+    
     public Message send(Message message) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return api.sendMessage(this, message);

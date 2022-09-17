@@ -9,6 +9,7 @@ import mx.kenzie.eris.api.entity.*;
 import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.entity.command.CreateCommand;
 import mx.kenzie.eris.api.entity.guild.Ban;
+import mx.kenzie.eris.api.entity.guild.Forum;
 import mx.kenzie.eris.api.entity.guild.ModifyMember;
 import mx.kenzie.eris.api.entity.message.Attachment;
 import mx.kenzie.eris.api.entity.message.UnsentMessage;
@@ -48,19 +49,6 @@ public class DiscordAPI {
     
     public CompletableFuture<?> dispatch(Outgoing payload) {
         return this.network.sendPayload(payload);
-    }
-    
-    //<editor-fold desc="Request Helpers" defaultstate="collapsed">
-    @SuppressWarnings("all")
-    public CompletableFuture<InputStream> request(String type, String path, String body) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return this.network.request(type, path, body, bot.headers).body();
-            } catch (IOException | InterruptedException ex) {
-                if (Bot.DEBUG_MODE) ex.printStackTrace();
-                throw new DiscordException(ex);
-            }
-        });
     }
     
     @SuppressWarnings("all")
@@ -174,12 +162,12 @@ public class DiscordAPI {
             return object;
         });
     }
-    //</editor-fold>
     
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> post(String path, String body, Type object) {
         return this.request("POST", path, body, object);
     }
+    //</editor-fold>
     
     public Message sendMessage(long channel, Message message) {
         return this.sendMessage(Long.toString(channel), message);
@@ -219,11 +207,11 @@ public class DiscordAPI {
         this.post("/users/@me/channels", "{\"recipient_id\":" + id + "}", channel).thenAccept(Lazy::finish);
         return channel;
     }
-    //</editor-fold>
     
     public Channel getChannel(long id) {
         return this.getChannel(Long.toString(id));
     }
+    //</editor-fold>
     
     public Channel getChannel(String id) {
         final Channel channel = cache.getOrUse(id, new Channel());
@@ -239,10 +227,18 @@ public class DiscordAPI {
         return this.request("GET", path, null, object);
     }
     
+    public Forum getForumChannel(String id) {
+        final Forum channel = cache.getOrUse(id, new Forum());
+        channel.api = this;
+        channel.id = id;
+        cache.store(channel);
+        this.get("/channels/" + id, channel).thenAccept(Lazy::finish);
+        return channel;
+    }
+    
     public User getUser(long id) {
         return this.getUser(Long.toString(id));
     }
-    //</editor-fold>
     
     public User getUser(String id) {
         final User user = cache.getOrUse(id, new User());
@@ -259,6 +255,7 @@ public class DiscordAPI {
         if (user instanceof Self self) this.get("/users/@me", self).thenAccept(Lazy::finish);
         else this.get("/users/" + user.id, user).thenAccept(Lazy::finish);
     }
+    //</editor-fold>
     
     //<editor-fold desc="Guilds" defaultstate="collapsed">
     public Guild getGuild(long id) {
@@ -272,7 +269,6 @@ public class DiscordAPI {
         this.get("/guilds/" + id, guild).thenAccept(Lazy::finish);
         return guild;
     }
-    //</editor-fold>
     
     public Guild.Preview getGuildPreview(long id) {
         return this.getGuildPreview(Long.toString(id));
@@ -285,6 +281,7 @@ public class DiscordAPI {
         this.get("/guilds/" + id + "/preview", preview).thenAccept(Lazy::finish);
         return preview;
     }
+    //</editor-fold>
     
     public LazyList<Channel> getChannels(Guild guild) {
         final List<Object> data = new ArrayList<>();
@@ -360,7 +357,6 @@ public class DiscordAPI {
     public <Type> CompletableFuture<Type> patch(String path, String body, Type object) {
         return this.request("PATCH", path, body, object);
     }
-    //</editor-fold>
     
     public void update(Member member) {
         if (!member.isValid()) throw new DiscordException("Unable to update member - user ID unknown.");
@@ -378,14 +374,12 @@ public class DiscordAPI {
         this.get("/guilds/" + gid + "/bans/" + uid, ban).thenAccept(Lazy::finish);
         return ban;
     }
+    //</editor-fold>
     
     public <IGuild, IUser> void createBan(IGuild guild, IUser user, Ban ban) {
         final String gid = this.getGuildId(guild), uid = this.getUserId(user);
         this.request("PUT", "/guilds/" + gid + "/bans/" + uid, Json.toJson(ban), null).thenRun(ban::finish);
     }
-    
-    
-    //</editor-fold>
     
     public <
         @Accept({long.class, String.class, Guild.class}) IGuild,
@@ -394,7 +388,6 @@ public class DiscordAPI {
         final String gid = this.getGuildId(guild), uid = this.getUserId(user);
         this.request("DELETE", "/guilds/" + gid + "/bans/" + uid, null, null);
     }
-    //</editor-fold>
     
     public void update(Guild guild) {
         guild.unready();
@@ -404,10 +397,14 @@ public class DiscordAPI {
             .exceptionally(guild::error).thenAccept(Lazy::finish);
     }
     
+    
+    //</editor-fold>
+    
     //<editor-fold desc="Interactions" defaultstate="collapsed">
     public Command registerCommand(Command command) {
         return this.registerCommand(command, (String) null);
     }
+    //</editor-fold>
     
     public <IGuild> Command registerCommand(Command command, IGuild guild) {
         final String id = bot.self.id;
@@ -440,7 +437,6 @@ public class DiscordAPI {
             }
         });
     }
-    //</editor-fold>
     
     public <IGuild> LazyList<Command> getCommands(IGuild guild) {
         final String id = this.getGuildId(guild), self = this.getSelf().id;
@@ -457,6 +453,7 @@ public class DiscordAPI {
         assert bot.session != null : "Bot has not connected";
         return bot.self;
     }
+    //</editor-fold>
     
     public void interactionResponse(Interaction interaction, Interaction.Response response) {
         final String body = Json.toJson(response);
@@ -505,6 +502,7 @@ public class DiscordAPI {
     @SuppressWarnings("unchecked")
     public <Type> Type getRemote(String id, Class<Type> expected) {
         if (expected == Guild.class) return (Type) this.getGuild(id);
+        if (expected == Forum.class) return (Type) this.getForumChannel(id);
         if (expected == Channel.class) return (Type) this.getChannel(id);
         if (expected == User.class) return (Type) this.getUser(id);
         if (expected == Guild.Preview.class) return (Type) this.getGuildPreview(id);
@@ -528,22 +526,37 @@ public class DiscordAPI {
         final ArrayList<Thread> list = new ArrayList<>();
         final LazyList<Thread> threads = new LazyList<>(Thread.class, list);
         class Result extends Payload {
-            public final Thread[] threads = new Thread[0];
+            public Thread[] threads;
         }
-        final CompletableFuture<Result> future;
-        final Result result = new Result();
-        future = this.get("/guilds/" + id + "/threads/active", result);
-        future.exceptionally(throwable -> {
-            threads.error(throwable);
-            return new Result();
-        }).thenAccept(thing -> {
+        this.get("/guilds/" + id + "/threads/active").thenAccept(json -> {
+            final Result result = json.toObject(new Result(), Result.class);
             for (final Thread thread : result.threads) {
                 thread.api = this;
                 list.add(thread);
             }
             threads.finish();
+        }).exceptionally(throwable -> {
+            threads.error(throwable);
+            return null;
         });
         return threads;
+    }
+    
+    public CompletableFuture<Json> get(String path) {
+        return this.request("GET", path, null).thenApply(Json::new);
+    }
+    
+    //<editor-fold desc="Request Helpers" defaultstate="collapsed">
+    @SuppressWarnings("all")
+    public CompletableFuture<InputStream> request(String type, String path, String body) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return this.network.request(type, path, body, bot.headers).body();
+            } catch (IOException | InterruptedException ex) {
+                if (Bot.DEBUG_MODE) ex.printStackTrace();
+                throw new DiscordException(ex);
+            }
+        });
     }
     //</editor-fold>
     
