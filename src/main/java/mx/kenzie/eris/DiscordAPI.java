@@ -23,9 +23,12 @@ import mx.kenzie.eris.error.DiscordException;
 import mx.kenzie.eris.network.CacheJson;
 import mx.kenzie.eris.network.EntityCache;
 import mx.kenzie.eris.network.NetworkController;
+import sun.reflect.ReflectionFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -470,6 +473,43 @@ public class DiscordAPI {
         else return null;
     }
     
+    public <Type extends Entity> Type makeEntity(Class<Type> type, InputStream data) {
+        try (final Json json = new Json(data)) {
+            final Type template = this.makeEntity(this.makeEntity(type));
+            json.toObject(this.makeEntity(template));
+            return template;
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    public <Type extends Entity> Type makeEntity(Type template) {
+        if (!(template instanceof Snowflake snowflake)) return template;
+        if (!this.shouldCache(template)) return template;
+        final Snowflake cached = cache.get(snowflake.id);
+        if (cached != null) return (Type) cached;
+        this.cache.store(snowflake);
+        return template;
+    }
+    
+    public <Type extends Payload> Type makeEntity(Class<Type> type) {
+        final TypeMaker<Type> maker = new TypeMaker<>(type);
+        maker.identifyConstructor();
+        final Type thing = maker.createInstance();
+        if (thing instanceof Entity entity) entity.api = this;
+        return thing;
+    }
+    
+    protected boolean shouldCache(Object entity) {
+        return (entity instanceof User || entity instanceof Guild || entity instanceof Channel);
+    }
+    
+    public <Type extends Entity> Type makeEntity(Type template, InputStream data) {
+        try (final Json json = new Json(data)) {
+            json.toObject(this.makeEntity(template));
+        }
+        return template;
+    }
+    
     @SuppressWarnings("unchecked")
     public <Type extends Entity> Type makeEntity(Type template, Map<String, Object> data) {
         this.cache.helper.mapToObject(template, template.getClass(), data);
@@ -482,21 +522,6 @@ public class DiscordAPI {
         }
         this.cache.store(snowflake);
         return template;
-    }
-    
-    protected boolean shouldCache(Object entity) {
-        return (entity instanceof User || entity instanceof Guild || entity instanceof Channel);
-    }
-    
-    @SuppressWarnings("unchecked")
-    public <Type extends Entity> Type makeEntity(Type template) {
-        if (!(template instanceof Snowflake snowflake)) return template;
-        if (!this.shouldCache(template)) return template;
-        final Snowflake cached = cache.get(snowflake.id);
-        if (cached != null) return (Type) cached;
-        this.cache.store(snowflake);
-        return template;
-        
     }
     
     @SuppressWarnings("unchecked")
@@ -546,7 +571,6 @@ public class DiscordAPI {
         return this.request("GET", path, null).thenApply(Json::new);
     }
     
-    //<editor-fold desc="Request Helpers" defaultstate="collapsed">
     @SuppressWarnings("all")
     public CompletableFuture<InputStream> request(String type, String path, String body) {
         return CompletableFuture.supplyAsync(() -> {
@@ -558,6 +582,46 @@ public class DiscordAPI {
             }
         });
     }
-    //</editor-fold>
+    
+    private static class TypeMaker<Type> {
+        protected final Class<Type> type;
+        protected Constructor<Type> constructor;
+        
+        private TypeMaker(Class<Type> type) {
+            this.type = type;
+        }
+        
+        private void identifyConstructor() {
+            this.constructor = this.identifyInitialConstructor();
+            assert constructor != null;
+        }
+        
+        @SuppressWarnings("unchecked")
+        private Constructor<Type> identifyInitialConstructor() {
+            if (!type.isLocalClass()) try {
+                Constructor<Type> constructor = type.getDeclaredConstructor();
+                final boolean result = constructor.trySetAccessible();
+                assert result || constructor.canAccess(null);
+                return constructor;
+            } catch (NoSuchMethodException ignore) {
+            }
+            try {
+                final Constructor<?> shift = Object.class.getConstructor();
+                return (Constructor<Type>) ReflectionFactory.getReflectionFactory()
+                    .newConstructorForSerialization(type, shift);
+            } catch (NoSuchMethodException ex) {
+                throw new JsonException("Unable to create '" + type.getSimpleName() + "' object.", ex);
+            }
+        }
+        
+        private Type createInstance() {
+            try {
+                return constructor.newInstance();
+            } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                throw new JsonException("Unable to create '" + type.getSimpleName() + "' object.", e);
+            }
+        }
+        
+    }
     
 }
