@@ -50,6 +50,10 @@ public class DiscordAPI {
         return new DiscordException("The object " + entity.debugName() + " is not linked to a DiscordAPI.");
     }
     
+    public EntityCache getCache() {
+        return cache;
+    }
+    
     public CompletableFuture<?> dispatch(Outgoing payload) {
         return this.network.sendPayload(payload);
     }

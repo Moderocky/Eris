@@ -104,6 +104,10 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     private ScheduledFuture<?> heartbeat;
     private transient boolean shouldResume = false;
     
+    private Bot() {
+        this("token");
+    }
+    
     public Bot(String token, int... intents) {
         this.token = token;
         this.headers[1] = "Bot " + token;

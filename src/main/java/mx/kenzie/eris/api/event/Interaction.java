@@ -109,6 +109,10 @@ public class Interaction extends Entity implements Event {
         public @Optional
         @Any Callback data;
         
+        private GenericResponse() {
+            this(null);
+        }
+        
         public GenericResponse(Callback callback) {
             this.data = callback;
         }
@@ -121,6 +125,10 @@ public class Interaction extends Entity implements Event {
     
     static class MessageResponse extends Response {
         public InteractionMessage data;
+        
+        private MessageResponse() {
+            this(null);
+        }
         
         public MessageResponse(Message message) {
             this.data = message;

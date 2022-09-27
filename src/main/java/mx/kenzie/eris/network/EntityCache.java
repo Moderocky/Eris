@@ -5,31 +5,33 @@ import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.api.entity.Snowflake;
 import mx.kenzie.eris.error.DiscordException;
 
-import java.lang.ref.WeakReference;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.lang.ref.SoftReference;
+import java.util.*;
 
 public class EntityCache {
     
     public final Json.JsonHelper helper = new Json.JsonHelper();
-    protected final Map<String, WeakReference<Snowflake>> map;
+    protected final Map<String, SoftReference<Snowflake>> map;
     public Set<Class<? extends Snowflake>> permitted = new HashSet<>();
     protected boolean shouldCache;
+    
+    public EntityCache(Class<? extends Snowflake>... permitted) {
+        this();
+        this.permitted.addAll(Arrays.asList(permitted));
+    }
     
     public EntityCache() {
         this(new HashMap<>());
     }
     
-    protected EntityCache(Map<String, WeakReference<Snowflake>> map) {
+    protected EntityCache(Map<String, SoftReference<Snowflake>> map) {
         this.map = map;
     }
     
     @SuppressWarnings("unchecked")
     public <Type extends Snowflake> Type getOrCreate(String id, Class<Type> type) {
         if (!shouldCache) return helper.createObject(type);
-        final WeakReference<Snowflake> reference;
+        final SoftReference<Snowflake> reference;
         synchronized (map) {
             reference = map.get(id);
         }
@@ -45,14 +47,14 @@ public class EntityCache {
         if (!shouldCache) return;
         if (entity == null || entity.id == null) throw new DiscordException("Unable to handle entity: " + entity);
         synchronized (map) {
-            this.map.put(entity.id, new WeakReference<>(entity));
+            this.map.put(entity.id, new SoftReference<>(entity));
         }
     }
     
     @SuppressWarnings("unchecked")
     public <Type extends Snowflake> Type getOrUse(String id, Type type) {
         if (!shouldCache) return type;
-        final WeakReference<Snowflake> reference;
+        final SoftReference<Snowflake> reference;
         synchronized (map) {
             reference = map.get(id);
         }
@@ -66,7 +68,7 @@ public class EntityCache {
     @SuppressWarnings("unchecked")
     public <Type extends Snowflake> Type get(String id) {
         if (!shouldCache) return null;
-        final WeakReference<Snowflake> reference;
+        final SoftReference<Snowflake> reference;
         synchronized (map) {
             reference = map.get(id);
         }
