@@ -31,6 +31,8 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.http.HttpResponse;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -49,6 +51,16 @@ public class DiscordAPI {
     
     public static DiscordException unlinkedEntity(Entity entity) {
         return new DiscordException("The object " + entity.debugName() + " is not linked to a DiscordAPI.");
+    }
+    
+    public static Instant getInstant(String timestamp) {
+        if (timestamp == null) return Instant.EPOCH;
+        return Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestamp));
+    }
+    
+    public static String getTimestamp(Instant instant) {
+        if (instant == null) return DateTimeFormatter.ISO_INSTANT.format(Instant.EPOCH);
+        return DateTimeFormatter.ISO_INSTANT.format(instant);
     }
     
     public EntityCache getCache() {

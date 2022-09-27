@@ -15,7 +15,12 @@ import mx.kenzie.eris.api.event.channel.DeleteChannel;
 import mx.kenzie.eris.api.event.channel.UpdateChannel;
 import mx.kenzie.eris.api.event.channel.UpdateChannelPins;
 import mx.kenzie.eris.api.event.guild.*;
+import mx.kenzie.eris.api.event.guild.invite.CreateInvite;
+import mx.kenzie.eris.api.event.guild.invite.DeleteInvite;
+import mx.kenzie.eris.api.event.message.BulkDeleteMessage;
+import mx.kenzie.eris.api.event.message.DeleteMessage;
 import mx.kenzie.eris.api.event.message.ReceiveMessage;
+import mx.kenzie.eris.api.event.message.UpdateMessage;
 import mx.kenzie.eris.api.event.thread.*;
 import mx.kenzie.eris.api.utility.WeakMap;
 import mx.kenzie.eris.data.Payload;
@@ -53,6 +58,9 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("READY", Ready.class);
         EVENT_LIST.put("RESUMED", Resumed.class);
         EVENT_LIST.put("MESSAGE_CREATE", ReceiveMessage.class);
+        EVENT_LIST.put("MESSAGE_UPDATE", UpdateMessage.class);
+        EVENT_LIST.put("MESSAGE_DELETE", DeleteMessage.class);
+        EVENT_LIST.put("MESSAGE_DELETE_BULK", BulkDeleteMessage.class);
         EVENT_LIST.put("INTERACTION_CREATE", Interaction.class);
         EVENT_LIST.put("GUILD_JOIN_REQUEST_UPDATE", UpdateJoinRequest.class);
         EVENT_LIST.put("GUILD_CREATE", IdentifyGuild.class);
@@ -60,6 +68,9 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("GUILD_DELETE", DeleteGuild.class);
         EVENT_LIST.put("GUILD_ROLE_CREATE", CreateGuildRole.class);
         EVENT_LIST.put("GUILD_ROLE_UPDATE", UpdateGuildRole.class);
+        EVENT_LIST.put("GUILD_ROLE_DELETE", DeleteGuildRole.class);
+        EVENT_LIST.put("INVITE_CREATE", CreateInvite.class);
+        EVENT_LIST.put("INVITE_DELETE", DeleteInvite.class);
         EVENT_LIST.put("GUILD_BAN_ADD", AddGuildBan.class);
         EVENT_LIST.put("GUILD_BAN_REMOVE", RemoveGuildBan.class);
         EVENT_LIST.put("GUILD_EMOJIS_UPDATE", UpdateGuildEmojis.class);
@@ -84,6 +95,8 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("THREAD_UPDATE_MEMBER", UpdateThreadMember.class);
         EVENT_LIST.put("THREAD_UPDATE_MEMBERS", UpdateThreadMembers.class);
         EVENT_LIST.put("PRESENCE_UPDATE", UpdatePresence.class);
+        EVENT_LIST.put("APPLICATION_COMMAND_PERMISSIONS_UPDATE", UpdateCommandPermissions.class);
+        EVENT_LIST.put("$INTERNAL_CLOSE_SOCKET", SocketClose.class);
     }
     
     public final ExecutorService executor = Executors.newCachedThreadPool();
@@ -104,7 +117,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     private ScheduledFuture<?> heartbeat;
     private transient boolean shouldResume = false;
     
-    private Bot() {
+    Bot() {
         this("token");
     }
     
