@@ -13,6 +13,7 @@ import mx.kenzie.eris.api.entity.guild.Forum;
 import mx.kenzie.eris.api.entity.guild.ModifyMember;
 import mx.kenzie.eris.api.entity.message.Attachment;
 import mx.kenzie.eris.api.entity.message.UnsentMessage;
+import mx.kenzie.eris.api.entity.voice.VoiceRegion;
 import mx.kenzie.eris.api.event.Interaction;
 import mx.kenzie.eris.api.utility.LazyList;
 import mx.kenzie.eris.api.utility.MultiBody;
@@ -109,7 +110,6 @@ public class DiscordAPI {
         }
     }
     
-    //<editor-fold desc="Messages" defaultstate="collapsed">
     public Message write(String content) {
         final Message message = new Message();
         message.api = this;
@@ -174,7 +174,6 @@ public class DiscordAPI {
     public <Type> CompletableFuture<Type> post(String path, String body, Type object) {
         return this.request("POST", path, body, object);
     }
-    //</editor-fold>
     
     public Message sendMessage(long channel, Message message) {
         return this.sendMessage(Long.toString(channel), message);
@@ -203,7 +202,6 @@ public class DiscordAPI {
         return message;
     }
     
-    //<editor-fold desc="Channels" defaultstate="collapsed">
     public Channel createDirectChannel(long id) {
         return this.createDirectChannel(Long.toString(id));
     }
@@ -218,7 +216,6 @@ public class DiscordAPI {
     public Channel getChannel(long id) {
         return this.getChannel(Long.toString(id));
     }
-    //</editor-fold>
     
     public Channel getChannel(String id) {
         final Channel channel = cache.getOrUse(id, new Channel());
@@ -262,9 +259,7 @@ public class DiscordAPI {
         if (user instanceof Self self) this.get("/users/@me", self).thenAccept(Lazy::finish);
         else this.get("/users/" + user.id, user).thenAccept(Lazy::finish);
     }
-    //</editor-fold>
     
-    //<editor-fold desc="Guilds" defaultstate="collapsed">
     public Guild getGuild(long id) {
         return this.getGuild(Long.toString(id));
     }
@@ -288,7 +283,6 @@ public class DiscordAPI {
         this.get("/guilds/" + id + "/preview", preview).thenAccept(Lazy::finish);
         return preview;
     }
-    //</editor-fold>
     
     public LazyList<Channel> getChannels(Guild guild) {
         final List<Object> data = new ArrayList<>();
@@ -321,7 +315,6 @@ public class DiscordAPI {
         return roles;
     }
     
-    //<editor-fold desc="Members" defaultstate="collapsed">
     public <IGuild, IUser> Member getMember(IGuild guild, IUser user) {
         final Member member = new Member(); // don't cache members due to the ID overload
         if (user instanceof User u) member.user = u;
@@ -333,7 +326,6 @@ public class DiscordAPI {
         return member;
     }
     
-    //<editor-fold desc="Helpers" defaultstate="collapsed">
     public String getUserId(Object object) {
         if (object == null) return null;
         if (object instanceof String value) return value;
@@ -374,14 +366,12 @@ public class DiscordAPI {
             .exceptionally(member::error).thenAccept(Lazy::finish);
     }
     
-    //<editor-fold desc="Bans" defaultstate="collapsed">
     public <IGuild, IUser> Ban getBan(IGuild guild, IUser user) {
         final String gid = this.getGuildId(guild), uid = this.getUserId(user);
         final Ban ban = new Ban();
         this.get("/guilds/" + gid + "/bans/" + uid, ban).thenAccept(Lazy::finish);
         return ban;
     }
-    //</editor-fold>
     
     public <IGuild, IUser> void createBan(IGuild guild, IUser user, Ban ban) {
         final String gid = this.getGuildId(guild), uid = this.getUserId(user);
@@ -404,14 +394,9 @@ public class DiscordAPI {
             .exceptionally(guild::error).thenAccept(Lazy::finish);
     }
     
-    
-    //</editor-fold>
-    
-    //<editor-fold desc="Interactions" defaultstate="collapsed">
     public Command registerCommand(Command command) {
         return this.registerCommand(command, (String) null);
     }
-    //</editor-fold>
     
     public <IGuild> Command registerCommand(Command command, IGuild guild) {
         final String id = bot.self.id;
@@ -455,12 +440,16 @@ public class DiscordAPI {
         return commands;
     }
     
-    //<editor-fold desc="Users" defaultstate="collapsed">
     public Self getSelf() {
         assert bot.session != null : "Bot has not connected";
         return bot.self;
     }
-    //</editor-fold>
+    
+    public LazyList<VoiceRegion> getVoiceRegions() {
+        final LazyList<VoiceRegion> list = new LazyList<>(VoiceRegion.class, new ArrayList<>());
+        this.get("/voice/regions", list).exceptionally(list::error).thenAccept(Lazy::finish);
+        return list;
+    }
     
     public void interactionResponse(Interaction interaction, Interaction.Response response) {
         final String body = Json.toJson(response);

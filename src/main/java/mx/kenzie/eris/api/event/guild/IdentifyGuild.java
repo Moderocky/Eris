@@ -3,6 +3,7 @@ package mx.kenzie.eris.api.event.guild;
 import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.entity.Channel;
 import mx.kenzie.eris.api.entity.Guild;
+import mx.kenzie.eris.api.entity.voice.VoiceState;
 import mx.kenzie.eris.data.Payload;
 
 public class IdentifyGuild extends Guild implements Event {
@@ -10,8 +11,9 @@ public class IdentifyGuild extends Guild implements Event {
     public String joined_at;
     public boolean large, unavailable;
     public int member_count;
+    public VoiceState[] voice_states;
     
-    public Payload[] voice_states, members, presences, stage_instances, guild_scheduled_events;
+    public Payload[] members, presences, stage_instances, guild_scheduled_events;
     public Channel[] channels;
     public Thread[] threads;
 //    member_count	integer	total number of members in this guild
@@ -22,4 +24,5 @@ public class IdentifyGuild extends Guild implements Event {
 //    presences	array of partial presence update objects	presences of the members in the guild, will only include non-offline members if the size is greater than large threshold
 //    stage_instances	array of stage instance objects	Stage instances in the guild
 //        guild_scheduled_events
+
 }

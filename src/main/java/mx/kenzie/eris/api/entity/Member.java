@@ -1,8 +1,9 @@
 package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.eris.api.entity.guild.ModifyMember;
+import mx.kenzie.eris.api.magic.Permission;
 
-public class Member extends ModifyMember {
+public class Member extends ModifyMember implements Permission {
     
     public User user = new User();
     public String avatar, joined_at, premium_since;
@@ -13,11 +14,12 @@ public class Member extends ModifyMember {
     
     private transient long permissions0;
     
-    public boolean hasPermission(long permission) {
+    @Override
+    public long permissions() {
         if (permissions == null && permissions0 == 0) this.await();
         if (permissions == null) permissions = "0"; // solve null during conversion
         if (permissions0 == 0) permissions0 = Long.parseLong(permissions);
-        return (permissions0 & permission) != 0;
+        return permissions0;
     }
     
     public boolean isValid() {

@@ -26,7 +26,10 @@ public class Guild extends Snowflake {
     public Integer max_presences, max_members, premium_subscription_count, max_video_channel_users, approximate_member_count, approximate_presence_count, hub_type;
     public String name, icon, icon_hash, splash, discovery_splash, owner_id, permissions, region, afk_channel_id, widget_channel_id, application_id, system_channel_id, rules_channel_id, vanity_url_code, description, banner, preferred_locale, public_updates_channel_id;
     public String[] features;
-    public Payload[] roles, emojis, stickers, embedded_activities;
+    public Role[] roles;
+    public Emoji[] emojis;
+    public Sticker[] stickers;
+    public Payload[] embedded_activities;
     public Payload welcome_screen, application_command_counts;
     private transient LazyList<Role> roles0;
     
