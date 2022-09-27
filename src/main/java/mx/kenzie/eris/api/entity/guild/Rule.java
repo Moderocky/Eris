@@ -16,6 +16,7 @@ public class Rule extends Snowflake {
     public static class Trigger extends Payload {
         public String[] keyword_filter, allow_list;
         public int[] presets;
+        public int mention_total_limit;
     }
     
     public static class Action extends Payload {

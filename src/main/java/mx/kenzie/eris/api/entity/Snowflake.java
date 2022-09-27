@@ -13,7 +13,9 @@ public class Snowflake extends Lazy implements Comparable<Snowflake> {
     public @Optional String id;
     private transient long id0;
     
-    protected Snowflake() {}
+    protected Snowflake() {
+    }
+    
     public Snowflake(long id) {
         this.id0 = id;
         this.id = Long.toString(id);
@@ -23,10 +25,10 @@ public class Snowflake extends Lazy implements Comparable<Snowflake> {
         this.id = id;
     }
     
-    @Contract(pure = true)
-    public long id() {
-        if (id0 < 1) return id0 = Long.parseLong(id);
-        return id0;
+    public static Snowflake from(Instant instant) {
+        final long timestamp = instant.toEpochMilli();
+        final long snowflake = (timestamp - 1420070400000L) << 22;
+        return new Snowflake(snowflake);
     }
     
     public String mention() {
@@ -50,20 +52,20 @@ public class Snowflake extends Lazy implements Comparable<Snowflake> {
         return (obj instanceof Snowflake snowflake) && Objects.equals(this.id, snowflake.id);
     }
     
-    public long timestamp() {
-        final long snowflake = this.id();
-        return (snowflake >> 22) + 1420070400000L;
-    }
-    
     public Instant getInstant() {
         final long timestamp = this.timestamp();
         return Instant.ofEpochMilli(timestamp);
     }
     
-    public static Snowflake from(Instant instant) {
-        final long timestamp = instant.toEpochMilli();
-        final long snowflake = (timestamp - 1420070400000L) << 22;
-        return new Snowflake(snowflake);
+    public long timestamp() {
+        final long snowflake = this.id();
+        return (snowflake >> 22) + 1420070400000L;
+    }
+    
+    @Contract(pure = true)
+    public long id() {
+        if (id0 < 1) return id0 = Long.parseLong(id);
+        return id0;
     }
     
     @Override

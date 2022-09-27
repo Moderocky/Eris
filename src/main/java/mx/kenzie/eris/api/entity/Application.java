@@ -23,8 +23,9 @@ public class Application extends Snowflake implements ApplicationFlags {
     public static class InstallParams extends Payload implements Permission {
         public String[] scopes;
         public String permissions;
-    
+        
         private transient long permissions0;
+        
         @Override
         public long permissions() {
             if (permissions == null) return permissions0;
