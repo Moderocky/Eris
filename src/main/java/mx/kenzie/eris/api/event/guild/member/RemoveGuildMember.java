@@ -1,4 +1,4 @@
-package mx.kenzie.eris.api.event.guild;
+package mx.kenzie.eris.api.event.guild.member;
 
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Event;
