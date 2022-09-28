@@ -243,10 +243,10 @@ public class DiscordAPI {
         return this.request("GET", path, null, object);
     }
     
-    public Forum getForumChannel(String id) {
-        final Forum channel = cache.getOrUse(id, new Forum());
+    public <IChannel> Forum getForumChannel(IChannel id) {
+        final Forum channel = cache.getOrUse(id + "", new Forum());
         channel.api = this;
-        channel.id = id;
+        channel.id = id + "";
         cache.store(channel);
         this.get("/channels/" + id, channel).thenAccept(Lazy::finish);
         return channel;

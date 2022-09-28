@@ -7,11 +7,14 @@ import mx.kenzie.eris.api.entity.Channel;
 import mx.kenzie.eris.api.entity.Guild;
 import mx.kenzie.eris.api.entity.Message;
 import mx.kenzie.eris.api.magic.Intents;
+import mx.kenzie.eris.network.EntityCache;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.InputStream;
+import java.time.Instant;
+import java.util.Arrays;
 
 public class BasicFunctionalityTest {
     
@@ -54,13 +57,13 @@ public class BasicFunctionalityTest {
         final Channel channel = api.getChannel(1001024258140540938L);
         assert channel.successful();
         final Message message = channel.getMessage(1001025353273327686L);
-        assert message.successful();
+        assert message.successful() : message.error().getMessage();
     }
     
     @Test
     public void retrieveMessage() {
         final Message message = channel.getMessage(1001025353273327686L);
-        assert message.successful();
+        assert message.successful() : message.error().getMessage();
         assert message.content.equals("message");
         assert message.author.id.equals("196709350469795841");
     }
@@ -70,11 +73,64 @@ public class BasicFunctionalityTest {
         final Channel channel = api.getChannel(1001024258140540938L);
         final Message message = channel.send(new Message("test"));
         message.await();
-        assert message.successful();
+        assert message.successful() : message.error().getMessage();
         message.delete();
         message.await();
-        assert message.successful();
+        assert message.successful() : message.error().getMessage();
     }
     
+    @Test
+    public void instantTest() {
+        final Instant instant = Instant.now();
+        final String timestamp = DiscordAPI.getTimestamp(instant);
+        final Instant reverted = DiscordAPI.getInstant(timestamp);
+        assert reverted.equals(instant) : "Time conversion was inaccurate.";
+    }
+    
+    @Test
+    public void entityCacheTest() {
+        final EntityCache cache = bot.getAPI().getCache();
+        assert cache != null : "Cache was null.";
+    }
+    
+    @Test
+    public void writeTest() {
+        final Message message = bot.getAPI().write("hello there");
+        assert message != null;
+        assert message.successful() : message.error().getMessage();
+    }
+    
+    @Test
+    public void sendMessageTest() {
+        final Message message = new Message("hello there");
+        message.addAttachment("test.txt", "test file.");
+        api.sendMessage(channel, message);
+        message.await();
+        assert message.successful() : message.error().getMessage();
+        assert message.content.equals("hello there");
+        message.content = "general kenobi";
+        message.edit();
+        message.await();
+        assert message.successful() : message.error().getMessage();
+        message.delete();
+        message.await();
+        assert message.successful() : message.error().getMessage();
+    }
+    
+    @Test
+    public void guildPreviewTest() {
+        final Guild.Preview preview = api.getGuildPreview(guild.id());
+        preview.await();
+        assert preview.successful();
+        assert preview.approximate_member_count > 0;
+        assert preview.approximate_presence_count > 0;
+        assert preview.name != null;
+        assert preview.icon != null;
+        assert preview.splash == null;
+        assert preview.discovery_splash == null;
+        assert preview.features.length == 0 : Arrays.toString(preview.features);
+        assert preview.emojis.length == 0 : Arrays.toString(preview.emojis);
+        assert preview.stickers.length == 0 : Arrays.toString(preview.stickers);
+    }
     
 }

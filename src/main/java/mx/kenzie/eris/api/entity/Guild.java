@@ -189,8 +189,9 @@ public class Guild extends Snowflake {
     
     public static class Preview extends Snowflake {
         public String name, icon, splash, discovery_splash, description;
-        public String[] features;
-        public Payload[] emojis, stickers;
+        public String[] features = new String[0];
+        public Emoji[] emojis = new Emoji[0];
+        public Sticker[] stickers = new Sticker[0];
         public int approximate_member_count, approximate_presence_count;
         
         public Guild getGuild() {

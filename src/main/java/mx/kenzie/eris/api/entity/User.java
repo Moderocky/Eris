@@ -12,6 +12,7 @@ public class User extends Snowflake {
     
     public int discriminator() {
         if (discriminator == null) this.await();
+        assert discriminator != null;
         if (discriminator0 < 1) discriminator0 = Integer.parseInt(discriminator);
         return discriminator0;
     }
