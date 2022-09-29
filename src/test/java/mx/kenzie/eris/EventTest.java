@@ -115,6 +115,8 @@ public class EventTest {
         for (final String line : lines) {
             final String tag = line.split("\t")[0].trim().toUpperCase().replace(" ", "_");
             if (tag.isEmpty()) continue;
+//            System.out.println("| " + line.split("\t")[0].trim() + " | " + Bot.EVENT_LIST.get(tag).getSimpleName() + " |");
+            // For documentation :)
             if (!Bot.EVENT_LIST.containsKey(tag)) missing.add(tag);
         }
         assert missing.size() == 0 : "Event handlers missing for " + missing;

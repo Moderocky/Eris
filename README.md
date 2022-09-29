@@ -171,6 +171,115 @@ These may be used from a `Lazy` object directly (e.g. `lazy.whenReady()...`) how
 Alternatively, the data can be acquired from the API's `request` methods directly. Since Eris contains the Argo JSON library, the `InputStream` can be read and converted.
 This is not advised for beginner users, since the data will have to be marshalled correctly.
 
+## Events
+
+Events are triggered by incoming payloads from the Discord websocket.
+These are sent when something happens that your application 1) intends to listen to and 2) has the privilege to listen to.
+
+Your application will not receive events if it was not registered with the correct intents or if it does not have privilege for those intents.
+
+### Event Structure
+
+The event object received by listeners is designed to be easy-to-use. \
+All events are `Payload`s corresponding to their JSON key/value structure.
+
+Some events are designed to correspond directly with entities, such as `Channel Create`.
+The `CreateChannel` object directly extends the `Channel` entity class, and is fully usable as a channel object.
+This makes it easy to construct a listener with behaviour around this.
+
+```java 
+bot.registerListener(CreateChannel.class, channel -> {
+    channel.send(new Message("hello there"));
+});
+```
+
+### Event List
+
+This is the list of Discord events and corresponding event classes in this library.
+
+Note: Discord (unhelpfully) sends some of these events as payloads - the event class will be left blank.
+
+| Discord Event Name                     | Event Class                 |
+|----------------------------------------|-----------------------------|
+| Hello                                  |                             |
+| Ready                                  | Ready                       |
+| Resumed                                | Resumed                     |
+| Reconnect                              |                             |
+| Invalid Session                        |                             |
+| Application Command Permissions Update | UpdateCommandPermissions    |
+| Auto Moderation Rule Create            | CreateModerationRule        |
+| Auto Moderation Rule Update            | UpdateModerationRule        |
+| Auto Moderation Rule Delete            | DeleteModerationRule        |
+| Auto Moderation Action Execution       | ExecuteRule                 |
+| Channel Create                         | CreateChannel               |
+| Channel Update                         | UpdateChannel               |
+| Channel Delete                         | DeleteChannel               |
+| Channel Pins Update                    | UpdateChannelPins           |
+| Thread Create                          | CreateThread                |
+| Thread Update                          | UpdateThread                |
+| Thread Delete                          | DeleteThread                |
+| Thread List Sync                       | ThreadListSync              |
+| Thread Member Update                   | UpdateThreadMember          |
+| Thread Members Update                  | UpdateThreadMembers         |
+| Guild Create                           | IdentifyGuild               |
+| Guild Update                           | UpdateGuild                 |
+| Guild Delete                           | DeleteGuild                 |
+| Guild Ban Add                          | AddGuildBan                 |
+| Guild Ban Remove                       | RemoveGuildBan              |
+| Guild Emojis Update                    | UpdateGuildEmojis           |
+| Guild Stickers Update                  | UpdateGuildStickers         |
+| Guild Integrations Update              | UpdateGuildIntegrations     |
+| Guild Member Add                       | AddGuildMember              |
+| Guild Member Remove                    | RemoveGuildMember           |
+| Guild Member Update                    | UpdateGuildMember           |
+| Guild Members Chunk                    | IdentifyGuildMembers        |
+| Guild Role Create                      | CreateGuildRole             |
+| Guild Role Update                      | UpdateGuildRole             |
+| Guild Role Delete                      | DeleteGuildRole             |
+| Guild Scheduled Event Create           | CreateScheduledEvent        |
+| Guild Scheduled Event Update           | UpdateScheduledEvent        |
+| Guild Scheduled Event Delete           | DeleteScheduledEvent        |
+| Guild Scheduled Event User Add         | ScheduledEventAddUser       |
+| Guild Scheduled Event User Remove      | ScheduledEventRemoveUser    |
+| Integration Create                     | CreateIntegration           |
+| Integration Update                     | UpdateIntegration           |
+| Integration Delete                     | DeleteIntegration           |
+| Interaction Create                     | Interaction                 |
+| Invite Create                          | CreateInvite                |
+| Invite Delete                          | DeleteInvite                |
+| Message Create                         | ReceiveMessage              |
+| Message Update                         | UpdateMessage               |
+| Message Delete                         | DeleteMessage               |
+| Message Delete Bulk                    | BulkDeleteMessage           |
+| Message Reaction Add                   | AddMessageReaction          |
+| Message Reaction Remove                | RemoveMessageReaction       |
+| Message Reaction Remove All            | RemoveAllMessageReactions   |
+| Message Reaction Remove Emoji          | RemoveEmojiMessageReactions |
+| Presence Update                        | UpdatePresence              |
+| Stage Instance Create                  | CreateStage                 |
+| Stage Instance Update                  | UpdateStage                 |
+| Stage Instance Delete                  | DeleteStage                 |
+| Typing Start                           | StartTyping                 |
+| User Update                            | UpdateUser                  |
+| Voice State Update                     | UpdateVoiceState            |
+| Voice Server Update                    | UpdateVoiceServer           |
+| Webhooks Update                        | UpdateWebhooks              |
+
+
+### Listeners
+
+Listeners can anticipate Discord **events** (dispatches.) \
+Advanced users can listen to raw gateway **payloads** and handle the data manually.
+
+```java 
+final Bot bot = new Bot("token");
+
+bot.registerListener(Ready.class, ready -> {
+    System.out.println("The bot has successfully logged in!");
+    System.out.println("It is called " + ready.user.getTag());
+});
+```
+
 ## Handling Entities in Bulk
 
 It will be necessary to handle data - and its corresponding entities - in bulk.
@@ -246,7 +355,6 @@ Messages are passed across a transferring queue and then iterated. This allows t
 | Low-CPU: no heavy consumers or lambdas required.        |                                             |
 | In-situ: entities are in the current method.            |                                             |
 | Speedy: incoming entities are queued in the background. |                                             |
-
 
 ## Caching
 Unlike other discord libraries, Eris operates only a very limited cache. \
@@ -368,7 +476,6 @@ Users are not forced into using the provided API methods or even the `Entity` da
 The API provides ways to send raw requests to Discord and read their data as an `InputStream`.
 
 You may also unregister the payload-listener that creates wrapped events and interpret payloads directly from the gateway socket.
-
 
 ## Dependencies
 
