@@ -10,10 +10,7 @@ import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.api.entity.Self;
 import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.event.*;
-import mx.kenzie.eris.api.event.channel.CreateChannel;
-import mx.kenzie.eris.api.event.channel.DeleteChannel;
-import mx.kenzie.eris.api.event.channel.UpdateChannel;
-import mx.kenzie.eris.api.event.channel.UpdateChannelPins;
+import mx.kenzie.eris.api.event.channel.*;
 import mx.kenzie.eris.api.event.guild.*;
 import mx.kenzie.eris.api.event.guild.ban.AddGuildBan;
 import mx.kenzie.eris.api.event.guild.ban.RemoveGuildBan;
@@ -24,10 +21,13 @@ import mx.kenzie.eris.api.event.guild.member.AddGuildMember;
 import mx.kenzie.eris.api.event.guild.member.IdentifyGuildMembers;
 import mx.kenzie.eris.api.event.guild.member.RemoveGuildMember;
 import mx.kenzie.eris.api.event.guild.member.UpdateGuildMember;
-import mx.kenzie.eris.api.event.message.BulkDeleteMessage;
-import mx.kenzie.eris.api.event.message.DeleteMessage;
-import mx.kenzie.eris.api.event.message.ReceiveMessage;
-import mx.kenzie.eris.api.event.message.UpdateMessage;
+import mx.kenzie.eris.api.event.integration.CreateIntegration;
+import mx.kenzie.eris.api.event.integration.DeleteIntegration;
+import mx.kenzie.eris.api.event.integration.UpdateIntegration;
+import mx.kenzie.eris.api.event.message.*;
+import mx.kenzie.eris.api.event.stage.CreateStage;
+import mx.kenzie.eris.api.event.stage.DeleteStage;
+import mx.kenzie.eris.api.event.stage.UpdateStage;
 import mx.kenzie.eris.api.event.thread.*;
 import mx.kenzie.eris.api.utility.WeakMap;
 import mx.kenzie.eris.data.Payload;
@@ -99,8 +99,8 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("THREAD_CREATE", CreateThread.class);
         EVENT_LIST.put("THREAD_UPDATE", UpdateThread.class);
         EVENT_LIST.put("THREAD_DELETE", DeleteThread.class);
-        EVENT_LIST.put("THREAD_UPDATE_MEMBER", UpdateThreadMember.class);
-        EVENT_LIST.put("THREAD_UPDATE_MEMBERS", UpdateThreadMembers.class);
+        EVENT_LIST.put("THREAD_MEMBER_UPDATE", UpdateThreadMember.class);
+        EVENT_LIST.put("THREAD_MEMBERS_UPDATE", UpdateThreadMembers.class);
         EVENT_LIST.put("GUILD_SCHEDULED_EVENT_CREATE", CreateScheduledEvent.class);
         EVENT_LIST.put("GUILD_SCHEDULED_EVENT_UPDATE", UpdateScheduledEvent.class);
         EVENT_LIST.put("GUILD_SCHEDULED_EVENT_DELETE", DeleteScheduledEvent.class);
@@ -108,6 +108,26 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("GUILD_SCHEDULED_EVENT_USER_REMOVE", ScheduledEventRemoveUser.class);
         EVENT_LIST.put("PRESENCE_UPDATE", UpdatePresence.class);
         EVENT_LIST.put("APPLICATION_COMMAND_PERMISSIONS_UPDATE", UpdateCommandPermissions.class);
+        EVENT_LIST.put("INTEGRATION_CREATE", CreateIntegration.class);
+        EVENT_LIST.put("INTEGRATION_UPDATE", UpdateIntegration.class);
+        EVENT_LIST.put("INTEGRATION_DELETE", DeleteIntegration.class);
+        EVENT_LIST.put("MESSAGE_REACTION_ADD", AddMessageReaction.class);
+        EVENT_LIST.put("MESSAGE_REACTION_REMOVE", RemoveMessageReaction.class);
+        EVENT_LIST.put("MESSAGE_REACTION_REMOVE_ALL", RemoveAllMessageReactions.class);
+        EVENT_LIST.put("MESSAGE_REACTION_REMOVE_EMOJI", RemoveEmojiMessageReactions.class);
+        EVENT_LIST.put("STAGE_INSTANCE_CREATE", CreateStage.class);
+        EVENT_LIST.put("STAGE_INSTANCE_UPDATE", UpdateStage.class);
+        EVENT_LIST.put("STAGE_INSTANCE_DELETE", DeleteStage.class);
+        EVENT_LIST.put("TYPING_START", StartTyping.class);
+        EVENT_LIST.put("USER_UPDATE", UpdateUser.class);
+        EVENT_LIST.put("VOICE_STATE_UPDATE", UpdateVoiceState.class);
+        EVENT_LIST.put("VOICE_SERVER_UPDATE", UpdateVoiceServer.class);
+        EVENT_LIST.put("WEBHOOKS_UPDATE", UpdateWebhooks.class);
+        // not technically events but here for documentation parity
+        EVENT_LIST.put("HELLO", Hello.class);
+        EVENT_LIST.put("RECONNECT", Reconnect.class);
+        EVENT_LIST.put("INVALID_SESSION", InvalidSession.class);
+        // internally-tracked events
         EVENT_LIST.put("$INTERNAL_CLOSE_SOCKET", SocketClose.class);
     }
     
