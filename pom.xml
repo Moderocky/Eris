@@ -9,6 +9,7 @@
     <version>1.0.0</version>
     <name>Eris</name>
     <description>A lightweight library for the Discord API.</description>
+    <url>https://github.com/Moderocky/Eris</url>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
