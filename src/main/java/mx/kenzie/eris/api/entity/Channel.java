@@ -150,22 +150,22 @@ public class Channel extends CreateChannel {
         transient String around, before, after;
         
         public ResultMessages limit(int limit) {
-            this.limit = limit;
+            this.limit = Math.max(0, Math.min(limit, 100));
             return this;
         }
         
-        public ResultMessages around(String around) {
-            this.around = around;
+        public ResultMessages around(Object around) {
+            this.around = around instanceof Snowflake snowflake ? snowflake.id : around + "";
             return this;
         }
         
-        public ResultMessages before(String before) {
-            this.before = before;
+        public ResultMessages before(Object before) {
+            this.before = before instanceof Snowflake snowflake ? snowflake.id : before + "";
             return this;
         }
         
-        public ResultMessages after(String after) {
-            this.after = after;
+        public ResultMessages after(Object after) {
+            this.after = after instanceof Snowflake snowflake ? snowflake.id : after + "";
             return this;
         }
         

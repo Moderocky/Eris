@@ -1,5 +1,6 @@
 package mx.kenzie.eris.api.entity;
 
+import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
@@ -21,6 +22,16 @@ public class Thread extends Channel {
         if (applied_tags.length > 0) return true;
         this.await();
         return this.api.getChannel(parent_id).isForum();
+    }
+    
+    public Thread modify() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.unready();
+        this.api.patch("/channels/" + this, Json.toJson(this, null,
+                "name", "archived", "auto_archive_duration", "locked", "invitable", "rate_limit_per_user",
+                "flags", "applied_tags"), this)
+            .exceptionally(this::error).thenAccept(Lazy::finish);
+        return this;
     }
     
     public Thread join() {
