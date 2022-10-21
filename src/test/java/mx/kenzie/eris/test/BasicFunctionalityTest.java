@@ -6,6 +6,7 @@ import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.entity.Channel;
 import mx.kenzie.eris.api.entity.Guild;
 import mx.kenzie.eris.api.entity.Message;
+import mx.kenzie.eris.api.magic.ChannelType;
 import mx.kenzie.eris.api.magic.Intents;
 import mx.kenzie.eris.network.EntityCache;
 import org.junit.AfterClass;
@@ -121,7 +122,7 @@ public class BasicFunctionalityTest {
     public void guildPreviewTest() {
         final Guild.Preview preview = api.getGuildPreview(guild.id());
         preview.await();
-        assert preview.successful();
+        assert preview.successful(): channel.error();
         assert preview.approximate_member_count > 0;
         assert preview.approximate_presence_count > 0;
         assert preview.name != null;
@@ -131,6 +132,20 @@ public class BasicFunctionalityTest {
         assert preview.features.length == 0 : Arrays.toString(preview.features);
         assert preview.emojis.length == 0 : Arrays.toString(preview.emojis);
         assert preview.stickers.length == 0 : Arrays.toString(preview.stickers);
+    }
+    
+    @Test
+    public void createChannelTest() {
+        final Channel channel = new Channel();
+        channel.type = ChannelType.GUILD_VOICE;
+        channel.name = "Test Channel";
+        guild.createChannel(channel);
+        channel.await();
+        assert channel.successful(): channel.error();
+        assert channel.type == ChannelType.GUILD_VOICE;
+        assert channel.name.equals("Test Channel");
+        channel.delete();
+        channel.await();
     }
     
 }
