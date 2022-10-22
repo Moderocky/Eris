@@ -144,6 +144,8 @@ public class BasicFunctionalityTest {
         assert channel.successful(): channel.error();
         assert channel.type == ChannelType.GUILD_VOICE;
         assert channel.name.equals("Test Channel");
+        assert !channel.nsfw;
+        assert channel.parent_id == null;
         channel.delete();
         channel.await();
     }
