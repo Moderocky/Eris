@@ -146,6 +146,10 @@ public class BasicFunctionalityTest {
         assert channel.name.equals("Test Channel");
         assert !channel.nsfw;
         assert channel.parent_id == null;
+        channel.parent_id = "399248280854200332";
+        channel.modify();
+        channel.await();
+        assert channel.parent_id != null;
         channel.delete();
         channel.await();
     }
