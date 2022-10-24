@@ -122,13 +122,13 @@ public class BasicFunctionalityTest {
     public void guildPreviewTest() {
         final Guild.Preview preview = api.getGuildPreview(guild.id());
         preview.await();
-        assert preview.successful(): channel.error();
-        assert preview.approximate_member_count > 0;
-        assert preview.approximate_presence_count > 0;
-        assert preview.name != null;
-        assert preview.icon != null;
-        assert preview.splash == null;
-        assert preview.discovery_splash == null;
+        assert preview.successful() : channel.error();
+        assert preview.approximate_member_count > 0 : preview.approximate_member_count;
+        assert preview.approximate_presence_count > 0 : preview.approximate_presence_count;
+        assert preview.name != null : "Name was not retrieved.";
+        assert preview.icon != null : "Icon was not retrieved.";
+        assert preview.splash == null : "Splash was erroneously retrieved.";
+        assert preview.discovery_splash == null : "Discovery was erroneously retrieved.";
         assert preview.features.length == 0 : Arrays.toString(preview.features);
         assert preview.emojis.length == 0 : Arrays.toString(preview.emojis);
         assert preview.stickers.length == 0 : Arrays.toString(preview.stickers);
@@ -141,7 +141,7 @@ public class BasicFunctionalityTest {
         channel.name = "Test Channel";
         guild.createChannel(channel);
         channel.await();
-        assert channel.successful(): channel.error();
+        assert channel.successful() : channel.error();
         assert channel.type == ChannelType.GUILD_VOICE;
         assert channel.name.equals("Test Channel");
         assert !channel.nsfw;
