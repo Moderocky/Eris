@@ -9,6 +9,7 @@ public class Role extends CreateRole {
     public int position;
     public boolean managed;
     public @Optional Tag tags;
+    public @Optional String icon;
     
     public Role() {
     }
