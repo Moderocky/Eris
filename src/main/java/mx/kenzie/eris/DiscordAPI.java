@@ -11,6 +11,7 @@ import mx.kenzie.eris.api.entity.command.CreateCommand;
 import mx.kenzie.eris.api.entity.guild.Ban;
 import mx.kenzie.eris.api.entity.guild.Forum;
 import mx.kenzie.eris.api.entity.guild.ModifyMember;
+import mx.kenzie.eris.api.entity.guild.Template;
 import mx.kenzie.eris.api.entity.message.Attachment;
 import mx.kenzie.eris.api.entity.message.UnsentMessage;
 import mx.kenzie.eris.api.entity.voice.VoiceRegion;
@@ -24,6 +25,7 @@ import mx.kenzie.eris.error.DiscordException;
 import mx.kenzie.eris.network.CacheJson;
 import mx.kenzie.eris.network.EntityCache;
 import mx.kenzie.eris.network.NetworkController;
+import org.jetbrains.annotations.Nullable;
 import sun.reflect.ReflectionFactory;
 
 import java.io.IOException;
@@ -296,6 +298,26 @@ public class DiscordAPI {
         return preview;
     }
     
+    public <IGuild> Template createTemplate(IGuild guild, String name, @Nullable String description) {
+        final String id = this.getGuildId(guild);
+        final Map<String, Object> parameters = new HashMap<>(2);
+        parameters.put("name", name);
+        if (description != null) parameters.put("description", description);
+        final Template template = new Template();
+        template.api = this;
+        this.post("/guilds/" + id + "/templates", Json.toJson(parameters), template)
+            .exceptionally(template::error).thenAccept(Lazy::finish);
+        return template;
+    }
+    
+    public String getGuildId(Object object) {
+        if (object == null) return null;
+        if (object instanceof String value) return value;
+        if (object instanceof Guild value) return value.id;
+        if (object instanceof Guild.Preview value) return value.id;
+        return Objects.toString(object);
+    }
+    
     public LazyList<Channel> getChannels(Guild guild) {
         final List<Object> data = new ArrayList<>();
         final List<Channel> backer = new ArrayList<>();
@@ -343,14 +365,6 @@ public class DiscordAPI {
         if (object instanceof String value) return value;
         if (object instanceof User value) return value.id;
         if (object instanceof Member value) return value.user.id;
-        return Objects.toString(object);
-    }
-    
-    public String getGuildId(Object object) {
-        if (object == null) return null;
-        if (object instanceof String value) return value;
-        if (object instanceof Guild value) return value.id;
-        if (object instanceof Guild.Preview value) return value.id;
         return Objects.toString(object);
     }
     

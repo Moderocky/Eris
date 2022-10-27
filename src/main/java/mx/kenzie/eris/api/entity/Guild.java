@@ -131,8 +131,17 @@ public class Guild extends Snowflake {
     public <IUser, IRole> Guild addRole(IUser id, IRole role) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
-        System.out.println("/guilds/" + this.id + "/members/" + api.getUserId(id) + "/roles/" + role); // todo
+//        System.out.println("/guilds/" + this.id + "/members/" + api.getUserId(id) + "/roles/" + role);
+// todo check if this is actually correct ?
         this.api.request("PUT", "/guilds/" + this.id + "/members/" + api.getUserId(id) + "/roles/" + role, "[]", null)
+            .exceptionally(this::error).thenRun(this::finish);
+        return this;
+    }
+    
+    public <IUser, IRole> Guild removeRole(IUser id, IRole role) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        this.unready();
+        this.api.request("DELETE", "/guilds/" + this.id + "/members/" + api.getUserId(id) + "/roles/" + role, null, null)
             .exceptionally(this::error).thenRun(this::finish);
         return this;
     }
@@ -180,6 +189,11 @@ public class Guild extends Snowflake {
     public <IUser> void ban(IUser user, Ban ban) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.api.createBan(this, user, ban);
+    }
+    
+    public Template createTemplate(String name, String description) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        return this.api.createTemplate(this, name, description);
     }
     
     public static class GuildHashes extends Payload {
