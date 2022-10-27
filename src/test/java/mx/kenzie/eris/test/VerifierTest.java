@@ -1,6 +1,6 @@
 package mx.kenzie.eris.test;
 
-import mx.kenzie.eris.api.entity.Entity;
+import mx.kenzie.eris.data.Payload;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -11,13 +11,15 @@ import java.util.Map;
 
 public abstract class VerifierTest {
     
-    protected void verify(Class<? extends Entity> entity, String schema) {
+    protected void verify(Class<? extends Payload> entity, String schema) {
         final String[] lines = schema.split("\n");
         final Map<String, Class<?>> fields = new LinkedHashMap<>();
         final List<String> missing = new ArrayList<>();
         for (final String line : lines) {
             final String[] parts = line.split("\t");
-            final String name = parts[0].replace(' ', '_').replace('?', ' ').trim();
+            final String name = parts[0].replace(' ', '_')
+                .replace('*', ' ')
+                .replace('?', ' ').trim();
             if (name.isEmpty()) continue;
             final String type = parts[1];
             fields.put(name, switch (type) {

@@ -10,7 +10,7 @@ import org.intellij.lang.annotations.MagicConstant;
 public abstract class CreateChannel extends Snowflake {
     public @MagicConstant(flagsFromClass = ChannelType.class) int type;
     public String name;
-    public @Optional Integer position, bitrate, user_limit, rate_limit_per_user, video_quality_mode, default_auto_archive_duration;
+    public @Optional Integer position, bitrate, user_limit, rate_limit_per_user, video_quality_mode, default_auto_archive_duration, default_thread_rate_limit_per_user;
     public boolean nsfw;
     public @Optional String topic, last_message_id, icon, parent_id, last_pin_timestamp, rtc_region;
     public @Optional Payload[] permission_overwrites;

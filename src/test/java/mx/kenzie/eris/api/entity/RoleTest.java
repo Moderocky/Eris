@@ -1,6 +1,5 @@
 package mx.kenzie.eris.api.entity;
 
-import junit.framework.TestCase;
 import mx.kenzie.eris.test.VerifierTest;
 import org.junit.Test;
 
@@ -20,6 +19,10 @@ public class RoleTest extends VerifierTest {
             managed	boolean	whether this role is managed by an integration
             mentionable	boolean	whether this role is mentionable
             tags?	role tags object	the tags this role has""");
+        this.verify(Role.Tag.class, """
+            bot_id?	snowflake	the id of the bot this role belongs to
+            integration_id?	snowflake	the id of the integration this role belongs to
+            premium_subscriber?	null	whether this is the guild's premium subscriber role""");
     }
     
 }

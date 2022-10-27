@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class Thread extends Channel {
     
-    public int message_count, member_count, default_auto_archive_duration;
+    public int message_count, member_count, default_auto_archive_duration, total_message_sent;
     public Payload thread_metadata;
     public Payload member;
     public @Optional String[] member_ids_preview;
