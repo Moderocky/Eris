@@ -1,5 +1,6 @@
 package mx.kenzie.eris.test;
 
+import mx.kenzie.argo.meta.Name;
 import mx.kenzie.eris.data.Payload;
 
 import java.lang.reflect.Field;
@@ -17,7 +18,7 @@ public abstract class VerifierTest {
         final List<String> missing = new ArrayList<>();
         for (final String line : lines) {
             final String[] parts = line.split("\t");
-            final String name = parts[0].replace(' ', '_')
+            final String name = parts[0]
                 .replace('*', ' ')
                 .replace('?', ' ').trim();
             if (name.isEmpty()) continue;
@@ -31,7 +32,9 @@ public abstract class VerifierTest {
         for (final Field field : entity.getFields()) {
             if (Modifier.isStatic(field.getModifiers())) continue;
             if (Modifier.isPrivate(field.getModifiers())) continue;
-            real.put(field.getName(), field.getType());
+            if (field.isAnnotationPresent(Name.class))
+                real.put(field.getAnnotation(Name.class).value(), field.getType());
+            else real.put(field.getName(), field.getType());
         }
         for (final Map.Entry<String, Class<?>> entry : fields.entrySet()) {
             if (real.containsKey(entry.getKey())) {
