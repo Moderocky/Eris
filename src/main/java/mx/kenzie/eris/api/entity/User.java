@@ -1,13 +1,15 @@
 package mx.kenzie.eris.api.entity;
 
+import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.DiscordAPI;
 
 public class User extends Snowflake {
     
-    public boolean verified, mfa_enabled, bot, system;
-    public String username, email, discriminator, avatar, banner, locale;
-    public int flags, accent_color, premium_type, public_flags;
+    public @Optional boolean verified, bot, system, mfa_enabled;
+    public String username, discriminator, avatar;
+    public @Optional String banner, email, locale;
+    public @Optional int flags, accent_color, premium_type, public_flags;
     private transient int discriminator0;
     
     public int discriminator() {

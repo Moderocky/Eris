@@ -2,6 +2,7 @@ package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.Name;
+import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.command.Command;
@@ -20,17 +21,21 @@ import java.util.concurrent.CompletableFuture;
 public class Guild extends Snowflake {
     
     public final GuildHashes guild_hashes = new GuildHashes();
-    public boolean widget_enabled, premium_progress_bar_enabled, lazy;
-    public @Name("owner") boolean is_owner;
+    public boolean premium_progress_bar_enabled, lazy;
+    public @Optional
+    @Name("owner") boolean is_owner;
+    public @Optional boolean widget_enabled;
     public int afk_timeout, verification_level, default_message_notifications, explicit_content_filter, mfa_level, system_channel_flags, premium_tier, nsfw_level;
-    public Integer max_presences, max_members, premium_subscription_count, max_video_channel_users, approximate_member_count, approximate_presence_count, hub_type;
-    public String name, icon, icon_hash, splash, discovery_splash, owner_id, permissions, region, afk_channel_id, widget_channel_id, application_id, system_channel_id, rules_channel_id, vanity_url_code, description, banner, preferred_locale, public_updates_channel_id;
+    public @Optional Integer max_presences, max_members, premium_subscription_count, max_video_channel_users, approximate_member_count, approximate_presence_count, hub_type;
+    public String name, icon, splash, discovery_splash, owner_id, afk_channel_id, application_id, system_channel_id, rules_channel_id, vanity_url_code, description, banner, preferred_locale, public_updates_channel_id;
+    public @Optional String icon_hash, permissions, region, widget_channel_id;
     public String[] features;
     public Role[] roles;
     public Emoji[] emojis;
-    public Sticker[] stickers;
+    public @Optional Sticker[] stickers;
     public Payload[] embedded_activities;
-    public Payload welcome_screen, application_command_counts;
+    public Payload application_command_counts;
+    public @Optional Payload welcome_screen;
     private transient LazyList<Role> roles0;
     
     public BulkEntity<Rule> getRules() {

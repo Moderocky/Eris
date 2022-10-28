@@ -9,13 +9,15 @@ import mx.kenzie.eris.data.Payload;
 import java.time.Instant;
 
 public class Invite extends Lazy {
-    public String code, expires_at, created_at;
+    public String code, created_at;
+    public @Optional String expires_at;
     public @Optional Guild guild;
     public @Optional Channel channel;
     public @Optional User inviter, target_user;
-    public int approximate_presence_count, approximate_member_count;
+    public @Optional int approximate_presence_count, approximate_member_count;
     public @Optional Payload stage_instance, guild_scheduled_event; // todo
-    public int max_age, max_uses, uses, target_type; // STREAM = 1, EMBEDDED_APPLICATION = 2
+    public int max_age, max_uses, uses;
+    public @Optional Integer target_type; // STREAM = 1, EMBEDDED_APPLICATION = 2
     public boolean temporary;
     public @Optional Application target_application;
     

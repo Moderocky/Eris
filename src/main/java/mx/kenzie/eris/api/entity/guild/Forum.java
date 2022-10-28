@@ -7,9 +7,9 @@ import mx.kenzie.eris.data.Payload;
 
 public class Forum extends Channel {
     
-    public Tag[] available_tags = new Tag[0];
+    public @Optional Tag[] available_tags = new Tag[0];
     public @Optional Integer default_sort_order;
-    public Payload default_reaction_emoji;
+    public @Optional Payload default_reaction_emoji;
     
     public static class Tag extends Snowflake {
         public String name;

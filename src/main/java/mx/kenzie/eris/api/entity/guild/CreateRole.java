@@ -6,8 +6,8 @@ import mx.kenzie.eris.api.entity.Snowflake;
 public abstract class CreateRole extends Snowflake {
     public @Optional String name;
     public @Optional String permissions, unicode_emoji;
-    public @Optional Integer color;
-    public @Optional Boolean hoist, mentionable;
+    public @Optional int color;
+    public @Optional boolean hoist, mentionable;
 //    public @Optional Payload icon; todo
     
     //    name	string	name of the role	"new role"

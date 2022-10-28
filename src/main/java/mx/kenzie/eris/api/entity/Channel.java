@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class Channel extends CreateChannel {
     
-    public int flags;
+    public @Optional int flags;
     public @Optional String guild_id, last_message_id, owner_id, application_id, last_pin_timestamp, permissions;
     public @Optional User[] recipients;
     
