@@ -6,14 +6,15 @@ import mx.kenzie.eris.api.magic.Permission;
 import mx.kenzie.eris.data.Payload;
 
 public class Application extends Snowflake implements ApplicationFlags {
-    public int flags;
+    public @Optional int flags;
     public boolean bot_public, bot_require_code_grant;
-    public String name, icon, description, summary, verify_key;
+    public String name, icon, description, verify_key;
     public @Optional String terms_of_service_url, privacy_policy_url, guild_id, primary_sku_id, slug, cover_image, custom_install_url;
     public @Optional String[] rpc_origins, tags;
     public @Optional User owner;
     public @Optional Team team;
     public @Optional InstallParams install_params;
+    public @Deprecated String summary;
     
     @Override
     public int flags() {

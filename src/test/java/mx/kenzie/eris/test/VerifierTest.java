@@ -20,7 +20,9 @@ public abstract class VerifierTest {
         final List<String> optionals = new ArrayList<>();
         for (final String line : lines) {
             final String[] parts = line.split("\t");
+            final boolean deprecated = parts[0].contains("(deprecated)");
             final String name = parts[0]
+                .replace("(deprecated)", "")
                 .replace('*', ' ')
                 .replace('?', ' ').trim();
             if (name.isEmpty()) continue;
@@ -49,7 +51,7 @@ public abstract class VerifierTest {
                 };
             };
             expectations.add(new FieldExpectation(
-                name, value, state
+                name, value, state, deprecated
             ));
         }
         final Map<String, Field> real = new LinkedHashMap<>();
@@ -63,6 +65,9 @@ public abstract class VerifierTest {
         for (final FieldExpectation expectation : expectations) {
             if (real.containsKey(expectation.name)) {
                 final Field field = real.get(expectation.name);
+                if (expectation.deprecated && !field.isAnnotationPresent(Deprecated.class))
+                    optionals.add("Class " + entity.getSimpleName() + " field " + field.getName() +
+                        " (" + field.getType().getSimpleName() + ") was missing deprecated status.");
                 if (expectation.optional == OptionalState.KEY && !field.isAnnotationPresent(Optional.class))
                     optionals.add("Class " + entity.getSimpleName() + " field " + field.getName() +
                         " (" + field.getType().getSimpleName() + ") was missing optional status.");
@@ -84,7 +89,7 @@ public abstract class VerifierTest {
         KEY, VALUE, NONE
     }
     
-    record FieldExpectation(String name, Class<?> type, OptionalState optional) {
+    record FieldExpectation(String name, Class<?> type, OptionalState optional, boolean deprecated) {
     }
     
 }

@@ -8,10 +8,7 @@ import mx.kenzie.eris.api.entity.Thread;
 import mx.kenzie.eris.api.entity.*;
 import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.entity.command.CreateCommand;
-import mx.kenzie.eris.api.entity.guild.Ban;
-import mx.kenzie.eris.api.entity.guild.Forum;
-import mx.kenzie.eris.api.entity.guild.ModifyMember;
-import mx.kenzie.eris.api.entity.guild.Template;
+import mx.kenzie.eris.api.entity.guild.*;
 import mx.kenzie.eris.api.entity.message.Attachment;
 import mx.kenzie.eris.api.entity.message.UnsentMessage;
 import mx.kenzie.eris.api.entity.voice.VoiceRegion;
@@ -298,6 +295,34 @@ public class DiscordAPI {
         return preview;
     }
     
+    public <IGuild> WelcomeScreen getWelcomeScreen(IGuild guild) {
+        final String id = this.getGuildId(guild);
+        final WelcomeScreen screen = new WelcomeScreen();
+        this.get("/guilds/" + id + "/welcome-screen", screen)
+            .exceptionally(screen::error).thenAccept(Lazy::finish);
+        return screen;
+    }
+    
+    public String getGuildId(Object object) {
+        if (object == null) return null;
+        if (object instanceof String value) return value;
+        if (object instanceof Guild value) return value.id;
+        if (object instanceof Guild.Preview value) return value.id;
+        return Objects.toString(object);
+    }
+    
+    public <IGuild> WelcomeScreen modifyWelcomeScreen(IGuild guild, WelcomeScreen screen) {
+        final String id = this.getGuildId(guild);
+        this.patch("/guilds/" + id + "/welcome-screen", Json.toJson(screen), screen)
+            .exceptionally(screen::error).thenAccept(Lazy::finish);
+        return screen;
+    }
+    
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> patch(String path, String body, Type object) {
+        return this.request("PATCH", path, body, object);
+    }
+    
     public <IGuild> Template createTemplate(IGuild guild, String name, @Nullable String description) {
         final String id = this.getGuildId(guild);
         final Map<String, Object> parameters = new HashMap<>(2);
@@ -308,14 +333,6 @@ public class DiscordAPI {
         this.post("/guilds/" + id + "/templates", Json.toJson(parameters), template)
             .exceptionally(template::error).thenAccept(Lazy::finish);
         return template;
-    }
-    
-    public String getGuildId(Object object) {
-        if (object == null) return null;
-        if (object instanceof String value) return value;
-        if (object instanceof Guild value) return value.id;
-        if (object instanceof Guild.Preview value) return value.id;
-        return Objects.toString(object);
     }
     
     public LazyList<Channel> getChannels(Guild guild) {
@@ -376,11 +393,6 @@ public class DiscordAPI {
         this.patch("/guilds/" + gid + "/members/" + uid, Json.toJson(member, ModifyMember.class, null), result)
             .exceptionally(result::error).thenAccept(Lazy::finish);
         return result;
-    }
-    
-    @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> patch(String path, String body, Type object) {
-        return this.request("PATCH", path, body, object);
     }
     
     public void update(Member member) {

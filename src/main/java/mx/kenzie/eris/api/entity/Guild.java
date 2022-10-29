@@ -201,6 +201,16 @@ public class Guild extends Snowflake {
         return this.api.createTemplate(this, name, description);
     }
     
+    public WelcomeScreen getWelcomeScreen() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        return this.api.getWelcomeScreen(this);
+    }
+    
+    public WelcomeScreen modifyWelcomeScreen(WelcomeScreen screen) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        return this.api.modifyWelcomeScreen(this, screen);
+    }
+    
     public static class GuildHashes extends Payload {
         public Hash channels, roles, metadata;
         public int version;
