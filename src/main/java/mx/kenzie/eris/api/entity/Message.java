@@ -14,18 +14,23 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Message extends UnsentMessage {
-    public String channel_id, timestamp, edited_timestamp, webhook_id, application_id;
+    public String channel_id, timestamp, edited_timestamp;
+    public @Optional String webhook_id, application_id;
     public User author;
     public boolean mention_everyone, pinned;
     public User[] mentions;
     public String[] mention_roles;
-    public Channel[] mention_channels;
-    public Payload[] reactions, sticker_items;
-    public Object nonce;
+    public @Optional Channel[] mention_channels;
+    public @Optional Payload[] reactions, sticker_items;
+    public @Optional Object nonce;
     public int type;
-    public Payload activity, application, interaction;
-    public Message referenced_message;
-    public Thread thread;
+    public @Optional Integer position;
+    public @Optional Sticker[] stickers;
+    public @Optional Interaction interaction;
+    public @Optional Activity activity;
+    public @Optional Application application;
+    public @Optional Message referenced_message;
+    public @Optional Thread thread;
     
     public Message() {
     }
@@ -152,6 +157,18 @@ public class Message extends UnsentMessage {
     public boolean isFromSelf() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return (author.equals(api.getSelf()));
+    }
+    
+    public static class Interaction extends Snowflake {
+        public int type;
+        public String name;
+        public User user;
+        public @Optional Member member;
+    }
+    
+    public static class Activity extends Payload {
+        public int type;
+        public @Optional String party_id;
     }
     
     public static class Reference extends Payload {

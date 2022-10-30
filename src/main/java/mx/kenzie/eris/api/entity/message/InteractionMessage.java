@@ -9,8 +9,8 @@ import mx.kenzie.eris.api.entity.command.callback.Callback;
 
 public abstract class InteractionMessage extends Snowflake implements Callback {
     
-    public int flags;
-    public @Optional Boolean tts;
+    public @Optional int flags;
+    public @Optional boolean tts;
     public @Optional String content;
     public @Optional
     @Any Component[] components;

@@ -3,8 +3,8 @@ package mx.kenzie.eris.api.entity;
 import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
+import mx.kenzie.eris.api.entity.guild.ScheduledEvent;
 import mx.kenzie.eris.api.utility.Query;
-import mx.kenzie.eris.data.Payload;
 
 import java.time.Instant;
 
@@ -15,7 +15,8 @@ public class Invite extends Lazy {
     public @Optional Channel channel;
     public @Optional User inviter, target_user;
     public @Optional int approximate_presence_count, approximate_member_count;
-    public @Optional Payload stage_instance, guild_scheduled_event; // todo
+    public @Optional Stage stage_instance;
+    public @Optional ScheduledEvent guild_scheduled_event;
     public int max_age, max_uses, uses;
     public @Optional Integer target_type; // STREAM = 1, EMBEDDED_APPLICATION = 2
     public boolean temporary;
