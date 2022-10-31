@@ -41,11 +41,11 @@ public class CacheJson extends Json {
         else return super.toObject(object, type, map);
         final Snowflake snowflake = cache.get(id), result;
         super.toObject(source, type, map);
-        if (snowflake == null)  this.cache.store(result = source);
+        if (snowflake == null) this.cache.store(result = source);
         else if (!object.getClass().isInstance(snowflake)) {
             this.cache.store(result = source);
             super.toObject(snowflake, type, map);
-        } else  result = super.toObject(snowflake, type, map);
+        } else result = super.toObject(snowflake, type, map);
         return (Type) result;
     }
     

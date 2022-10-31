@@ -13,6 +13,39 @@ import java.util.*;
 
 public abstract class VerifierTest {
     
+    protected void magic(Class<?> constant, String schema) {
+        final String[] lines = schema.split("\n");
+        int missing = 0;
+        final Map<String, Integer> real = new LinkedHashMap<>();
+        for (final Field field : constant.getFields()) {
+            if (!Modifier.isStatic(field.getModifiers())) continue;
+            if (!Modifier.isFinal(field.getModifiers())) continue;
+            try {
+                real.put(field.getName(), field.getInt(null));
+            } catch (IllegalAccessException ex) {
+                ex.printStackTrace();
+            }
+        }
+        for (final String line : lines) {
+            final String[] parts = line.split("\t");
+            final boolean deprecated = parts[0].contains("(deprecated)");
+            final String name = parts[0]
+                .replace("(deprecated)", "")
+                .replace('*', ' ')
+                .replace('?', ' ').toUpperCase().trim();
+            if (name.isEmpty()) continue;
+            final int value = Integer.parseInt(parts[1].trim());
+            if (!real.containsKey(name)) {
+                missing++;
+                System.err.println("Magic constant " + constant.getSimpleName() + " missing flag " + name + " (" + value + ")");
+            } else if (real.get(name) != value) {
+                missing++;
+                System.err.println("Magic constant " + constant.getSimpleName() + " flag " + name + " had value " + real.get(name) + " (expected " + value + ")");
+            }
+        }
+        assert missing == 0;
+    }
+    
     protected void verify(Class<? extends Payload> entity, String schema) {
         final String[] lines = schema.split("\n");
         final Set<FieldExpectation> expectations = new LinkedHashSet<>();

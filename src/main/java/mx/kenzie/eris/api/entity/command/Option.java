@@ -4,10 +4,11 @@ import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.api.magic.OptionType;
 import mx.kenzie.eris.data.Payload;
+import org.intellij.lang.annotations.MagicConstant;
 
 public class Option extends Entity {
-    public int type;
-    public boolean required = true;
+    public @MagicConstant(flagsFromClass = OptionType.class) int type;
+    public @Optional boolean required = true, autocomplete;
     public String name, description;
     public @Optional Payload name_localizations, description_localizations;
     public @Optional Choice<?>[] choices;
@@ -15,7 +16,6 @@ public class Option extends Entity {
     public @Optional int[] channel_types;
     public @Optional Number min_value, max_value;
     public @Optional Integer min_length, max_length;
-    public boolean autocomplete;
     
     public Option() {
     }
@@ -116,9 +116,9 @@ public class Option extends Entity {
 //    max_length?	integer	For option type STRING, the maximum allowed length (minimum of 1)
 //    autocomplete? *	boolean	If autocomplete interactions are enabled for this STRING, INTEGER, or NUMBER type option
     
-    public static class Choice<Type> {
+    public static class Choice<Type> extends Payload {
         public String name;
-        public Payload name_localizations;
+        public @Optional Payload name_localizations;
         public Type value;
         
         public Choice() {

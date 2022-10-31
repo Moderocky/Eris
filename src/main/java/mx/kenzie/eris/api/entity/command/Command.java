@@ -8,6 +8,8 @@ public class Command extends CreateCommand {
     
     public String id;
     public @Optional String guild_id, application_id, version;
+    public @Optional
+    @Deprecated Boolean default_permission;
     
     public Command() {
     }
