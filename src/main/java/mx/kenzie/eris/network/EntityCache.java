@@ -15,6 +15,7 @@ public class EntityCache {
     public Set<Class<? extends Snowflake>> permitted = new HashSet<>();
     protected boolean shouldCache;
     
+    @SafeVarargs
     public EntityCache(Class<? extends Snowflake>... permitted) {
         this();
         this.permitted.addAll(Arrays.asList(permitted));
