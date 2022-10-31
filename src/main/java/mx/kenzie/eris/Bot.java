@@ -143,8 +143,8 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     protected int intents;
     protected volatile Self self;
     protected volatile String session;
+    protected transient WebSocket socket;
     private boolean running = true;
-    private transient WebSocket socket;
     private CompletableFuture<?> process;
     private ScheduledFuture<?> heartbeat;
     private transient boolean shouldResume = false;
