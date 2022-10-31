@@ -208,4 +208,9 @@ public enum StatusCode {
         for (final StatusCode value : StatusCode.values()) if (value.code == error) return value;
         return null;
     }
+    
+    @Override
+    public String toString() {
+        return this.message;
+    }
 }

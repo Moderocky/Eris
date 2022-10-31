@@ -16,6 +16,11 @@ public class APIException extends DiscordException {
         super(message);
     }
     
+    public APIException(int code, String message) {
+        this.code = code;
+        this.message = message;
+    }
+    
     public Map<String, Object> getErrors() {
         return errors;
     }
@@ -27,12 +32,18 @@ public class APIException extends DiscordException {
     
     @Override
     public void printStackTrace(PrintStream s) {
+        s.println("Error code " + code + ": " + this.getStatusCode());
         s.println("Errors from API: " + errors);
         super.printStackTrace(s);
     }
     
+    public StatusCode getStatusCode() {
+        return StatusCode.get(code);
+    }
+    
     @Override
     public void printStackTrace(PrintWriter s) {
+        s.println("Error code " + code + ": " + this.getStatusCode());
         s.println("Errors from API: " + errors);
         super.printStackTrace(s);
     }
