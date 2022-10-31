@@ -62,6 +62,11 @@ public class Message extends UnsentMessage {
         this.components = rows;
     }
     
+    public Message send(Channel channel) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        return api.sendMessage(channel, this);
+    }
+    
     public void addAttachment(String filename, String content) {
         final List<Attachment> list;
         final boolean has = attachments != null;

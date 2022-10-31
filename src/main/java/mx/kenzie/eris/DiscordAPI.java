@@ -98,6 +98,7 @@ public class DiscordAPI {
         });
     }
     
+    @SuppressWarnings({"unchecked", "rawtypes"})
     protected <Type> Type handle(HttpResponse<InputStream> request, Type object) {
         final Map<String, Object> map = new HashMap<>();
         try (final Json json = new CacheJson(request.body(), cache)) {
@@ -124,6 +125,7 @@ public class DiscordAPI {
     public Message write(String content) {
         final Message message = new Message();
         message.api = this;
+        message.content = content;
         message.finish();
         return message;
     }
