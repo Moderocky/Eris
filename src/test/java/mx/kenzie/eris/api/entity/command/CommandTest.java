@@ -21,6 +21,15 @@ public class CommandTest extends VerifierTest {
             dm_permission?	boolean	Indicates whether the command is available in DMs with the app, only for globally-scoped commands. By default, commands are visible.	all
             default_permission?	?boolean	Not recommended for use as field will soon be deprecated. Indicates whether the command is enabled by default when the app is added to a guild, defaults to true	all
             version	snowflake	Autoincrementing version identifier updated during substantial record changes	all""");
+        this.verify(Command.Permissions.class, """
+            id	snowflake	ID of the command or the application ID
+            application_id	snowflake	ID of the application the command belongs to
+            guild_id	snowflake	ID of the guild
+            permissions	array of application command permissions	Permissions for the command in the guild, max of 100""");
+        this.verify(Command.Permissions.Override.class, """
+            id	snowflake	ID of the role, user, or channel. It can also be a permission constant
+            type	application command permission type	role (1), user (2), or channel (3)
+            permission	boolean	true to allow, false, to disallow""");
     }
     
 }
