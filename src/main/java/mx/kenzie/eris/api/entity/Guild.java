@@ -57,11 +57,20 @@ public class Guild extends Snowflake {
     }
     
     public <IEmoji> Emoji getEmoji(IEmoji id) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final Emoji emoji = new Emoji();
         emoji.id = id + "";
         this.api.get("/guilds/" + this.id + "/emojis/" + emoji.id, null, emoji)
             .exceptionally(emoji::error).thenAccept(Lazy::finish);
         return emoji;
+    }
+    
+    public <IApplication> LazyList<Command.Permissions> getCommandPermissions(IApplication application) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        final LazyList<Command.Permissions> list = new LazyList<>(Command.Permissions.class, new ArrayList<>());
+        this.api.get("/applications/" + application + "/guilds/" + id + "/commands/permissions", list)
+            .exceptionally(list::error).thenAccept(Lazy::finish);
+        return list;
     }
     
     public <IChannel> Channel getChannel(IChannel id) {

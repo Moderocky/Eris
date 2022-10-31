@@ -1,6 +1,10 @@
 package mx.kenzie.eris.api.entity.command;
 
+import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.eris.DiscordAPI;
+import mx.kenzie.eris.api.Lazy;
+import mx.kenzie.eris.api.entity.Snowflake;
 import mx.kenzie.eris.api.magic.CommandType;
 import mx.kenzie.eris.data.Payload;
 
@@ -83,9 +87,45 @@ public class Command extends CreateCommand {
         return this;
     }
     
+    public Permissions getPermissions() {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        assert guild_id != null : "Permissions may be retrieved only within a guild.";
+        final Permissions permissions = new Permissions();
+        permissions.api = api;
+        permissions.application_id = application_id;
+        permissions.guild_id = guild_id;
+        this.api.get("/applications/" + application_id + "/guilds/" + guild_id + "/commands/" + id + "/permissions", permissions)
+            .exceptionally(permissions::error).thenAccept(Lazy::finish);
+        return permissions;
+    }
+    
+    public Command updatePermissions(Permissions permissions) {
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        assert guild_id != null : "Permissions may be altered only within a guild.";
+        this.unready();
+        this.api.request("PUT", "/applications/" + application_id + "/guilds/" + guild_id + "/commands/" + id + "/permissions",
+                Json.toJson(permissions))
+            .exceptionally(throwable -> {
+                this.error(throwable);
+                return null;
+            })
+            .thenAccept(throwable -> this.finish());
+        return this;
+    }
+    
     @Override
     public String toString() {
         return id;
+    }
+    
+    public static class Permissions extends Snowflake {
+        public String application_id, guild_id;
+        public Override[] permissions = new Override[0];
+        
+        public static class Override extends Snowflake {
+            public int type;
+            public boolean permission;
+        }
     }
     
 }
