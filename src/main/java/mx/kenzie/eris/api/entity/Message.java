@@ -68,29 +68,24 @@ public class Message extends UnsentMessage {
     }
     
     public void addAttachment(String filename, String content) {
+        this.addAttachment0(filename, content);
+    }
+    
+    private void addAttachment0(String name, Object content) {
         final List<Attachment> list;
         final boolean has = attachments != null;
         if (has) list = new ArrayList<>(Arrays.asList(attachments));
         else list = new ArrayList<>();
         final Attachment attachment = new Attachment();
-        attachment.id = has ? attachments.length + "" : "0";
-        attachment.filename = filename;
+        attachment.id = list.size() + "";
+        attachment.filename = name;
         attachment.content = content;
         list.add(attachment);
         this.attachments = list.toArray(new Attachment[0]);
     }
     
     public void addAttachment(File file) {
-        final List<Attachment> list;
-        final boolean has = attachments != null;
-        if (has) list = new ArrayList<>(Arrays.asList(attachments));
-        else list = new ArrayList<>();
-        final Attachment attachment = new Attachment();
-        attachment.id = has ? attachments.length + "" : "0";
-        attachment.filename = file.getName();
-        attachment.content = file;
-        list.add(attachment);
-        this.attachments = list.toArray(new Attachment[0]);
+        this.addAttachment0(file.getName(), file);
     }
     
     public Message pin() {
@@ -154,7 +149,6 @@ public class Message extends UnsentMessage {
     public Message reply(Message message) {
         message.message_reference = new Reference();
         message.message_reference.message_id = id;
-//        message.message_reference.channel_id = channel_id;
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return api.sendMessage(channel_id, message);
     }
