@@ -71,6 +71,7 @@ public class Interaction extends Entity implements Event {
         return message;
     }
     
+    @SuppressWarnings("unchecked")
     public synchronized Message getMessage() {
         if (message0 != null) return message0;
         if (!data.resolved.containsKey("messages")) return null;
