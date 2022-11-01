@@ -1,5 +1,6 @@
-package mx.kenzie.eris;
+package mx.kenzie.eris.test;
 
+import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.api.Event;
 import org.junit.Test;
 

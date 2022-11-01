@@ -49,4 +49,49 @@ public class MessageTest extends VerifierTest {
             member?	partial member object	Member who invoked the interaction in the guild""");
     }
     
+    @Test
+    public void retrieveMessage() {
+        final Message message = channel.getMessage(1001025353273327686L);
+        assert message.successful() : message.error().getMessage();
+        assert message.content.equals("message");
+        assert message.author.id.equals("196709350469795841");
+        assert message.attachments == null || message.attachments.length == 0;
+    }
+    
+    @Test
+    public void sendDeleteMessage() {
+        final Channel channel = api.getChannel(1001024258140540938L);
+        final Message message = channel.send(new Message("test"));
+        message.await();
+        assert message.successful() : message.error().getMessage();
+        message.delete();
+        message.await();
+        assert message.successful() : message.error().getMessage();
+    }
+    
+    @Test
+    public void writeTest() {
+        final Message message = bot.getAPI().write("hello there");
+        assert message != null;
+        assert message.successful() : message.error().getMessage();
+    }
+    
+    @Test
+    public void sendMessageTest() {
+        final Message message = new Message("hello there");
+        message.addAttachment("test.txt", "test file.");
+        message.addAttachment("test_2.txt", "test file two.");
+        api.sendMessage(channel, message);
+        message.await();
+        assert message.successful() : message.error().getMessage();
+        assert message.content.equals("hello there");
+        message.content = "general kenobi";
+        message.edit();
+        message.await();
+        assert message.successful() : message.error().getMessage();
+        message.delete();
+        message.await();
+        assert message.successful() : message.error().getMessage();
+    }
+    
 }

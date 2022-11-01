@@ -3,6 +3,8 @@ package mx.kenzie.eris.api.entity;
 import mx.kenzie.eris.test.VerifierTest;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 public class GuildTest extends VerifierTest {
     
     @Test
@@ -61,6 +63,22 @@ public class GuildTest extends VerifierTest {
             approximate_presence_count	integer	approximate number of online members in this guild
             description	?string	the description for the guild
             stickers	array of sticker objects	custom guild stickers""");
+    }
+    
+    @Test
+    public void guildPreviewTest() {
+        final Guild.Preview preview = api.getGuildPreview(guild.id());
+        preview.await();
+        assert preview.successful() : channel.error();
+        assert preview.approximate_member_count > 0 : preview.approximate_member_count;
+        assert preview.approximate_presence_count > 0 : preview.approximate_presence_count;
+        assert preview.name != null : "Name was not retrieved.";
+        assert preview.icon != null : "Icon was not retrieved.";
+        assert preview.splash == null : "Splash was erroneously retrieved.";
+        assert preview.discovery_splash == null : "Discovery was erroneously retrieved.";
+        assert preview.features.length == 0 : Arrays.toString(preview.features);
+        assert preview.emojis.length == 0 : Arrays.toString(preview.emojis);
+        assert preview.stickers.length == 0 : Arrays.toString(preview.stickers);
     }
     
 }

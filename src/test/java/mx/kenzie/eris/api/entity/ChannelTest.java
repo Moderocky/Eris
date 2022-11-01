@@ -1,5 +1,6 @@
 package mx.kenzie.eris.api.entity;
 
+import mx.kenzie.eris.api.magic.ChannelType;
 import mx.kenzie.eris.test.VerifierTest;
 import org.junit.Test;
 
@@ -32,6 +33,26 @@ public class ChannelTest extends VerifierTest {
             permissions?	string	computed permissions for the invoking user in the channel, including overwrites, only included when part of the resolved data received on a slash command interaction
             flags?	integer	channel flags combined as a bitfield
             default_thread_rate_limit_per_user?	integer	the initial rate_limit_per_user to set on newly created threads in a channel. this field is copied to the thread at creation time and does not live update.""");
+    }
+    
+    @Test
+    public void createChannelTest() {
+        final Channel channel = new Channel();
+        channel.type = ChannelType.GUILD_VOICE;
+        channel.name = "Test Channel";
+        guild.createChannel(channel);
+        channel.await();
+        assert channel.successful() : channel.error();
+        assert channel.type == ChannelType.GUILD_VOICE;
+        assert channel.name.equals("Test Channel");
+        assert !channel.nsfw;
+        assert channel.parent_id == null;
+        channel.parent_id = "399248280854200332";
+        channel.modify();
+        channel.await();
+        assert channel.parent_id != null;
+        channel.delete();
+        channel.await();
     }
     
 }

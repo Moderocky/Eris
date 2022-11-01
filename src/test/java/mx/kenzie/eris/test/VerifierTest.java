@@ -1,17 +1,56 @@
 package mx.kenzie.eris.test;
 
+import mx.kenzie.argo.Json;
 import mx.kenzie.argo.meta.Name;
 import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.eris.Bot;
+import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.entity.Channel;
 import mx.kenzie.eris.api.entity.Guild;
 import mx.kenzie.eris.api.entity.User;
+import mx.kenzie.eris.api.magic.Intents;
 import mx.kenzie.eris.data.Payload;
+import org.junit.BeforeClass;
 
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
 public abstract class VerifierTest {
+    
+    private static final String TOKEN;
+    public static boolean running;
+    protected static Bot bot;
+    protected static DiscordAPI api;
+    protected static Guild guild;
+    protected static Channel channel;
+    
+    static {
+        final InputStream stream = BasicFunctionalityTest.class.getClassLoader().getResourceAsStream("token.json");
+        assert stream != null;
+        try (final Json json = new Json(stream)) {
+            final String[] tokens = json.toArray(new String[0]);
+            TOKEN = tokens[0];
+        }
+    }
+    
+    @BeforeClass
+    public static void setup() {
+        if (running) return;
+        running = true;
+        bot = new Bot(TOKEN, Intents.MESSAGE_CONTENT, Intents.DIRECT_MESSAGES, Intents.GUILDS, Intents.GUILD_BANS, Intents.GUILD_MEMBERS);
+        api = bot.getAPI();
+        bot.start();
+        bot.await();
+        guild = api.getGuild(399248280300683275L);
+        channel = api.getChannel(1001024258140540938L);
+        guild.await();
+        channel.await();
+        assert guild.successful();
+        assert channel.successful();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> bot.close()));
+    }
     
     protected void magic(Class<?> constant, String schema) {
         final String[] lines = schema.split("\n");

@@ -136,7 +136,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     protected final Map<Command, CommandHandler> commands = new HashMap<>();
     protected final DiscordAPI api;
     final String token;
-    final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(A, B)"};
+    final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(Eris, B)"};
     private final Object lock = new Object();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
     protected NetworkController network;
