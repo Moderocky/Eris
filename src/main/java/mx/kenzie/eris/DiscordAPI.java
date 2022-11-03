@@ -632,7 +632,7 @@ public class DiscordAPI {
         @SuppressWarnings("unchecked")
         private Constructor<Type> identifyInitialConstructor() {
             if (!type.isLocalClass()) try {
-                Constructor<Type> constructor = type.getDeclaredConstructor();
+                final Constructor<Type> constructor = type.getDeclaredConstructor();
                 final boolean result = constructor.trySetAccessible();
                 assert result || constructor.canAccess(null);
                 return constructor;
