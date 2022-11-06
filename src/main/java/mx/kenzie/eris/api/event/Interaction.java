@@ -26,6 +26,7 @@ public class Interaction extends Entity implements Event {
     public Member member;
     public User user;
     public Data data = new Data();
+    public transient Map<String, Object> __data;
     private transient Message message0;
     
     public Message sendMessage(Message message) {
@@ -148,14 +149,22 @@ public class Interaction extends Entity implements Event {
     }
     
     public class Data extends Payload {
-        public String name, id, custom_id, guild_id, target_id;
+        public String name, id, guild_id, target_id;
         public Integer type;
         public Option[] options;
         
         public Row[] components;
         public Map<String, Object> resolved;
         
+        public String custom_id;
+        public Integer component_type;
+        public Object[] values;
+        public transient Map<String, Object> __data;
         private transient Input[] inputs0;
+        
+        public boolean isFromMessage() {
+            return component_type != null && type == null;
+        }
         
         public String getInputValue(String id) {
             final Input[] inputs = this.getInputs();
