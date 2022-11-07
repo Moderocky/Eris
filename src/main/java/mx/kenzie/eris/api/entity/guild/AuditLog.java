@@ -1,12 +1,15 @@
 package mx.kenzie.eris.api.entity.guild;
 
 import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.eris.api.Lazy;
+import mx.kenzie.eris.api.entity.Integration;
 import mx.kenzie.eris.api.entity.Thread;
-import mx.kenzie.eris.api.entity.*;
+import mx.kenzie.eris.api.entity.User;
+import mx.kenzie.eris.api.entity.Webhook;
 import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.data.Payload;
 
-public class AuditLog extends Entity {
+public class AuditLog extends Lazy {
     
     public Command[] application_commands;
     public Entry[] audit_log_entries;

@@ -9,6 +9,7 @@ import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.entity.guild.*;
 import mx.kenzie.eris.api.utility.BulkEntity;
 import mx.kenzie.eris.api.utility.LazyList;
+import mx.kenzie.eris.api.utility.Query;
 import mx.kenzie.eris.data.Payload;
 
 import java.time.Duration;
@@ -37,6 +38,14 @@ public class Guild extends Snowflake {
     public Payload application_command_counts;
     public @Optional Payload welcome_screen;
     private transient LazyList<Role> roles0;
+    
+    public AuditLog getAuditLog(Query query) {
+        final AuditLog log = new AuditLog();
+        log.api = this.api;
+        this.api.get("/guilds/" + this.id + "/audit-logs", query, log)
+            .exceptionally(log::error).thenAccept(Lazy::finish);
+        return log;
+    }
     
     public BulkEntity<Rule> getRules() {
         return BulkEntity.of(api, Rule.class, list -> this.api.get("/guilds/" + id + "/auto-moderation/rules", null, list));
