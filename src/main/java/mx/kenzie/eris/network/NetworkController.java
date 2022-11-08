@@ -87,9 +87,9 @@ public class NetworkController implements Closeable {
     }
     
     public CompletableFuture<?> sendPayload(Outgoing payload) {
-        if (Bot.DEBUG_MODE) System.out.println("Dispatch: " + payload.getClass().getSimpleName());
         assert socket != null;
         assert payload != null;
+        this.bot.debug("Dispatch " + payload.getClass().getSimpleName());
         return this.socket.sendText(Json.toJson(payload), true);
     }
     
@@ -144,6 +144,7 @@ public class NetworkController implements Closeable {
     }
     
     public WebSocket openSocket(String url) {
+        this.bot.debug("Building websocket.");
         final WebSocket.Builder builder = client.newWebSocketBuilder();
         this.socket = builder.buildAsync(URI.create(url), new SocketListener(this)).join();
         return socket;

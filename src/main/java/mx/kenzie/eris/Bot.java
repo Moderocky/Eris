@@ -129,6 +129,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("INVALID_SESSION", InvalidSession.class);
         // internally-tracked events
         EVENT_LIST.put("$INTERNAL_CLOSE_SOCKET", SocketClose.class);
+        EVENT_LIST.put("$INTERNAL_DEBUG", Debug.class);
     }
     
     public final ExecutorService executor = Executors.newCachedThreadPool();
@@ -241,20 +242,23 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             this.registerPayloadListener(Incoming.class, incoming -> incoming.network.notify(incoming.sequence));
             this.registerPayloadListener(Dispatch.class, dispatch -> {
                 final Json.JsonHelper helper = dispatch.network.helper;
-                if (Bot.DEBUG_MODE) System.out.println("Preparing: " + dispatch.key + " " + dispatch.data.keySet());
+                this.debug("Preparing " + dispatch.key);
                 final Class<? extends Event> type = EVENT_LIST.getOrDefault(dispatch.key, Event.Unknown.class);
                 final Event event = helper.createObject(type);
                 if (event instanceof Entity entity) entity.api = this.api;
                 helper.mapToObject(event, type, dispatch.data);
                 this.triggerEvent(event);
             });
+            this.registerListener(Debug.class, debug -> System.out.println(debug.message));
             this.registerListener(SocketClose.class, close -> {
+                this.debug("Received close event (" + close.code + ")");
                 if (close.code >= 1000 && close.code < 2000) {
                     if (heartbeat != null) heartbeat.cancel(true);
                     this.heartbeat = null;
                     this.network.sequence.set(0);
                     this.shouldResume = false; // Don't resume for RFC spec. closing codes
                 }
+                this.debug("Attempting reconnect sequence.");
                 if (close.getReason() == SocketClose.Reason.INVALID_SEQUENCE) {
                     if (heartbeat != null) heartbeat.cancel(true);
                     this.heartbeat = null;
@@ -265,7 +269,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             });
             this.registerPayloadListener(Reconnect.class, reconnect -> this.connect(true));
             this.registerPayloadListener(InvalidSession.class, session -> {
-                if (DEBUG_MODE) System.out.println("Received Invalid Session (9)");
+                this.debug("Received Invalid Session (9)");
                 /*
                  * We never attempt a resume here, even if the payload suggests one
                  * may be possible — This is done to keep the code simple; keeping track
@@ -334,7 +338,6 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     @SuppressWarnings({"unchecked", "RawUseOfParameterized"})
     public void triggerEvent(Event event) {
         assert event instanceof Payload : "Event was not a payload.";
-        if (Bot.DEBUG_MODE) System.out.println("Event: " + event.getClass().getSimpleName());
         for (final Map.Entry<Listener<?>, Class<? extends Event>> entry : this.listeners.entrySet()) {
             final Class<?> type = entry.getValue();
             if (!type.isInstance(event)) continue;
@@ -358,6 +361,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             Thread.sleep(5000L); // required pause before reconnect
         } catch (InterruptedException ignored) {
         }
+        this.debug("Preparing to open socket.");
         this.openSocket();
     }
     
@@ -374,7 +378,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     
     private void openSocket() {
         try (final Json json = new Json(network.request("GET", "/gateway/bot", null, headers).body())) {
-            if (DEBUG_MODE) System.out.println("Opening socket.");
+            this.debug("Requested socket URL.");
             final GatewayConnection connection = json.toObject(new GatewayConnection());
             this.socket = network.openSocket(connection.url + "/?v=10&encoding=json");
         } catch (IOException | InterruptedException ex) {
@@ -389,5 +393,17 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     @Override
     public String toString() {
         return "Bot " + this.self;
+    }
+    
+    public void debug(String message) {
+        if (!DEBUG_MODE) return;
+        final Throwable throwable = new Throwable();
+        final StackTraceElement[] original, trace;
+        throwable.fillInStackTrace();
+        original = throwable.getStackTrace();
+        trace = new StackTraceElement[original.length - 1];
+        System.arraycopy(original, 1, trace, 0, trace.length);
+        final Debug debug = new Debug(message, trace);
+        this.triggerEvent(debug);
     }
 }

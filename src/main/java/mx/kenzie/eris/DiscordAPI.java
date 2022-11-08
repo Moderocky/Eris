@@ -90,7 +90,7 @@ public class DiscordAPI {
                 throw new DiscordException("Error in request.", ex);
             }
         }).exceptionally(throwable -> {
-            if (Bot.DEBUG_MODE) throwable.printStackTrace();
+            this.bot.debug("Thrown " + throwable.getMessage());
             if (throwable instanceof CompletionException ex) throwable = ex.getCause();
             if (object instanceof Lazy lazy) lazy.error(throwable);
             else Bot.handle(throwable);
@@ -105,7 +105,7 @@ public class DiscordAPI {
             final boolean isMap = json.willBeMap();
             if (isMap) map.putAll(json.toMap());
             if (isMap && map.containsKey("code") && map.containsKey("message")) {
-                if (Bot.DEBUG_MODE) System.err.println("Error " + map.get("code") + ": " + map);
+                this.bot.debug("Error " + map.get("code") + ": " + map);
                 final APIException error = new APIException(map.get("message") + "");
                 this.network.helper.mapToObject(error, APIException.class, map);
                 throw error;
@@ -165,7 +165,6 @@ public class DiscordAPI {
                 final HttpResponse<InputStream> request = this.network.multiRequest(type, path, body, bot.headers);
                 return this.handle(request, object);
             } catch (IOException | InterruptedException ex) {
-                if (Bot.DEBUG_MODE) ex.printStackTrace();
                 throw new DiscordException("Error in request.", ex);
             } finally {
                 try {
@@ -175,7 +174,6 @@ public class DiscordAPI {
                 }
             }
         }).exceptionally(throwable -> {
-            if (Bot.DEBUG_MODE) throwable.printStackTrace();
             if (throwable instanceof CompletionException ex) throwable = ex.getCause();
             if (object instanceof Lazy lazy) lazy.error(throwable);
             else Bot.handle(throwable);
@@ -610,7 +608,6 @@ public class DiscordAPI {
             try {
                 return this.network.request(type, path, body, bot.headers).body();
             } catch (IOException | InterruptedException ex) {
-                if (Bot.DEBUG_MODE) ex.printStackTrace();
                 throw new DiscordException(ex);
             }
         });

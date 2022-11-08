@@ -30,7 +30,7 @@ public class SocketClose extends Payload implements Event {
          See https://web.archive.org/web/20220728102833/https://www.rfc-editor.org/rfc/rfc6455#section-7.4.1.
          (Archived from the original: https://www.rfc-editor.org/rfc/rfc6455#section-7.4.1, 2022-07-28T10:28:33)
         */
-        WS_CLOSED(1000, false),
+        WS_CLOSED(1000, true),
         WS_GOING_AWAY(1001, true),
         WS_PROTOCOL_ERROR(1002, true),
         WS_UNACCEPTABLE_DATA(1003, false),
