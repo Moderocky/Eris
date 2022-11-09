@@ -32,10 +32,7 @@ import mx.kenzie.eris.api.event.thread.*;
 import mx.kenzie.eris.api.utility.WeakMap;
 import mx.kenzie.eris.data.Payload;
 import mx.kenzie.eris.data.incoming.Incoming;
-import mx.kenzie.eris.data.incoming.gateway.Dispatch;
-import mx.kenzie.eris.data.incoming.gateway.Hello;
-import mx.kenzie.eris.data.incoming.gateway.InvalidSession;
-import mx.kenzie.eris.data.incoming.gateway.Reconnect;
+import mx.kenzie.eris.data.incoming.gateway.*;
 import mx.kenzie.eris.data.incoming.http.GatewayConnection;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 import mx.kenzie.eris.data.outgoing.gateway.Heartbeat;
@@ -145,6 +142,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     protected volatile Self self;
     protected volatile String session;
     protected transient WebSocket socket;
+    protected boolean heartbeatReceived;
     private boolean running = true;
     private CompletableFuture<?> process;
     private ScheduledFuture<?> heartbeat;
@@ -239,6 +237,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     @Override
     public void run() {
         try {
+            this.registerPayloadListener(HeartbeatReceived.class, beat -> this.heartbeatReceived = true);
             this.registerPayloadListener(Incoming.class, incoming -> incoming.network.notify(incoming.sequence));
             this.registerPayloadListener(Dispatch.class, dispatch -> {
                 final Json.JsonHelper helper = dispatch.network.helper;
@@ -291,11 +290,15 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 identify.data.token = this.token;
                 final int delay = hello.data.heartbeat_interval;
                 this.dispatch(identify);
+                if (heartbeat != null) heartbeat.cancel(true);
                 this.heartbeat = scheduler.scheduleWithFixedDelay(() -> {
                     final Heartbeat heartbeat = new Heartbeat();
                     final int sequence = this.network.sequence.getAcquire();
                     heartbeat.data = sequence < 1 ? null : sequence;
-                    this.dispatch(heartbeat);
+                    if (heartbeatReceived) {
+                        this.dispatch(heartbeat);
+                        this.heartbeatReceived = false;
+                    } else this.connect(true);
                 }, (long) (delay * ThreadLocalRandom.current().nextDouble(0, 1)), delay, TimeUnit.MILLISECONDS);
                 this.shouldResume = true;
             });
@@ -361,6 +364,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             Thread.sleep(5000L); // required pause before reconnect
         } catch (InterruptedException ignored) {
         }
+        this.heartbeatReceived = true; // to pass first time
         this.debug("Preparing to open socket.");
         this.openSocket();
     }

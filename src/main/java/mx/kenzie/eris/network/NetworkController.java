@@ -34,7 +34,7 @@ public class NetworkController implements Closeable {
         NETWORK_CODES.put(7, Reconnect.class);
         NETWORK_CODES.put(9, InvalidSession.class);
         NETWORK_CODES.put(10, Hello.class);
-        NETWORK_CODES.put(11, Heartbeat.class);
+        NETWORK_CODES.put(11, HeartbeatReceived.class);
     }
     
     public final Map<Integer, Class<? extends Incoming>> codes = new HashMap<>(NETWORK_CODES);
