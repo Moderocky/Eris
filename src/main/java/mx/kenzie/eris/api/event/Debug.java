@@ -13,4 +13,12 @@ public class Debug extends Payload implements Event {
         this.trace = trace;
     }
     
+    public Class<?> getSource() {
+        try {
+            return Class.forName(trace[0].getClassName());
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+    }
+    
 }

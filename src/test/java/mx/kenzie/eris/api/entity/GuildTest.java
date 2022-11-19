@@ -76,7 +76,7 @@ public class GuildTest extends VerifierTest {
         assert preview.icon != null : "Icon was not retrieved.";
         assert preview.splash == null : "Splash was erroneously retrieved.";
         assert preview.discovery_splash == null : "Discovery was erroneously retrieved.";
-        assert preview.features.length == 0 : Arrays.toString(preview.features);
+        assert preview.features.length == 1 : Arrays.toString(preview.features);
         assert preview.emojis.length == 0 : Arrays.toString(preview.emojis);
         assert preview.stickers.length == 0 : Arrays.toString(preview.stickers);
     }
