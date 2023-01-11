@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Button extends Component {
     
-    private static final AtomicInteger COUNTER = new AtomicInteger();
+    protected static final AtomicInteger COUNTER = new AtomicInteger();
     public int style = 1;
     public @Optional String label, url;
     public @Optional Payload emoji;

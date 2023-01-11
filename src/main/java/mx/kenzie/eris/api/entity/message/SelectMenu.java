@@ -4,6 +4,8 @@ import mx.kenzie.argo.meta.Name;
 import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.data.Payload;
 
+import static mx.kenzie.eris.api.entity.message.Button.COUNTER;
+
 public class SelectMenu extends Component {
     
     public int min_values = 1, max_values = 1;
@@ -75,6 +77,21 @@ public class SelectMenu extends Component {
     public SelectMenu disabled(boolean disabled) {
         this.disabled = disabled;
         return this;
+    }
+    
+    public static SelectMenu auto(int min, int max, String placeholder, Option... options) {
+        return SelectMenu.auto(null, min, max, placeholder, options);
+    }
+    
+    public static SelectMenu auto(String id, int min, int max, String placeholder, Option... options) {
+        if (id == null) id = "auto_menu_id_" + COUNTER.incrementAndGet();
+        final SelectMenu menu = new SelectMenu(id, min, max, placeholder, options);
+        menu.expectResult();
+        return menu;
+    }
+    
+    public static SelectMenu auto(String placeholder, Option... options) {
+        return SelectMenu.auto(null, 1, 1, placeholder, options);
     }
     
     public static class Option extends Payload {
