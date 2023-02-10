@@ -10,7 +10,7 @@ import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.data.Payload;
 
 public class AuditLog extends Lazy {
-    
+
     public Command[] application_commands;
     public Entry[] audit_log_entries;
     public Rule[] auto_moderation_rules;
@@ -19,13 +19,13 @@ public class AuditLog extends Lazy {
     public Thread[] threads;
     public User[] users;
     public Webhook[] webhooks;
-    
+
     public static class Entry extends Payload {
         public String target_id, user_id, id, reason;
         public @Optional Payload[] changes;
         public int action_type;
         public Payload options;
-        
+
     }
-    
+
 }

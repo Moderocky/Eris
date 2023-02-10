@@ -16,86 +16,111 @@ public class Option extends Entity {
     public @Optional int[] channel_types;
     public @Optional Number min_value, max_value;
     public @Optional Integer min_length, max_length;
-    
+
     public Option() {
     }
-    
+
+    public Option(String name, String description, int type) {
+        this.name = name;
+        this.description = description;
+        this.type = type;
+    }
+
     public Option(String name, String description, int type, Choice<?>... choices) {
         this.name = name;
         this.description = description;
         this.type = type;
         this.choices = choices;
     }
-    
+
+    public Option(String name, String description, int type, Option... options) {
+        this.name = name;
+        this.description = description;
+        this.type = type;
+        this.options = options;
+    }
+
     public static <Type> Choice<Type> choice(String name, Type value) {
         return new Choice<>(name, value);
     }
-    
+
     @SafeVarargs
     public static Option ofBooleans(String name, String description, Choice<Boolean>... choices) {
         return new Option(name, description, OptionType.BOOLEAN, choices);
     }
-    
+
     @SafeVarargs
     public static Option ofStrings(String name, String description, Choice<String>... choices) {
         return new Option(name, description, OptionType.STRING, choices);
     }
-    
+
+    public static Option subGroup(String name, String description, Option... options) {
+        return new Option(name, description, OptionType.SUB_COMMAND_GROUP, options);
+    }
+
+    public static Option subCommand(String name, String description, Option... options) {
+        return new Option(name, description, OptionType.SUB_COMMAND, options);
+    }
+
+    public static Option of(String name, String description, @MagicConstant(flagsFromClass = OptionType.class) int type) {
+        return new Option(name, description, type);
+    }
+
     public Option type(int type) {
         this.type = type;
         return this;
     }
-    
+
     public Option required(boolean required) {
         this.required = required;
         return this;
     }
-    
+
     public Option name(String name) {
         this.name = name;
         return this;
     }
-    
+
     public Option description(String description) {
         this.description = description;
         return this;
     }
-    
+
     public Option choices(Choice<?>... choices) {
         this.choices = choices;
         return this;
     }
-    
+
     public Option options(Option... options) {
         this.options = options;
         return this;
     }
-    
+
     public Option channel_types(int... channel_types) {
         this.channel_types = channel_types;
         return this;
     }
-    
+
     public Option min_value(Number min_value) {
         this.min_value = min_value;
         return this;
     }
-    
+
     public Option max_value(Number max_value) {
         this.max_value = max_value;
         return this;
     }
-    
+
     public Option min_length(Integer min_length) {
         this.min_length = min_length;
         return this;
     }
-    
+
     public Option max_length(Integer max_length) {
         this.max_length = max_length;
         return this;
     }
-    
+
     public Option autocomplete(boolean autocomplete) {
         this.autocomplete = autocomplete;
         return this;
@@ -115,20 +140,20 @@ public class Option extends Entity {
 //    min_length?	integer	For option type STRING, the minimum allowed length (minimum of 0)
 //    max_length?	integer	For option type STRING, the maximum allowed length (minimum of 1)
 //    autocomplete? *	boolean	If autocomplete interactions are enabled for this STRING, INTEGER, or NUMBER type option
-    
+
     public static class Choice<Type> extends Payload {
         public String name;
         public @Optional Payload name_localizations;
         public Type value;
-        
+
         public Choice() {
         }
-        
+
         public Choice(String name, Type value) {
             this.name = name;
             this.value = value;
         }
-        
+
     }
-    
+
 }

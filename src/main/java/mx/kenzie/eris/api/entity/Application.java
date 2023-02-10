@@ -15,18 +15,18 @@ public class Application extends Snowflake implements ApplicationFlags {
     public @Optional Team team;
     public @Optional InstallParams install_params;
     public @Deprecated String summary;
-    
+
     @Override
     public int flags() {
         return flags;
     }
-    
+
     public static class InstallParams extends Payload implements Permission {
         public String[] scopes;
         public String permissions;
-        
+
         private transient long permissions0;
-        
+
         @Override
         public long permissions() {
             if (permissions == null) return permissions0;
@@ -34,5 +34,5 @@ public class Application extends Snowflake implements ApplicationFlags {
             return permissions0;
         }
     }
-    
+
 }

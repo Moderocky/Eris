@@ -4,21 +4,21 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MagicQueue<Type> {
-    
+
     private final Queue<Type> queue = new ConcurrentLinkedQueue<>();
     private final Object lock = new Object();
     volatile boolean closed;
-    
+
     public MagicQueue() {
     }
-    
+
     public void close() {
         this.closed = true;
         synchronized (lock) {
             this.lock.notifyAll();
         }
     }
-    
+
     public void add(Type type) {
         try {
             this.queue.offer(type);
@@ -29,7 +29,7 @@ public class MagicQueue<Type> {
             ex.printStackTrace();
         }
     }
-    
+
     public Type get() {
         Type type;
         while ((type = this.queue.poll()) == null && !closed) try {

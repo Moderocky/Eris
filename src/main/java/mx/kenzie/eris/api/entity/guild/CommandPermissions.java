@@ -6,7 +6,7 @@ import mx.kenzie.eris.data.Payload;
 public class CommandPermissions extends Snowflake {
     public String application_id, guild_id;
     public Permission[] permissions;
-    
+
     public static class Permission extends Payload {
         public String id;
         public int type;

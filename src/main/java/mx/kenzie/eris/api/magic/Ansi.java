@@ -20,50 +20,50 @@ public interface Ansi {
         BG_PALE = new Internal("44"),
         BG_LILAC = new Internal("45"),
         BG_WHITE = new Internal("47");
-    
+
     Ansi add(Ansi ansi);
-    
+
     Ansi bold();
-    
+
     Ansi italic();
-    
+
     Ansi underline();
-    
+
     Ansi strikethrough();
-    
+
 }
 
 record Internal(String code) implements Ansi {
     //    static final char CODE = ''; // 
     static final String CODE = "\\u001b";
-    
+
     @Override
     public String toString() {
         return CODE + '[' + code + 'm';
     }
-    
+
     @Override
     public Ansi add(Ansi ansi) {
         return new Internal(this.code + ';' + ((Internal) ansi).code);
     }
-    
+
     public Ansi bold() {
         return new Internal(this.code + ';' + 1);
     }
-    
+
     @Override
     public Ansi italic() {
         return new Internal(this.code + ';' + 2);
     }
-    
+
     @Override
     public Ansi underline() {
         return new Internal(this.code + ';' + 3);
     }
-    
+
     @Override
     public Ansi strikethrough() {
         return new Internal(this.code + ';' + 9);
     }
-    
+
 }

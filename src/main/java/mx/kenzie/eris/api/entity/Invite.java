@@ -21,37 +21,37 @@ public class Invite extends Lazy {
     public @Optional Integer target_type; // STREAM = 1, EMBEDDED_APPLICATION = 2
     public boolean temporary;
     public @Optional Application target_application;
-    
+
     protected Invite() {
         this.finish();
     }
-    
+
     public Invite(DiscordAPI api, String code) {
         this.api = api;
         this.api.get("/invites/" + code,
                 Query.make("with_counts", true, "with_expiration", true), this)
             .exceptionally(this::error).thenAccept(Invite::finish);
     }
-    
+
     public Invite delete() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
         this.api.delete("/invites/" + code).exceptionally(this::error0).thenAccept(this::finish0);
         return this;
     }
-    
+
     private void finish0(Void unused) {
         this.finish();
     }
-    
+
     public boolean hasCreation() {
         return created_at != null;
     }
-    
+
     public boolean expired() {
         return this.hasExpiry() && DiscordAPI.getInstant(expires_at).isBefore(Instant.now());
     }
-    
+
     public boolean hasExpiry() {
         return expires_at != null;
     }

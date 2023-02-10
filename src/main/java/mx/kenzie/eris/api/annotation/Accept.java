@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.LOCAL_VARIABLE, ElementType.TYPE_PARAMETER})
 public @interface Accept {
-    
+
     Class<?>[] value() default {};
-    
+
 }

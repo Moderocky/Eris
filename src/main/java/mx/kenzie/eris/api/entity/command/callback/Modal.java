@@ -10,25 +10,25 @@ import mx.kenzie.eris.api.event.Interaction;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Modal extends Expecting<Interaction> implements Callback {
-    
+
     private static final AtomicInteger COUNTER = new AtomicInteger();
     public String custom_id, title;
     public @Any Component[] components;
-    
+
     public Modal() {
     }
-    
+
     public Modal(String id, String title, Component... components) {
         assert components.length > 0 && components.length < 6;
         this.custom_id = id;
         this.title = title;
         this.components = components;
     }
-    
+
     public static Modal auto(String title, Component... components) {
         return Modal.auto(null, title, components);
     }
-    
+
     public static Modal auto(String id, String title, Component... components) {
         if (id == null) id = "auto_modal_id_" + COUNTER.incrementAndGet();
         final Modal modal = new Modal();
@@ -44,13 +44,13 @@ public class Modal extends Expecting<Interaction> implements Callback {
         modal.expectResult();
         return modal;
     }
-    
+
     @Override
     public void expectResult() {
         Bot.INLINE_CALLBACKS.set(custom_id, this);
         this.trigger();
     }
-    
+
     @Override
     public int interactionResponseType() {
         return 9;

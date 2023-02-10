@@ -5,5 +5,5 @@ import mx.kenzie.eris.data.Payload;
 
 public class DeleteMessage extends Payload implements Event {
     public String id, channel_id, guild_id;
-    
+
 }

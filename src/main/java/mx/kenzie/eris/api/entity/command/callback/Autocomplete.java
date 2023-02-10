@@ -4,16 +4,16 @@ import mx.kenzie.eris.api.entity.Entity;
 import mx.kenzie.eris.api.entity.command.Option;
 
 public class Autocomplete extends Entity implements Callback {
-    
+
     public Option.Choice<?>[] choices;
-    
+
     public Autocomplete() {
     }
-    
+
     public Autocomplete(Option.Choice<?>... choices) {
         this.choices = choices;
     }
-    
+
     public static Autocomplete of(String... strings) {
         assert strings.length > 1;
         assert (strings.length & 1) == 0;
@@ -26,10 +26,10 @@ public class Autocomplete extends Entity implements Callback {
         }
         return new Autocomplete(choices);
     }
-    
+
     @Override
     public int interactionResponseType() {
         return 8;
     }
-    
+
 }

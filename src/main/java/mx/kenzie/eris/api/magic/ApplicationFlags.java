@@ -10,11 +10,11 @@ public interface ApplicationFlags {
         EMBEDDED = 1 << 17, // Indicates if an app is embedded within the Discord client (currently unavailable publicly)
         GATEWAY_MESSAGE_CONTENT = 1 << 18, // Intent required for bots in 100 or more servers to receive message content
         GATEWAY_MESSAGE_CONTENT_LIMITED = 1 << 19; // Intent required for bots in under 100 servers to receive message content, found in Bot Settings
-    
+
     default boolean hasFlag(int flag) {
         final long flags = this.flags();
         return (flags & flag) != 0;
     }
-    
+
     int flags();
 }

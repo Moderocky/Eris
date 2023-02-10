@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Interaction extends Entity implements Event {
-    
+
     public int type;
     public String token, id, guild_id, app_permissions, guild_locale, locale, channel_id, target_id;
     public Member member;
@@ -28,17 +28,17 @@ public class Interaction extends Entity implements Event {
     public Data data = new Data();
     public transient Map<String, Object> __data;
     private transient Message message0;
-    
+
     public Message sendMessage(Message message) {
         final String application = api.getApplicationID();
         this.api.sendMessagePoint("/webhooks/" + application + "/" + token, message, InteractionMessage.class);
         return message;
     }
-    
+
     public Callback respond(Callback callback) {
         return this.respond(callback, callback.interactionResponseType());
     }
-    
+
     public Callback respond(Callback callback, int type) {
         final Response response;
         if (callback instanceof Entity entity) entity.api = api;
@@ -49,13 +49,13 @@ public class Interaction extends Entity implements Event {
         this.api.interactionResponse(this, response);
         return callback;
     }
-    
+
     public void deleteOriginalResponse() {
         final String application = api.getApplicationID();
         assert api != null;
         this.api.delete("/webhooks/" + application + "/" + token + "/messages/@original");
     }
-    
+
     public Message getOriginalResponse() {
         final String application = api.getApplicationID();
         final Message message = new Message();
@@ -63,7 +63,7 @@ public class Interaction extends Entity implements Event {
             .exceptionally(message::error).thenAccept(Lazy::finish);
         return message;
     }
-    
+
     public Message editOriginalResponse(Message message) {
         final String application = api.getApplicationID();
         message.unready();
@@ -71,7 +71,7 @@ public class Interaction extends Entity implements Event {
             .exceptionally(message::error).thenAccept(Lazy::finish);
         return message;
     }
-    
+
     @SuppressWarnings("unchecked")
     public synchronized Message getMessage() {
         if (message0 != null) return message0;
@@ -87,18 +87,18 @@ public class Interaction extends Entity implements Event {
         }
         return null;
     }
-    
+
     public static class Input extends Payload {
         public int type;
         public String custom_id, value;
         public String[] values;
     }
-    
+
     public static class Row extends Payload {
         public int type = 1;
         public Input[] components;
     }
-    
+
     public static class Option extends Payload {
         public int type;
         public String name;
@@ -106,66 +106,66 @@ public class Interaction extends Entity implements Event {
         public Option[] options;
         public boolean focused;
     }
-    
+
     static class GenericResponse extends Response {
         public @Optional
         @Any Callback data;
-        
+
         private GenericResponse() {
             this(null);
         }
-        
+
         public GenericResponse(Callback callback) {
             this.data = callback;
         }
-        
+
         @Override
         public Object data() {
             return data;
         }
     }
-    
+
     static class MessageResponse extends Response {
         public InteractionMessage data;
-        
+
         private MessageResponse() {
             this(null);
         }
-        
+
         public MessageResponse(Message message) {
             this.data = message;
         }
-        
+
         @Override
         public Object data() {
             return data;
         }
     }
-    
+
     public static abstract class Response extends Payload {
         public int type;
-        
+
         public abstract Object data();
     }
-    
+
     public class Data extends Payload {
         public String name, id, guild_id, target_id;
         public Integer type;
         public Option[] options;
-        
+
         public Row[] components;
         public Map<String, Object> resolved;
-        
+
         public String custom_id;
         public Integer component_type;
         public Object[] values;
         public transient Map<String, Object> __data;
         private transient Input[] inputs0;
-        
+
         public boolean isFromMessage() {
             return component_type != null && type == null;
         }
-        
+
         public String getInputValue(String id) {
             final Input[] inputs = this.getInputs();
             for (final Input input : inputs) {
@@ -176,25 +176,25 @@ public class Interaction extends Entity implements Event {
             }
             return null;
         }
-        
+
         public Input[] getInputs() {
             if (inputs0 != null) return inputs0;
             final List<Input> list = new ArrayList<>();
             for (final Row row : components) Collections.addAll(list, row.components);
             return inputs0 = list.toArray(new Input[0]);
         }
-        
+
         public String[] getInputValues(String id) {
             final Input[] inputs = this.getInputs();
             for (final Input input : inputs) {
                 if (!id.equals(input.custom_id)) continue;
                 if (input.values != null) return input.values;
-                if (input.value != null) return new String[] {input.value};
+                if (input.value != null) return new String[]{input.value};
                 return new String[0];
             }
             return new String[0];
         }
-        
+
         @SuppressWarnings("unchecked")
         public SnowflakeMap<Message> getMessages() {
             final SnowflakeMap<Message> map = new SnowflakeMap<>();
@@ -210,7 +210,7 @@ public class Interaction extends Entity implements Event {
             }
             return map;
         }
-        
+
         @SuppressWarnings("unchecked")
         public SnowflakeMap<User> getUsers() {
             final SnowflakeMap<User> map = new SnowflakeMap<>();
@@ -226,9 +226,9 @@ public class Interaction extends Entity implements Event {
             }
             return map;
         }
-        
+
         // todo members
-        
+
     }
-    
+
 }

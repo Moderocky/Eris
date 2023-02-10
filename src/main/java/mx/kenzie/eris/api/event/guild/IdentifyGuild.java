@@ -7,12 +7,12 @@ import mx.kenzie.eris.api.entity.voice.VoiceState;
 import mx.kenzie.eris.data.Payload;
 
 public class IdentifyGuild extends Guild implements Event {
-    
+
     public String joined_at;
     public boolean large, unavailable;
     public int member_count;
     public VoiceState[] voice_states;
-    
+
     public Payload[] members, presences, stage_instances, guild_scheduled_events;
     public Channel[] channels;
     public Thread[] threads;

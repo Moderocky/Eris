@@ -9,18 +9,18 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class MultiBody implements AutoCloseable {
-    
+
     private final MemoryOutputStream write;
-    
+
     public MultiBody() {
         this.write = new MemoryOutputStream(1024, true);
         this.write("");
     }
-    
+
     protected void write(String line) {
         this.write.write((line + "\r\n").getBytes());
     }
-    
+
     public void sectionMessage(String data) {
         this.write("--boundary");
         this.write("Content-Disposition: form-data; name=\"payload_json\"");
@@ -28,11 +28,11 @@ public class MultiBody implements AutoCloseable {
         this.write("");
         this.write(data);
     }
-    
+
     public void finish() {
         this.write("--boundary--");
     }
-    
+
     public void section(String name, String data) {
         this.write("--boundary");
         this.write("Content-Disposition: form-data; name=\"" + name + "\"");
@@ -40,7 +40,7 @@ public class MultiBody implements AutoCloseable {
         this.write("");
         this.write(data);
     }
-    
+
     public void section(String name, String filename, Object data) {
         this.write("--boundary");
         this.write("Content-Disposition: form-data; name=\"" + name + "\"; filename=\"" + filename + "\"");
@@ -62,7 +62,7 @@ public class MultiBody implements AutoCloseable {
             }
         } else this.write(data.toString());
     }
-    
+
     public void section(String name, File file) {
         final String key = file.getName();
         this.write("--boundary");
@@ -76,11 +76,11 @@ public class MultiBody implements AutoCloseable {
             throw new DiscordException(e);
         }
     }
-    
+
     public InputStream stream() { // this needs to be closed
         return write.createInputStream();
     }
-    
+
     @Override
     public void close() throws Exception {
         this.write.freeMemory();

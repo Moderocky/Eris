@@ -8,7 +8,7 @@ public interface GuildScheduledEvent {
             COMPLETED = 3,
             CANCELED = 4;
     }
-    
+
     interface EntityTypes {
         int
             STAGE_INSTANCE = 1,

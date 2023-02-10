@@ -11,19 +11,19 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class Thread extends Channel {
-    
+
     public @Optional int message_count, member_count, total_message_sent, default_auto_archive_duration;
     public @Optional Payload thread_metadata;
     public @Optional Member member;
     public @Optional String[] member_ids_preview;
     public @Optional String[] applied_tags = new String[0];
-    
+
     public boolean isForumThread() {
         if (applied_tags.length > 0) return true;
         this.await();
         return this.api.getChannel(parent_id).isForum();
     }
-    
+
     public Thread modify() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
@@ -33,7 +33,7 @@ public class Thread extends Channel {
             .exceptionally(this::error).thenAccept(Lazy::finish);
         return this;
     }
-    
+
     public Thread join() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
@@ -42,7 +42,7 @@ public class Thread extends Channel {
             .thenRun(this::finish);
         return this;
     }
-    
+
     public Thread leave() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
@@ -51,7 +51,7 @@ public class Thread extends Channel {
             .thenRun(this::finish);
         return this;
     }
-    
+
     public <IUser> Thread addUser(IUser user) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final String id = api.getUserId(user);
@@ -61,7 +61,7 @@ public class Thread extends Channel {
             .thenRun(this::finish);
         return this;
     }
-    
+
     public <IUser> Thread removeUser(IUser user) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final String id = api.getUserId(user);
@@ -71,7 +71,7 @@ public class Thread extends Channel {
             .thenRun(this::finish);
         return this;
     }
-    
+
     public <IUser> Member getMember(IUser user) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final String id = api.getUserId(user);
@@ -81,39 +81,39 @@ public class Thread extends Channel {
             .exceptionally(member::error).thenAccept(Lazy::finish);
         return member;
     }
-    
+
     public BulkEntity<Member> getMembers() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return new ThreadMembers();
     }
-    
+
     public static class Member extends Lazy {
         public String id, user_id, join_timestamp;
         public int flags;
     }
-    
+
     public class ThreadMembers extends BulkEntity<Member> {
-        
+
         @Override
         protected Class<Member> getType() {
             return Member.class;
         }
-        
+
         @Override
         protected CompletableFuture<List<?>> getEntities(List<?> list) {
             return Thread.this.api.request("GET", "/channels/" + id + "/thread-members", null, list);
         }
-        
+
         @Override
         protected int limit() {
             return 200;
         }
-        
+
         @Override
         protected DiscordAPI api() {
             return api;
         }
     }
-    
-    
+
+
 }

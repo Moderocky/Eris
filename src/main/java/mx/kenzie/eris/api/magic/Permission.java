@@ -43,13 +43,13 @@ public interface Permission {
         SEND_MESSAGES_IN_THREADS = (1L << 38), // Allows for sending messages in threads	T
         USE_EMBEDDED_ACTIVITIES = (1L << 39), // Allows for using Activities (applications with the EMBEDDED flag), // in a voice channel	V
         MODERATE_MEMBERS = (1L << 40); // Allows for timing out users to prevent them from sending or reacting to messages in chat and threads, and from speaking in voice and stage channels
-    
+
     default boolean hasPermission(long permission) {
         final long permissions = this.permissions();
         return (permissions & permission) != 0;
     }
-    
+
     long permissions();
-    
-    
+
+
 }

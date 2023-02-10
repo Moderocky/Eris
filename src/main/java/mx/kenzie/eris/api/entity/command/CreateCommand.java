@@ -5,7 +5,7 @@ import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.data.Payload;
 
 public abstract class CreateCommand extends Lazy {
-    
+
     public String name;
     public @Optional String description;
     public @Optional int type = 1;

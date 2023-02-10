@@ -11,11 +11,11 @@ public class Integration extends Snowflake {
     public Account account;
     public Application application;
     public String[] scopes = new String[0];
-    
+
     public static class Account extends Snowflake {
         public String name;
     }
-    
+
     public static class Application extends Snowflake {
         public String name, icon, description;
         public @Optional User bot;

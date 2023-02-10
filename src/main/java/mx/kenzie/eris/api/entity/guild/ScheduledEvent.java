@@ -14,9 +14,9 @@ public class ScheduledEvent extends Snowflake implements GuildScheduledEvent {
     public @Optional Metadata entity_metadata;
     public @Optional User creator;
     public @Optional Integer user_count;
-    
+
     public static class Metadata extends Payload {
         public @Optional String location;
     }
-    
+
 }

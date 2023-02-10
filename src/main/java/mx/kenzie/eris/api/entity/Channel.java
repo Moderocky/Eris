@@ -14,19 +14,19 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class Channel extends CreateChannel {
-    
+
     public @Optional int flags;
     public @Optional String guild_id, last_message_id, owner_id, application_id, last_pin_timestamp, permissions;
     public @Optional User[] recipients;
-    
+
     public Channel() {
     }
-    
+
     public Channel(String name, int type) {
         this.name = name;
         this.type = type;
     }
-    
+
     public ThreadRequest getPublicArchivedThreads() {
         if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
         final ThreadRequest request = new ThreadRequest();
@@ -38,7 +38,7 @@ public class Channel extends CreateChannel {
             }).thenAccept(Lazy::finish);
         return request;
     }
-    
+
     public ThreadRequest getPrivateArchivedThreads() {
         if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
         final ThreadRequest request = new ThreadRequest();
@@ -50,7 +50,7 @@ public class Channel extends CreateChannel {
             }).thenAccept(Lazy::finish);
         return request;
     }
-    
+
     public RequestBuilder<Thread> createThread(String name) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final Thread thread = new Thread();
@@ -60,7 +60,7 @@ public class Channel extends CreateChannel {
         builder.set("name", name);
         return builder;
     }
-    
+
     public <IMessage> Message getMessage(IMessage id) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final Message message;
@@ -70,13 +70,13 @@ public class Channel extends CreateChannel {
             .exceptionally(message::error).thenAccept(Lazy::finish);
         return message;
     }
-    
+
     public <IMessage> void deleteMessage(IMessage id) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         if (id instanceof Message m) m.delete();
         else this.api.delete("/channels/" + this + "/messages/" + id);
     }
-    
+
     public void deleteMessages(Object[] messages) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final Set<String> ids = new HashSet<>();
@@ -90,7 +90,7 @@ public class Channel extends CreateChannel {
         }
         this.api.post("/channels/" + this + "/messages/bulk-delete", new Body().toJson(null), null);
     }
-    
+
     public Channel modify() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
@@ -98,14 +98,14 @@ public class Channel extends CreateChannel {
             .exceptionally(this::error).thenAccept(Lazy::finish);
         return this;
     }
-    
+
     public Channel delete() {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
         this.api.delete("/channels/" + this).exceptionally(this::error0).thenRun(this::finish);
         return this;
     }
-    
+
     public boolean isText() {
         if (name == null) this.await();
         return switch (type) {
@@ -115,65 +115,65 @@ public class Channel extends CreateChannel {
             default -> false;
         };
     }
-    
+
     public boolean isForum() {
         if (name == null) this.await();
         return type == ChannelType.GUILD_FORUM;
     }
-    
+
     public Message send(Message message) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         return api.sendMessage(this, message);
     }
-    
+
     public ResultMessages getMessages() {
         return new ResultMessages();
     }
-    
+
     public BulkEntity<Message> getPinnedMessages() {
         if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
         return BulkEntity.of(api, Message.class, list -> this.api.get("/channels/" + id + "/pins", null, list));
     }
-    
+
     public class ThreadRequest extends Lazy {
         public Thread[] threads = new Thread[0];
         public Thread.Member[] members = new Thread.Member[0];
         public boolean has_more;
-        
+
         public Channel getOwner() {
             return Channel.this;
         }
     }
-    
+
     public class ResultMessages extends BulkEntity<Message> {
         transient int limit = 50;
         transient String around, before, after;
-        
+
         public ResultMessages limit(int limit) {
             this.limit = Math.max(0, Math.min(limit, 100));
             return this;
         }
-        
+
         public ResultMessages around(Object around) {
-            this.around = around instanceof Snowflake snowflake ? snowflake.id : around + "";
+            this.around = around instanceof Snowflake snowflake ? snowflake.id : String.valueOf(around);
             return this;
         }
-        
+
         public ResultMessages before(Object before) {
-            this.before = before instanceof Snowflake snowflake ? snowflake.id : before + "";
+            this.before = before instanceof Snowflake snowflake ? snowflake.id : String.valueOf(before);
             return this;
         }
-        
+
         public ResultMessages after(Object after) {
-            this.after = after instanceof Snowflake snowflake ? snowflake.id : after + "";
+            this.after = after instanceof Snowflake snowflake ? snowflake.id : String.valueOf(after);
             return this;
         }
-        
+
         @Override
         protected Class<Message> getType() {
             return Message.class;
         }
-        
+
         @Override
         protected CompletableFuture<List<?>> getEntities(List<?> list) {
             if (api == null) throw DiscordAPI.unlinkedEntity(Channel.this);
@@ -184,16 +184,16 @@ public class Channel extends CreateChannel {
             else if (after != null) query.put("after", after);
             return Channel.this.api.get("/channels/" + id + "/messages", query, list);
         }
-        
+
         @Override
         protected int limit() {
             return this.limit;
         }
-        
+
         @Override
         protected DiscordAPI api() {
             return api;
         }
     }
-    
+
 }

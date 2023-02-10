@@ -9,7 +9,7 @@ public abstract class CreateRole extends Snowflake {
     public @Optional int color;
     public @Optional boolean hoist, mentionable;
 //    public @Optional Payload icon; todo
-    
+
     //    name	string	name of the role	"new role"
 //    permissions	string	bitwise value of the enabled/disabled permissions	@everyone permissions in guild
 //    color	integer	RGB color value	0
