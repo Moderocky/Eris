@@ -8,6 +8,7 @@ public class User extends Snowflake {
 
     public @Optional boolean verified, bot, system, mfa_enabled;
     public String username, discriminator, avatar;
+    public @Optional String global_name;
     public @Optional String banner, email, locale;
     public @Optional int flags, accent_color, premium_type, public_flags;
     private transient int discriminator0;

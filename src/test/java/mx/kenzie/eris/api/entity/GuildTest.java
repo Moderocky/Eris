@@ -6,7 +6,7 @@ import org.junit.Test;
 import java.util.Arrays;
 
 public class GuildTest extends VerifierTest {
-    
+
     @Test
     public void test() {
         this.verify(Guild.class, """
@@ -64,7 +64,7 @@ public class GuildTest extends VerifierTest {
             description	?string	the description for the guild
             stickers	array of sticker objects	custom guild stickers""");
     }
-    
+
     @Test
     public void guildPreviewTest() {
         final Guild.Preview preview = api.getGuildPreview(guild.id());
@@ -80,5 +80,5 @@ public class GuildTest extends VerifierTest {
         assert preview.emojis.length == 0 : Arrays.toString(preview.emojis);
         assert preview.stickers.length == 0 : Arrays.toString(preview.stickers);
     }
-    
+
 }

@@ -52,6 +52,12 @@ public class Snowflake extends Lazy implements Comparable<Snowflake> {
         return (obj instanceof Snowflake snowflake) && Objects.equals(this.id, snowflake.id);
     }
 
+    @Override
+    public int hashCode() {
+        if (id != null) return Long.hashCode(this.id());
+        return super.hashCode();
+    }
+
     public Instant getInstant() {
         final long timestamp = this.timestamp();
         return Instant.ofEpochMilli(timestamp);
@@ -73,4 +79,5 @@ public class Snowflake extends Lazy implements Comparable<Snowflake> {
         final long x = this.timestamp(), y = other.timestamp();
         return Long.compare(x, y);
     }
+
 }
