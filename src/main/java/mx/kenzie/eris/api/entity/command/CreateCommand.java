@@ -1,6 +1,6 @@
 package mx.kenzie.eris.api.entity.command;
 
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.data.Payload;
 

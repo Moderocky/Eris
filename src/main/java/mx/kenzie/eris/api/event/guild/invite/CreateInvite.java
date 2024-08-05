@@ -1,6 +1,6 @@
 package mx.kenzie.eris.api.event.guild.invite;
 
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.entity.Invite;
 

@@ -1,6 +1,6 @@
 package mx.kenzie.eris.api.entity.message;
 
-import mx.kenzie.argo.meta.Any;
+import mx.kenzie.grammar.Any;
 
 public class ActionRow extends Component {
     public @Any Component[] components;

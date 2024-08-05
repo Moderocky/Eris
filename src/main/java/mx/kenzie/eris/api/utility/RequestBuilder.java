@@ -3,6 +3,7 @@ package mx.kenzie.eris.api.utility;
 import mx.kenzie.argo.Json;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
+import mx.kenzie.eris.api.entity.Entity;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +15,6 @@ public class RequestBuilder<Type> {
     protected final Map<String, Object> map;
     protected final String mode, path;
     protected final DiscordAPI api;
-
 
     public RequestBuilder(DiscordAPI api, String type, String path, Type object) {
         this.api = api;
@@ -34,6 +34,7 @@ public class RequestBuilder<Type> {
             lazy.error(throwable);
             return type;
         }).thenAccept(thing -> lazy.finish());
+        if (type instanceof Entity entity) entity.api = api;
         return type;
     }
 

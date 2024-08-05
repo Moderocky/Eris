@@ -1,7 +1,7 @@
 package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.argo.Json;
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.data.Payload;
 
 import java.io.File;

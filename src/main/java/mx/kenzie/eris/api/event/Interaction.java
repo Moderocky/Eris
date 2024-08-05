@@ -1,33 +1,30 @@
 package mx.kenzie.eris.api.event;
 
 import mx.kenzie.argo.Json;
-import mx.kenzie.argo.meta.Any;
-import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.api.Lazy;
-import mx.kenzie.eris.api.entity.Entity;
-import mx.kenzie.eris.api.entity.Member;
-import mx.kenzie.eris.api.entity.Message;
-import mx.kenzie.eris.api.entity.User;
+import mx.kenzie.eris.api.entity.*;
 import mx.kenzie.eris.api.entity.command.callback.Callback;
 import mx.kenzie.eris.api.entity.message.InteractionMessage;
+import mx.kenzie.eris.api.magic.MessageFlags;
 import mx.kenzie.eris.api.utility.SnowflakeMap;
 import mx.kenzie.eris.data.Payload;
+import mx.kenzie.grammar.Any;
+import mx.kenzie.grammar.Optional;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class Interaction extends Entity implements Event {
+public class Interaction extends Entity implements Event, Replied {
 
     public int type;
     public String token, id, guild_id, app_permissions, guild_locale, locale, channel_id, target_id;
+    protected @Optional Channel channel;
     public Member member;
     public User user;
     public Data data = new Data();
     public transient Map<String, Object> __data;
     private transient Message message0;
+    public transient boolean alreadyResponded;
 
     public Message sendMessage(Message message) {
         final String application = api.getApplicationID();
@@ -50,6 +47,12 @@ public class Interaction extends Entity implements Event {
         return callback;
     }
 
+    public User getSource() {
+        if (user != null && user.id != null) return user;
+        if (member != null) return member.user;
+        throw new IllegalStateException("No user found");
+    }
+
     public void deleteOriginalResponse() {
         final String application = api.getApplicationID();
         assert api != null;
@@ -67,7 +70,8 @@ public class Interaction extends Entity implements Event {
     public Message editOriginalResponse(Message message) {
         final String application = api.getApplicationID();
         message.unready();
-        this.api.request("PATCH", "/webhooks/" + application + "/" + token + "/messages/@original", Json.toJson(message, InteractionMessage.class, null), message)
+        this.api.request("PATCH", "/webhooks/" + application + "/" + token + "/messages/@original",
+                Json.toJson(message, InteractionMessage.class, null), message)
             .exceptionally(message::error).thenAccept(Lazy::finish);
         return message;
     }
@@ -88,26 +92,128 @@ public class Interaction extends Entity implements Event {
         return null;
     }
 
+    @Override
+    public Message reply(Message message) {
+        this.respond(message);
+        return message;
+    }
+
+    @Override
+    public Message reply(String message) {
+        final Message response = new Message(message).withFlag(MessageFlags.EPHEMERAL);
+        if (alreadyResponded) this.sendMessage(response);
+        else this.reply(response);
+        return response;
+    }
+
+    public Channel getChannel() {
+        if (channel == null) return null;
+        if (channel.api == null) channel.api = this.api;
+        return channel;
+    }
+
+    public class Reader implements Iterator<String> {
+
+        private Option current;
+        private Iterator<Option> iterator;
+
+        public Reader() {
+            if (data == null || data.options == null) iterator = Collections.emptyIterator();
+            else {
+                final List<Option> options = new ArrayList<>();
+                this.consumeOptions(data, options);
+                this.iterator = options.iterator();
+            }
+        }
+
+        private void consumeOptions(Optioned current, List<Option> options) {
+            if (current.options == null) return;
+            for (Option option : current.options) {
+                options.add(option);
+                this.consumeOptions(option, options);
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return iterator.hasNext();
+        }
+
+        public String next() {
+            if (iterator.hasNext()) {
+                return (current = iterator.next()).name;
+            }
+            return null;
+        }
+
+        public String name() {
+            return current != null ? current.name : null;
+        }
+
+        @Deprecated
+        public <Type> Type value() {
+            //noinspection unchecked
+            return (Type) current.value;
+        }
+
+        public String asString() {
+            return (String) current.value;
+        }
+
+        public Integer asInteger() {
+            return ((Number) current.value).intValue();
+        }
+
+        public Double asDouble() {
+            return ((Number) current.value).doubleValue();
+        }
+
+        public User asUser() {
+            return api.getUser(String.valueOf(current.value));
+        }
+
+        public Channel asChannel() {
+            return api.getChannel(String.valueOf(current.value));
+        }
+
+        public Option current() {
+            return current;
+        }
+
+    }
+
     public static class Input extends Payload {
+
         public int type;
         public String custom_id, value;
         public String[] values;
+
     }
 
     public static class Row extends Payload {
+
         public int type = 1;
         public Input[] components;
+
     }
 
-    public static class Option extends Payload {
+    public static class Option extends Optioned {
+
         public int type;
         public String name;
         public Object value;
-        public Option[] options;
         public boolean focused;
+
+    }
+
+    static class Optioned extends Payload {
+
+        public Option[] options;
+
     }
 
     static class GenericResponse extends Response {
+
         public @Optional
         @Any Callback data;
 
@@ -123,9 +229,11 @@ public class Interaction extends Entity implements Event {
         public Object data() {
             return data;
         }
+
     }
 
     static class MessageResponse extends Response {
+
         public InteractionMessage data;
 
         private MessageResponse() {
@@ -140,18 +248,21 @@ public class Interaction extends Entity implements Event {
         public Object data() {
             return data;
         }
+
     }
 
     public static abstract class Response extends Payload {
+
         public int type;
 
         public abstract Object data();
+
     }
 
-    public class Data extends Payload {
+    public class Data extends Optioned {
+
         public String name, id, guild_id, target_id;
         public Integer type;
-        public Option[] options;
 
         public Row[] components;
         public Map<String, Object> resolved;
@@ -189,7 +300,7 @@ public class Interaction extends Entity implements Event {
             for (final Input input : inputs) {
                 if (!id.equals(input.custom_id)) continue;
                 if (input.values != null) return input.values;
-                if (input.value != null) return new String[]{input.value};
+                if (input.value != null) return new String[] {input.value};
                 return new String[0];
             }
             return new String[0];

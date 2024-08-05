@@ -1,7 +1,7 @@
 package mx.kenzie.eris.api.entity.message;
 
-import mx.kenzie.argo.meta.Any;
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Any;
+import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.api.entity.Embed;
 import mx.kenzie.eris.api.entity.Message;
 import mx.kenzie.eris.api.entity.Snowflake;

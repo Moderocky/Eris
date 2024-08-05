@@ -1,6 +1,6 @@
 package mx.kenzie.eris.api.entity.message;
 
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.api.entity.Message;
 
 public abstract class UnsentMessage extends InteractionMessage {
@@ -8,7 +8,7 @@ public abstract class UnsentMessage extends InteractionMessage {
     public @Optional Message.Reference message_reference;
     public @Optional String[] sticker_ids;
 
-    // files[n] todo
+    // files[n]
 
     protected transient boolean sent0;
 

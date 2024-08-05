@@ -1,6 +1,6 @@
 package mx.kenzie.eris.data.incoming.gateway;
 
-import mx.kenzie.argo.meta.Name;
+import mx.kenzie.grammar.Name;
 import mx.kenzie.eris.api.Event;
 import mx.kenzie.eris.data.Payload;
 import mx.kenzie.eris.data.incoming.Incoming;

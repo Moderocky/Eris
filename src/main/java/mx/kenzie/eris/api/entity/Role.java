@@ -1,7 +1,6 @@
 package mx.kenzie.eris.api.entity;
 
-import mx.kenzie.argo.meta.Optional;
-import mx.kenzie.argo.meta.Present;
+import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.api.entity.guild.CreateRole;
 import mx.kenzie.eris.data.Payload;
 
@@ -56,8 +55,7 @@ public class Role extends CreateRole {
 
     public static class Tag extends Payload {
         public @Optional String bot_id, integration_id;
-        public @Optional
-        @Present boolean premium_subscriber;
+        public @Optional boolean premium_subscriber;
 
         public Tag() {
         }

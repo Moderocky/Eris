@@ -1,6 +1,6 @@
 package mx.kenzie.eris.error;
 
-import mx.kenzie.argo.meta.Name;
+import mx.kenzie.grammar.Name;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;

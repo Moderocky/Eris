@@ -1,6 +1,6 @@
 package mx.kenzie.eris.data.outgoing.gateway;
 
-import mx.kenzie.argo.meta.Name;
+import mx.kenzie.grammar.Name;
 import mx.kenzie.eris.data.outgoing.Outgoing;
 
 public class Resume extends Outgoing {

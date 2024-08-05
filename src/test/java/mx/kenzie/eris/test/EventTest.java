@@ -11,7 +11,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class EventTest {
-    
+
     @Test
     public void test() throws Throwable {
         final Class<?>[] classes = EventTest.classes();
@@ -21,10 +21,10 @@ public class EventTest {
             assert Bot.EVENT_LIST.containsValue(type) : "Unregistered event " + type.getSimpleName();
         }
     }
-    
+
     private static Class<?>[] classes() throws IOException {
         final Set<Class<?>> classes = new LinkedHashSet<>();
-        try (final JarFile jarFile = new JarFile(new File("target/eris-1.0.0.jar"))) {
+        try (final JarFile jarFile = new JarFile(new File("target/eris-1.1.0.jar"))) {
             final Enumeration<JarEntry> thing = jarFile.entries();
             while (thing.hasMoreElements()) {
                 final JarEntry entry = thing.nextElement();
@@ -43,7 +43,7 @@ public class EventTest {
             return classes.toArray(new Class[0]);
         }
     }
-    
+
     @Test
     public void missing() {
         final String list = """
@@ -122,5 +122,5 @@ public class EventTest {
         }
         assert missing.size() == 0 : "Event handlers missing for " + missing;
     }
-    
+
 }

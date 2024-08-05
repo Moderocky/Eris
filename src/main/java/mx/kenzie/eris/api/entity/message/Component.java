@@ -1,6 +1,6 @@
 package mx.kenzie.eris.api.entity.message;
 
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.api.Expecting;
 import mx.kenzie.eris.api.event.Interaction;

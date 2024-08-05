@@ -1,0 +1,29 @@
+{
+    "Respect": {
+        "message": "Please keep all conversation friendly and respectful."
+    },
+    "NSFW/Appropriate": {
+        "message": "Please do not discuss violent, distasteful, dangerous or inappropriate topics in this server."
+    },
+    "Channel Misuse": {
+        "message": "Use all channels properly. Do not send spam, excessive or unwanted messages."
+    },
+    "Advertisement": {
+        "description": "This server is not an appropriate place for advertising."
+    },
+    "Not a help channel": {
+        "message": "This is not the right place to ask for help or support!\nUse <#138027100593455104> for Skript-related questions and <#155077403591442432> for other questions."
+    },
+    "Stop arguing": {
+        "message": "This server is not a place for petty arguments or personal drama."
+    },
+    "AI trash in help": {
+        "message": "AI-generated rubbish is not permitted in our help channels."
+    },
+    "AI trash in general": {
+        "message": "Please keep AI-generated content, showcasing & discussion of AI-related topics to the dedicated <#1229847209638625331> channel."
+    },
+    "No drama topics": {
+        "description": "Discussion of topics likely to offend or cause drama is not permitted in this server.\nYou may be as offensive and dramatic as you like in your own DMs, but not here."
+    }
+}

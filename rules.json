@@ -1,0 +1,26 @@
+{
+  "Respect": {
+    "description": "Be friendly and respectful to everybody. Our community is built on respect."
+  },
+  "NSFW/Appropriate": {
+    "description": "Keep all content safe-for-work and appropriate. Do not post violent, distasteful or sexual content."
+  },
+  "Channel Misuse": {
+    "description": "Use all channels properly. Do not send spam, excessive or unwanted messages."
+  },
+  "Harassment": {
+    "description": "Do not deliberately annoy or harass other users."
+  },
+  "Advertisement": {
+    "description": "Do not advertise or self-promote outside selective showcase channels."
+  },
+  "Hate Speech": {
+    "description": "Do not engage in hate speech or attacks on protected categories."
+  },
+  "Bot User": {
+    "description": "Bot/automated spam users are not permitted."
+  },
+  "AI Post Spam": {
+    "description": "Do not flood channels with pointless AI/Chat GPT post spam."
+  }
+}

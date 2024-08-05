@@ -1,6 +1,6 @@
 package mx.kenzie.eris.api.entity.guild;
 
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.api.entity.Snowflake;
 import mx.kenzie.eris.data.Payload;
 

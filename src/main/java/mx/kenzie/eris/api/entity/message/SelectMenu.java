@@ -1,7 +1,7 @@
 package mx.kenzie.eris.api.entity.message;
 
-import mx.kenzie.argo.meta.Name;
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Name;
+import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.data.Payload;
 
 import static mx.kenzie.eris.api.entity.message.Button.COUNTER;

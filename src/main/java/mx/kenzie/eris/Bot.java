@@ -50,14 +50,14 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 public class Bot extends Lazy implements Runnable, AutoCloseable {
-    
+
     public static final WeakMap<String, Expecting<Interaction>> INLINE_CALLBACKS = new WeakMap<>();
     public static final Map<String, Class<? extends Event>> EVENT_LIST = new HashMap<>();
     public static String API_URL = "https://discord.com/api/v10";
     public static String CDN_URL = "https://cdn.discordapp.com";
     public static boolean DEBUG_MODE = false;
     public static Consumer<Throwable> exceptionHandler;
-    
+
     static {
         EVENT_LIST.put("READY", Ready.class);
         EVENT_LIST.put("RESUMED", Resumed.class);
@@ -70,6 +70,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("GUILD_CREATE", IdentifyGuild.class);
         EVENT_LIST.put("GUILD_UPDATE", UpdateGuild.class);
         EVENT_LIST.put("GUILD_DELETE", DeleteGuild.class);
+        EVENT_LIST.put("GUILD_AUDIT_LOG_ENTRY_CREATE", CreateAuditLogEntry.class);
         EVENT_LIST.put("GUILD_ROLE_CREATE", CreateGuildRole.class);
         EVENT_LIST.put("GUILD_ROLE_UPDATE", UpdateGuildRole.class);
         EVENT_LIST.put("GUILD_ROLE_DELETE", DeleteGuildRole.class);
@@ -128,7 +129,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         EVENT_LIST.put("$INTERNAL_CLOSE_SOCKET", SocketClose.class);
         EVENT_LIST.put("$INTERNAL_DEBUG", Debug.class);
     }
-    
+
     public final ExecutorService executor = Executors.newCachedThreadPool();
     protected final Map<Listener<?>, Class<? extends Event>> listeners = new HashMap<>();
     protected final Map<Command, CommandHandler> commands = new HashMap<>();
@@ -147,11 +148,11 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     private CompletableFuture<?> process;
     private ScheduledFuture<?> heartbeat;
     private transient boolean shouldResume = false;
-    
+
     Bot() {
         this("token");
     }
-    
+
     public Bot(String token, int... intents) {
         this.token = token;
         this.headers[1] = "Bot " + token;
@@ -159,11 +160,11 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         this.api = new DiscordAPI(network, this);
         for (int intent : intents) this.intents |= intent;
     }
-    
+
     public String getSessionID() {
         return session;
     }
-    
+
     public Listener<?>[] getListeners(Class<? extends Event> type) {
         final List<Listener<?>> list = new ArrayList<>();
         for (final Map.Entry<Listener<?>, Class<? extends Event>> entry : listeners.entrySet()) {
@@ -172,27 +173,27 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         }
         return list.toArray(new Listener[0]);
     }
-    
+
     public void unregisterListener(Listener<?> listener) {
         this.listeners.remove(listener);
         this.network.unregisterListener(listener);
     }
-    
+
     public void registerCommand(Command command, CommandHandler handler) {
         this.registerCommand(command, null, handler);
     }
-    
+
     public <IGuild> Command registerCommand(Command command, IGuild guild, CommandHandler handler) {
         final String id = (guild == null) ? null : api.getGuildId(guild);
         command.guild_id = id;
         this.commands.put(command, handler);
         return this.api.registerCommand(command, id);
     }
-    
+
     public Listener<?>[] getPayloadListeners(Class<? extends Incoming> type) {
         return this.network.getListeners(type);
     }
-    
+
     @Override
     public void close() {
         for (final Command command : commands.keySet()) this.api.deleteCommand(command);
@@ -215,25 +216,25 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             this.lock.notifyAll();
         }
     }
-    
+
     public static void handle(Throwable throwable) {
         if (exceptionHandler != null) exceptionHandler.accept(throwable);
         else throwable.printStackTrace();
     }
-    
+
     public void start() {
         if (process != null) return;
         this.process = CompletableFuture.runAsync(this);
     }
-    
+
     public synchronized boolean isRunning() {
         return running;
     }
-    
+
     public DiscordAPI getAPI() {
         return this.api;
     }
-    
+
     @Override
     public void run() {
         try {
@@ -333,11 +334,11 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             ex.printStackTrace();
         }
     }
-    
+
     public <Event extends Incoming> void registerPayloadListener(Class<Event> type, Listener<Event> listener) {
         this.network.registerListener(type, listener);
     }
-    
+
     @SuppressWarnings({"unchecked", "RawUseOfParameterized"})
     public void triggerEvent(Event event) {
         assert event instanceof Payload : "Event was not a payload.";
@@ -354,11 +355,11 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             }, executor);
         }
     }
-    
+
     public <Type extends Payload & Event> void registerListener(Class<Type> type, Listener<Type> listener) {
         this.listeners.put(listener, type);
     }
-    
+
     private void connect(boolean wait) {
         if (wait) try {
             Thread.sleep(5000L); // required pause before reconnect
@@ -368,18 +369,18 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         this.debug("Preparing to open socket.");
         this.openSocket();
     }
-    
+
     public void resume() {
         final Resume resume = new Resume();
         resume.data.session_id = session;
         resume.data.sequence = this.getSequence();
         this.dispatch(resume);
     }
-    
+
     protected void dispatch(Outgoing payload) {
         this.network.sendPayload(payload);
     }
-    
+
     private void openSocket() {
         try (final Json json = new Json(network.request("GET", "/gateway/bot", null, headers).body())) {
             this.debug("Requested socket URL.");
@@ -389,16 +390,16 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
             Bot.handle(ex);
         }
     }
-    
+
     public int getSequence() {
         return network.sequence.getAcquire();
     }
-    
+
     @Override
     public String toString() {
         return "Bot " + this.self;
     }
-    
+
     public void debug(String message) {
         if (!DEBUG_MODE) return;
         final Throwable throwable = new Throwable();

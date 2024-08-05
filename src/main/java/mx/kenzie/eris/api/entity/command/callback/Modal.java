@@ -1,6 +1,6 @@
 package mx.kenzie.eris.api.entity.command.callback;
 
-import mx.kenzie.argo.meta.Any;
+import mx.kenzie.grammar.Any;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.api.Expecting;
 import mx.kenzie.eris.api.entity.message.ActionRow;

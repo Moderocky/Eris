@@ -1,6 +1,6 @@
 package mx.kenzie.eris.api.entity;
 
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Optional;
 
 public class Sticker extends Snowflake {
     public @Optional String pack_id, asset, guild_id;

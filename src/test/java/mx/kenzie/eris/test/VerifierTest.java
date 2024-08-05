@@ -1,8 +1,8 @@
 package mx.kenzie.eris.test;
 
 import mx.kenzie.argo.Json;
-import mx.kenzie.argo.meta.Name;
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Name;
+import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.entity.Channel;
@@ -18,14 +18,14 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 
 public abstract class VerifierTest {
-    
+
     private static final String TOKEN;
     public static boolean running;
     protected static Bot bot;
     protected static DiscordAPI api;
     protected static Guild guild;
     protected static Channel channel;
-    
+
     static {
         final InputStream stream = BasicFunctionalityTest.class.getClassLoader().getResourceAsStream("token.json");
         assert stream != null;
@@ -34,7 +34,7 @@ public abstract class VerifierTest {
             TOKEN = tokens[0];
         }
     }
-    
+
     @BeforeClass
     public static void setup() {
         if (running) return;
@@ -51,7 +51,7 @@ public abstract class VerifierTest {
         assert channel.successful();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> bot.close()));
     }
-    
+
     protected void magic(Class<?> constant, String schema) {
         final String[] lines = schema.split("\n");
         int missing = 0;
@@ -84,7 +84,7 @@ public abstract class VerifierTest {
         }
         assert missing == 0;
     }
-    
+
     protected void verify(Class<? extends Payload> entity, String schema) {
         final String[] lines = schema.split("\n");
         final Set<FieldExpectation> expectations = new LinkedHashSet<>();
@@ -149,19 +149,19 @@ public abstract class VerifierTest {
                 throw new AssertionError("Class " + entity.getSimpleName() + " field " + expectation.name + " " + value
                     .getSimpleName() + " did not match " + expectation.type.getSimpleName());
             } else missing.add(expectation.name);
-            
+
         }
         if (missing.size() > 0)
             System.err.println("Class " + entity.getSimpleName() + " was missing fields " + missing);
         if (optionals.size() > 0) for (String optional : optionals) System.err.println(optional);
         assert missing.size() == 0 && optionals.size() == 0;
     }
-    
+
     enum OptionalState {
         KEY, VALUE, NONE
     }
-    
+
     record FieldExpectation(String name, Class<?> type, OptionalState optional, boolean deprecated) {
     }
-    
+
 }

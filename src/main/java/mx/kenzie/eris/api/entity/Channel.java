@@ -1,7 +1,6 @@
 package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.argo.Json;
-import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.guild.CreateChannel;
@@ -9,6 +8,7 @@ import mx.kenzie.eris.api.magic.ChannelType;
 import mx.kenzie.eris.api.utility.BulkEntity;
 import mx.kenzie.eris.api.utility.RequestBuilder;
 import mx.kenzie.eris.data.Payload;
+import mx.kenzie.grammar.Optional;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -54,9 +54,8 @@ public class Channel extends CreateChannel {
     public RequestBuilder<Thread> createThread(String name) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final Thread thread = new Thread();
-        this.api.post("/channels/" + id + "/threads", "{\"name\":\"" + name + "\"}", thread)
-            .exceptionally(thread::error).thenAccept(Lazy::finish);
-        final RequestBuilder<Thread> builder = new RequestBuilder<>(api, "POST", "/channels/" + id + "/threads", thread);
+        final RequestBuilder<Thread> builder = new RequestBuilder<>(api, "POST", "/channels/" + id + "/threads",
+            thread);
         builder.set("name", name);
         return builder;
     }
@@ -86,7 +85,9 @@ public class Channel extends CreateChannel {
             else ids.add(message.toString());
         }
         class Body extends Payload {
+
             final String[] messages = ids.toArray(new String[0]);
+
         }
         this.api.post("/channels/" + this + "/messages/bulk-delete", new Body().toJson(null), null);
     }
@@ -110,7 +111,7 @@ public class Channel extends CreateChannel {
         if (name == null) this.await();
         return switch (type) {
             case ChannelType.DM, ChannelType.GROUP_DM, ChannelType.GUILD_TEXT, ChannelType.GUILD_NEWS,
-                ChannelType.GUILD_NEWS_THREAD, ChannelType.GUILD_PUBLIC_THREAD, ChannelType.GUILD_PRIVATE_THREAD ->
+                 ChannelType.GUILD_NEWS_THREAD, ChannelType.GUILD_PUBLIC_THREAD, ChannelType.GUILD_PRIVATE_THREAD ->
                 true;
             default -> false;
         };
@@ -136,6 +137,7 @@ public class Channel extends CreateChannel {
     }
 
     public class ThreadRequest extends Lazy {
+
         public Thread[] threads = new Thread[0];
         public Thread.Member[] members = new Thread.Member[0];
         public boolean has_more;
@@ -143,9 +145,11 @@ public class Channel extends CreateChannel {
         public Channel getOwner() {
             return Channel.this;
         }
+
     }
 
     public class ResultMessages extends BulkEntity<Message> {
+
         transient int limit = 50;
         transient String around, before, after;
 
@@ -194,6 +198,7 @@ public class Channel extends CreateChannel {
         protected DiscordAPI api() {
             return api;
         }
+
     }
 
 }

@@ -1,8 +1,8 @@
 package mx.kenzie.eris.api.entity;
 
-import mx.kenzie.argo.meta.Optional;
 import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.DiscordAPI;
+import mx.kenzie.grammar.Optional;
 
 public class User extends Snowflake {
 
@@ -12,6 +12,7 @@ public class User extends Snowflake {
     public @Optional String banner, email, locale;
     public @Optional int flags, accent_color, premium_type, public_flags;
     private transient int discriminator0;
+    private transient Channel directMessageChannel;
 
     public int discriminator() {
         if (discriminator == null) this.await();
@@ -21,7 +22,8 @@ public class User extends Snowflake {
     }
 
     public String getTag() {
-        if (username == null || discriminator == null) this.await();
+        if (username == null) this.await();
+        if (discriminator == null || discriminator.equals("0")) return this.displayName();
         return username + "#" + discriminator;
     }
 
@@ -73,9 +75,17 @@ public class User extends Snowflake {
     public Message sendMessage(Message message) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         message.unready();
-        this.api.createDirectChannel(id).<Channel>whenReady()
-            .thenAccept(channel -> this.api.sendMessage(channel, message));
+        if (directMessageChannel != null) this.api.sendMessage(directMessageChannel, message);
+        else this.api.createDirectChannel(id).<Channel>whenReady().thenAccept(channel -> {
+            this.directMessageChannel = channel;
+            this.api.sendMessage(channel, message);
+        });
         return message;
+    }
+
+    public String displayName() {
+        if (username == null) this.await();
+        return global_name != null ? global_name : username;
     }
 
 }

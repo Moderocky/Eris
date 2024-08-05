@@ -1,6 +1,6 @@
 package mx.kenzie.eris.api.entity.message;
 
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Optional;
 
 public class TextInput extends Component {
 

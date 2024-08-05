@@ -37,39 +37,39 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 public class DiscordAPI {
-    
+
     private final NetworkController network;
     private final Bot bot;
     private final EntityCache cache = new EntityCache();
     private String application;
-    
+
     DiscordAPI(NetworkController network, Bot bot) {
         this.network = network;
         this.bot = bot;
     }
-    
+
     public static DiscordException unlinkedEntity(Entity entity) {
         return new DiscordException("The object " + entity.debugName() + " is not linked to a DiscordAPI.");
     }
-    
+
     public static Instant getInstant(String timestamp) {
         if (timestamp == null) return Instant.EPOCH;
         return Instant.from(DateTimeFormatter.ISO_INSTANT.parse(timestamp));
     }
-    
+
     public static String getTimestamp(Instant instant) {
         if (instant == null) return DateTimeFormatter.ISO_INSTANT.format(Instant.EPOCH);
         return DateTimeFormatter.ISO_INSTANT.format(instant);
     }
-    
+
     public EntityCache getCache() {
         return cache;
     }
-    
+
     public CompletableFuture<?> dispatch(Outgoing payload) {
         return this.network.sendPayload(payload);
     }
-    
+
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> get(String path, Map<?, ?> query, Type object) {
         if (query != null && !query.isEmpty()) {
@@ -79,7 +79,7 @@ public class DiscordAPI {
         }
         return this.request("GET", path, null, object);
     }
-    
+
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> request(String type, String path, String body, Type object) {
         return CompletableFuture.supplyAsync(() -> {
@@ -97,7 +97,7 @@ public class DiscordAPI {
             return object;
         });
     }
-    
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     protected <Type> Type handle(HttpResponse<InputStream> request, Type object) {
         final Map<String, Object> map = new HashMap<>();
@@ -121,7 +121,7 @@ public class DiscordAPI {
             return object;
         }
     }
-    
+
     public Message write(String content) {
         final Message message = new Message();
         message.api = this;
@@ -129,35 +129,40 @@ public class DiscordAPI {
         message.finish();
         return message;
     }
-    
+
     public Message sendMessage(Channel channel, Message message) {
         if (channel.api == null) channel.api = this;
         return this.sendMessage(channel.id, message);
     }
-    
+
     public Message sendMessage(String channel, Message message) {
         message.unready();
+        if (message.api == null) message.api = this;
+        multipart_request:
         if (message.attachments != null && message.attachments.length > 0) {
+            any_to_upload:
+            {
+                for (Attachment attachment : message.attachments)
+                    if (attachment.content != null) break any_to_upload;
+                break multipart_request;
+            }
             final MultiBody body = new MultiBody();
             body.sectionMessage(Json.toJson(message, UnsentMessage.class, null));
             for (final Attachment attachment : message.attachments) {
-                if (attachment.filename != null)
-                    body.section("files[" + attachment.id + "]", attachment.filename, attachment.content);
-                else
-                    body.section("files[" + attachment.id + "]", attachment.content.toString());
+                if (attachment != null)
+                    body.section("files[" + attachment.id + "]", attachment);
             }
             body.finish();
             this.multiRequest("POST", "/channels/" + channel + "/messages", body, message)
                 .exceptionally(message::error).thenAccept(Lazy::finish);
-        } else {
-            final String body = Json.toJson(message, UnsentMessage.class, null);
-            this.post("/channels/" + channel + "/messages", body, message)
-                .exceptionally(message::error).thenAccept(Lazy::finish);
+            return message;
         }
-        if (message.api == null) message.api = this;
+        final String body = Json.toJson(message, UnsentMessage.class, null);
+        this.post("/channels/" + channel + "/messages", body, message)
+            .exceptionally(message::error).thenAccept(Lazy::finish);
         return message;
     }
-    
+
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> multiRequest(String type, String path, MultiBody body, Type object) {
         return CompletableFuture.supplyAsync(() -> {
@@ -180,16 +185,16 @@ public class DiscordAPI {
             return object;
         });
     }
-    
+
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> post(String path, String body, Type object) {
         return this.request("POST", path, body, object);
     }
-    
+
     public Message sendMessage(long channel, Message message) {
         return this.sendMessage(Long.toString(channel), message);
     }
-    
+
     public Message sendMessagePoint(String path, Message message, Class<?> type) {
         message.unready();
         if (message.attachments != null && message.attachments.length > 0) {
@@ -197,7 +202,7 @@ public class DiscordAPI {
             body.sectionMessage(Json.toJson(message, UnsentMessage.class, null));
             for (final Attachment attachment : message.attachments) {
                 if (attachment.filename != null)
-                    body.section("files[" + attachment.id + "]", attachment.filename, attachment.content);
+                    body.section("files[" + attachment.id + "]", attachment);
                 else
                     body.section("files[" + attachment.id + "]", attachment.content.toString());
             }
@@ -212,22 +217,23 @@ public class DiscordAPI {
         if (message.api == null) message.api = this;
         return message;
     }
-    
+
     public Channel createDirectChannel(long id) {
         return this.createDirectChannel(Long.toString(id));
     }
-    
+
     public Channel createDirectChannel(String id) {
         final Channel channel = cache.getOrUse(id, new Channel());
+        if (channel.api == this && channel.ready()) return channel;
         channel.api = this;
         this.post("/users/@me/channels", "{\"recipient_id\":" + id + "}", channel).thenAccept(Lazy::finish);
         return channel;
     }
-    
+
     public Channel getChannel(long id) {
         return this.getChannel(Long.toString(id));
     }
-    
+
     public Channel getChannel(String id) {
         final Channel channel = cache.getOrUse(id, new Channel());
         channel.api = this;
@@ -236,12 +242,12 @@ public class DiscordAPI {
         this.get("/channels/" + id, channel).thenAccept(Lazy::finish);
         return channel;
     }
-    
+
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> get(String path, Type object) {
         return this.request("GET", path, null, object);
     }
-    
+
     public <IChannel> Forum getForumChannel(IChannel id) {
         final Forum channel = cache.getOrUse(id + "", new Forum());
         channel.api = this;
@@ -250,11 +256,11 @@ public class DiscordAPI {
         this.get("/channels/" + id, channel).thenAccept(Lazy::finish);
         return channel;
     }
-    
+
     public User getUser(long id) {
         return this.getUser(Long.toString(id));
     }
-    
+
     public User getUser(String id) {
         final User user = cache.getOrUse(id, new User());
         user.api = this;
@@ -262,7 +268,7 @@ public class DiscordAPI {
         this.get("/users/" + id, user).thenAccept(Lazy::finish);
         return user;
     }
-    
+
     public void update(User user) {
         user.unready();
         cache.store(user);
@@ -270,11 +276,11 @@ public class DiscordAPI {
         if (user instanceof Self self) this.get("/users/@me", self).thenAccept(Lazy::finish);
         else this.get("/users/" + user.id, user).thenAccept(Lazy::finish);
     }
-    
+
     public Guild getGuild(long id) {
         return this.getGuild(Long.toString(id));
     }
-    
+
     public Guild getGuild(String id) {
         final Guild guild = cache.getOrUse(id, new Guild());
         guild.id = id;
@@ -282,11 +288,11 @@ public class DiscordAPI {
         this.get("/guilds/" + id, guild).thenAccept(Lazy::finish);
         return guild;
     }
-    
+
     public Guild.Preview getGuildPreview(long id) {
         return this.getGuildPreview(Long.toString(id));
     }
-    
+
     public Guild.Preview getGuildPreview(String id) {
         final Guild.Preview preview = new Guild.Preview();
         preview.id = id;
@@ -294,7 +300,7 @@ public class DiscordAPI {
         this.get("/guilds/" + id + "/preview", preview).thenAccept(Lazy::finish);
         return preview;
     }
-    
+
     public <IGuild> WelcomeScreen getWelcomeScreen(IGuild guild) {
         final String id = this.getGuildId(guild);
         final WelcomeScreen screen = new WelcomeScreen();
@@ -302,7 +308,7 @@ public class DiscordAPI {
             .exceptionally(screen::error).thenAccept(Lazy::finish);
         return screen;
     }
-    
+
     public String getGuildId(Object object) {
         if (object == null) return null;
         if (object instanceof String value) return value;
@@ -310,19 +316,19 @@ public class DiscordAPI {
         if (object instanceof Guild.Preview value) return value.id;
         return Objects.toString(object);
     }
-    
+
     public <IGuild> WelcomeScreen modifyWelcomeScreen(IGuild guild, WelcomeScreen screen) {
         final String id = this.getGuildId(guild);
         this.patch("/guilds/" + id + "/welcome-screen", Json.toJson(screen), screen)
             .exceptionally(screen::error).thenAccept(Lazy::finish);
         return screen;
     }
-    
+
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> patch(String path, String body, Type object) {
         return this.request("PATCH", path, body, object);
     }
-    
+
     public <IGuild> Template createTemplate(IGuild guild, String name, @Nullable String description) {
         final String id = this.getGuildId(guild);
         final Map<String, Object> parameters = new HashMap<>(2);
@@ -334,7 +340,7 @@ public class DiscordAPI {
             .exceptionally(template::error).thenAccept(Lazy::finish);
         return template;
     }
-    
+
     public LazyList<Channel> getChannels(Guild guild) {
         final List<Object> data = new ArrayList<>();
         final List<Channel> backer = new ArrayList<>();
@@ -352,20 +358,20 @@ public class DiscordAPI {
         });
         return channels;
     }
-    
+
     public <IGuild> LazyList<Role> getRoles(IGuild guild) {
         final LazyList<Role> roles = new LazyList<>(Role.class, new ArrayList<>());
         if (guild instanceof Guild g) g.api = this;
         this.get("/guilds/" + guild + "/roles", roles);
         return roles;
     }
-    
+
     public <IGuild> LazyList<Role> updateRoles(IGuild guild, LazyList<Role> roles) {
         roles.unready();
         this.get("/guilds/" + guild + "/roles", roles);
         return roles;
     }
-    
+
     public <IGuild, IUser> Member getMember(IGuild guild, IUser user) {
         final Member member = new Member(); // don't cache members due to the ID overload
         if (user instanceof User u) member.user = u;
@@ -376,7 +382,7 @@ public class DiscordAPI {
             .exceptionally(member::error).thenAccept(Lazy::finish);
         return member;
     }
-    
+
     public String getUserId(Object object) {
         if (object == null) return null;
         if (object instanceof String value) return value;
@@ -384,7 +390,7 @@ public class DiscordAPI {
         if (object instanceof Member value) return value.user.id;
         return Objects.toString(object);
     }
-    
+
     public <IGuild, IUser> Member modifyMember(IGuild guild, IUser user, ModifyMember member) {
         final String gid = this.getGuildId(guild), uid = this.getUserId(user);
         final Member result;
@@ -394,7 +400,7 @@ public class DiscordAPI {
             .exceptionally(result::error).thenAccept(Lazy::finish);
         return result;
     }
-    
+
     public void update(Member member) {
         if (!member.isValid()) throw new DiscordException("Unable to update member - user ID unknown.");
         if (member.guild_id == null) throw new DiscordException("Unable to update member - guild ID unknown.");
@@ -403,19 +409,19 @@ public class DiscordAPI {
         this.get("/guilds/" + member.guild_id + "/members/" + member.user.id, member)
             .exceptionally(member::error).thenAccept(Lazy::finish);
     }
-    
+
     public <IGuild, IUser> Ban getBan(IGuild guild, IUser user) {
         final String gid = this.getGuildId(guild), uid = this.getUserId(user);
         final Ban ban = new Ban();
         this.get("/guilds/" + gid + "/bans/" + uid, ban).thenAccept(Lazy::finish);
         return ban;
     }
-    
+
     public <IGuild, IUser> void createBan(IGuild guild, IUser user, Ban ban) {
         final String gid = this.getGuildId(guild), uid = this.getUserId(user);
         this.request("PUT", "/guilds/" + gid + "/bans/" + uid, Json.toJson(ban), null).thenRun(ban::finish);
     }
-    
+
     public <
         @Accept({long.class, String.class, Guild.class}) IGuild,
         @Accept({long.class, String.class, User.class}) IUser
@@ -423,7 +429,7 @@ public class DiscordAPI {
         final String gid = this.getGuildId(guild), uid = this.getUserId(user);
         this.request("DELETE", "/guilds/" + gid + "/bans/" + uid, null, null);
     }
-    
+
     public void update(Guild guild) {
         guild.unready();
         this.cache.store(guild);
@@ -431,11 +437,11 @@ public class DiscordAPI {
         this.get("/guilds/" + guild.id, guild)
             .exceptionally(guild::error).thenAccept(Lazy::finish);
     }
-    
+
     public Command registerCommand(Command command) {
         return this.registerCommand(command, (String) null);
     }
-    
+
     public <IGuild> Command registerCommand(Command command, IGuild guild) {
         final String id = bot.self.id;
         final String body = Json.toJson(command, CreateCommand.class, null);
@@ -447,17 +453,17 @@ public class DiscordAPI {
             .exceptionally(command::error).thenAccept(Lazy::finish);
         return command;
     }
-    
+
     public void deleteCommand(Command command) {
         this.deleteCommand(command.id, command.guild_id);
     }
-    
+
     public <ICommand, IGuild> void deleteCommand(ICommand command, IGuild guild) {
         final String id = bot.self.id;
         if (guild == null) this.delete("/applications/" + id + "/commands/" + command);
         else this.delete("/applications/" + id + "/guilds/" + guild + "/commands/" + command);
     }
-    
+
     public CompletableFuture<Void> delete(String path) {
         return CompletableFuture.supplyAsync(() -> {
             try {
@@ -467,7 +473,7 @@ public class DiscordAPI {
             }
         });
     }
-    
+
     public <IGuild> LazyList<Command> getCommands(IGuild guild) {
         final String id = this.getGuildId(guild), self = this.getSelf().id;
         final LazyList<Command> commands = new LazyList<>(Command.class, new ArrayList<>());
@@ -477,33 +483,34 @@ public class DiscordAPI {
         future.exceptionally(commands::error).thenAccept(Lazy::finish);
         return commands;
     }
-    
+
     public Self getSelf() {
         assert bot.session != null : "Bot has not connected";
         return bot.self;
     }
-    
+
     public LazyList<VoiceRegion> getVoiceRegions() {
         final LazyList<VoiceRegion> list = new LazyList<>(VoiceRegion.class, new ArrayList<>());
         this.get("/voice/regions", list).exceptionally(list::error).thenAccept(Lazy::finish);
         return list;
     }
-    
+
     public void interactionResponse(Interaction interaction, Interaction.Response response) {
+        interaction.alreadyResponded = true;
         final String body = Json.toJson(response);
         if (response.data() instanceof Lazy lazy)
             this.post("/interactions/" + interaction.id + "/" + interaction.token + "/callback", body, lazy)
                 .exceptionally(lazy::error).thenAccept(Lazy::finish);
         else this.post("/interactions/" + interaction.id + "/" + interaction.token + "/callback", body, null);
     }
-    
+
     @SuppressWarnings("unchecked")
     public <Type> Type getLocal(String id, Class<Type> expected) {
         final Snowflake snowflake = cache.get(id);
         if (expected.isInstance(snowflake)) return (Type) snowflake;
         else return null;
     }
-    
+
     public <Type extends Entity> Type makeEntity(Class<Type> type, InputStream data) {
         try (final Json json = new Json(data)) {
             final Type template = this.makeEntity(this.makeEntity(type));
@@ -511,7 +518,7 @@ public class DiscordAPI {
             return template;
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     public <Type extends Entity> Type makeEntity(Type template) {
         if (!(template instanceof Snowflake snowflake)) return template;
@@ -521,7 +528,7 @@ public class DiscordAPI {
         this.cache.store(snowflake);
         return template;
     }
-    
+
     public <Type extends Payload> Type makeEntity(Class<Type> type) {
         final TypeMaker<Type> maker = new TypeMaker<>(type);
         maker.identifyConstructor();
@@ -529,18 +536,18 @@ public class DiscordAPI {
         if (thing instanceof Entity entity) entity.api = this;
         return thing;
     }
-    
+
     protected boolean shouldCache(Object entity) {
         return (entity instanceof User || entity instanceof Guild || entity instanceof Channel);
     }
-    
+
     public <Type extends Entity> Type makeEntity(Type template, InputStream data) {
         try (final Json json = new Json(data)) {
             json.toObject(this.makeEntity(template));
         }
         return template;
     }
-    
+
     @SuppressWarnings("unchecked")
     public <Type extends Entity> Type makeEntity(Type template, Map<String, Object> data) {
         this.cache.helper.mapToObject(template, template.getClass(), data);
@@ -554,7 +561,7 @@ public class DiscordAPI {
         this.cache.store(snowflake);
         return template;
     }
-    
+
     @SuppressWarnings("unchecked")
     public <Type> Type getRemote(String id, Class<Type> expected) {
         if (expected == Guild.class) return (Type) this.getGuild(id);
@@ -564,11 +571,11 @@ public class DiscordAPI {
         if (expected == Guild.Preview.class) return (Type) this.getGuildPreview(id);
         else return null;
     }
-    
+
     public void cleanCache() {
         this.cache.clean();
     }
-    
+
     public String getApplicationID() {
         if (application == null) {
             bot.await();
@@ -576,13 +583,15 @@ public class DiscordAPI {
         }
         return application;
     }
-    
+
     public <IGuild> LazyList<Thread> getActiveThreads(IGuild guild) {
         final String id = this.getGuildId(guild);
         final ArrayList<Thread> list = new ArrayList<>();
         final LazyList<Thread> threads = new LazyList<>(Thread.class, list);
         class Result extends Payload {
+
             public Thread[] threads;
+
         }
         this.get("/guilds/" + id + "/threads/active").thenAccept(json -> {
             final Result result = json.toObject(new Result(), Result.class);
@@ -597,11 +606,11 @@ public class DiscordAPI {
         });
         return threads;
     }
-    
+
     public CompletableFuture<Json> get(String path) {
         return this.request("GET", path, null).thenApply(Json::new);
     }
-    
+
     @SuppressWarnings("all")
     public CompletableFuture<InputStream> request(String type, String path, String body) {
         return CompletableFuture.supplyAsync(() -> {
@@ -612,20 +621,21 @@ public class DiscordAPI {
             }
         });
     }
-    
+
     private static class TypeMaker<Type> {
+
         protected final Class<Type> type;
         protected Constructor<Type> constructor;
-        
+
         private TypeMaker(Class<Type> type) {
             this.type = type;
         }
-        
+
         private void identifyConstructor() {
             this.constructor = this.identifyInitialConstructor();
             assert constructor != null;
         }
-        
+
         @SuppressWarnings("unchecked")
         private Constructor<Type> identifyInitialConstructor() {
             if (!type.isLocalClass()) try {
@@ -643,7 +653,7 @@ public class DiscordAPI {
                 throw new JsonException("Unable to create '" + type.getSimpleName() + "' object.", ex);
             }
         }
-        
+
         private Type createInstance() {
             try {
                 return constructor.newInstance();
@@ -651,7 +661,7 @@ public class DiscordAPI {
                 throw new JsonException("Unable to create '" + type.getSimpleName() + "' object.", e);
             }
         }
-        
+
     }
-    
+
 }

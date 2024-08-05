@@ -1,6 +1,6 @@
 package mx.kenzie.eris.api.entity;
 
-import mx.kenzie.argo.meta.Optional;
+import mx.kenzie.grammar.Optional;
 
 public class Integration extends Snowflake {
     public String name, type;
