@@ -6,5 +6,5 @@ import mx.kenzie.eris.data.Payload;
 public class UpdateJoinRequest extends Payload implements Event {
     public String guild_id;
     public Payload request;
-    public int status;
+    public String status;
 }

@@ -22,6 +22,7 @@ import mx.kenzie.eris.error.DiscordException;
 import mx.kenzie.eris.network.CacheJson;
 import mx.kenzie.eris.network.EntityCache;
 import mx.kenzie.eris.network.NetworkController;
+import mx.kenzie.eris.utility.ArrayMerge;
 import org.jetbrains.annotations.Nullable;
 import sun.reflect.ReflectionFactory;
 
@@ -71,20 +72,23 @@ public class DiscordAPI {
     }
 
     @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> get(String path, Map<?, ?> query, Type object) {
+    public <Type> CompletableFuture<Type> get(String path, Map<?, ?> query, Type object, String... headers) {
         if (query != null && !query.isEmpty()) {
             final List<String> parts = new ArrayList<>();
             for (final Map.Entry<?, ?> entry : query.entrySet()) parts.add(entry.getKey() + "=" + entry.getValue());
             path += "?" + String.join("&", parts);
         }
-        return this.request("GET", path, null, object);
+        return this.request("GET", path, null, object, headers);
     }
 
     @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> request(String type, String path, String body, Type object) {
+    public <Type> CompletableFuture<Type> request(String type, String path, String body, Type object,
+                                                  String... headers) {
+        for (String header : headers) if (header == null) throw new NullPointerException("Null header");
         return CompletableFuture.supplyAsync(() -> {
             try {
-                final HttpResponse<InputStream> request = this.network.request(type, path, body, bot.headers);
+                final HttpResponse<InputStream> request = this.network.request(type, path, body,
+                    ArrayMerge.merge(bot.headers, headers));
                 return this.handle(request, object);
             } catch (IOException | InterruptedException ex) {
                 throw new DiscordException("Error in request.", ex);
@@ -164,10 +168,12 @@ public class DiscordAPI {
     }
 
     @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> multiRequest(String type, String path, MultiBody body, Type object) {
+    public <Type> CompletableFuture<Type> multiRequest(String type, String path, MultiBody body, Type object,
+                                                       String... headers) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                final HttpResponse<InputStream> request = this.network.multiRequest(type, path, body, bot.headers);
+                final HttpResponse<InputStream> request = this.network.multiRequest(type, path, body,
+                    ArrayMerge.merge(bot.headers, headers));
                 return this.handle(request, object);
             } catch (IOException | InterruptedException ex) {
                 throw new DiscordException("Error in request.", ex);
@@ -325,8 +331,8 @@ public class DiscordAPI {
     }
 
     @SuppressWarnings("all")
-    public <Type> CompletableFuture<Type> patch(String path, String body, Type object) {
-        return this.request("PATCH", path, body, object);
+    public <Type> CompletableFuture<Type> patch(String path, String body, Type object, String... headers) {
+        return this.request("PATCH", path, body, object, headers);
     }
 
     public <IGuild> Template createTemplate(IGuild guild, String name, @Nullable String description) {
@@ -392,11 +398,18 @@ public class DiscordAPI {
     }
 
     public <IGuild, IUser> Member modifyMember(IGuild guild, IUser user, ModifyMember member) {
+        return this.modifyMember(guild, user, member, null);
+    }
+
+    public <IGuild, IUser> Member modifyMember(IGuild guild, IUser user, ModifyMember member, @Nullable String reason) {
         final String gid = this.getGuildId(guild), uid = this.getUserId(user);
         final Member result;
         if (member instanceof Member value) result = value;
         else result = new Member();
-        this.patch("/guilds/" + gid + "/members/" + uid, Json.toJson(member, ModifyMember.class, null), result)
+        final String[] headers;
+        if (reason != null) headers = new String[] {"X-Audit-Log-Reason", reason};
+        else headers = new String[0];
+        this.patch("/guilds/" + gid + "/members/" + uid, Json.toJson(member, ModifyMember.class, null), result, headers)
             .exceptionally(result::error).thenAccept(Lazy::finish);
         return result;
     }
@@ -440,6 +453,20 @@ public class DiscordAPI {
 
     public Command registerCommand(Command command) {
         return this.registerCommand(command, (String) null);
+    }
+
+    public <IGuild> LazyList<Command> overwriteCommands(IGuild guild, Command... commands) {
+        final String id = bot.self.id;
+        final String body = Json.toJsonArray(commands);
+        final LazyList<Command> list = new LazyList<>(Command.class, new ArrayList<>());
+        for (Command command : commands) command.api = this;
+        CompletableFuture<LazyList<Command>> request;
+        if (guild == null) request = this.request("PUT", "/applications/" + id
+            + "/commands", body, list);
+        else request = this.request("PUT", "/applications/" + id
+            + "/guilds/" + this.getGuildId(guild) + "/commands", body, list);
+        request.exceptionally(list::error).thenAccept(Lazy::finish);
+        return list;
     }
 
     public <IGuild> Command registerCommand(Command command, IGuild guild) {

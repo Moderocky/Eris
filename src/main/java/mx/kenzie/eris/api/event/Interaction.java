@@ -47,6 +47,11 @@ public class Interaction extends Entity implements Event, Replied {
         return callback;
     }
 
+    public void acknowledge(boolean showLoading) {
+        if (showLoading) this.respond(() -> 5); // DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+        else this.respond(() -> 6); // DEFERRED_UPDATE_MESSAGE
+    }
+
     public User getSource() {
         if (user != null && user.id != null) return user;
         if (member != null) return member.user;

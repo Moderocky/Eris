@@ -1,10 +1,8 @@
 package mx.kenzie.eris.api.entity.message;
 
+import mx.kenzie.eris.data.Payload;
 import mx.kenzie.grammar.Name;
 import mx.kenzie.grammar.Optional;
-import mx.kenzie.eris.data.Payload;
-
-import static mx.kenzie.eris.api.entity.message.Button.COUNTER;
 
 public class SelectMenu extends Component {
 
@@ -13,31 +11,44 @@ public class SelectMenu extends Component {
     public Option[] options;
     public boolean disabled;
 
+    public SelectMenu(Option... options) {
+        this(safeId(), options);
+        this.autoRegistrationSafe = true;
+    }
+
     public SelectMenu(String id, Option... options) {
-        this();
-        this.custom_id = id;
+        this(id);
         this.options = options;
     }
 
-    public SelectMenu() {
+    public SelectMenu(String id) {
+        super(id);
         this.type = 3;
         this.options = new Option[0];
     }
 
+    public SelectMenu() {
+        super();
+    }
+
     public SelectMenu(String id, String placeholder, Option... options) {
-        this();
+        this(id);
         this.placeholder = placeholder;
         this.custom_id = id;
         this.options = options;
     }
 
     public SelectMenu(String id, int min, int max, String placeholder, Option... options) {
-        this();
-        this.custom_id = id;
+        this(id);
         this.placeholder = placeholder;
         this.min_values = min;
         this.max_values = max;
         this.options = options;
+    }
+
+    public SelectMenu(int min, int max, String placeholder, Option... options) {
+        this(safeId(), min, max, placeholder, options);
+        this.autoRegistrationSafe = true;
     }
 
     public static Option option() {
@@ -54,19 +65,10 @@ public class SelectMenu extends Component {
         return option;
     }
 
-    public static SelectMenu auto(int min, int max, String placeholder, Option... options) {
-        return SelectMenu.auto(null, min, max, placeholder, options);
-    }
-
-    public static SelectMenu auto(String id, int min, int max, String placeholder, Option... options) {
-        if (id == null) id = "auto_menu_id_" + COUNTER.incrementAndGet();
-        final SelectMenu menu = new SelectMenu(id, min, max, placeholder, options);
-        menu.expectResult();
+    public static SelectMenu any(int min, String placeholder, Option... options) {
+        final SelectMenu menu = new SelectMenu(min, options.length, placeholder, options);
+        menu.autoRegistrationSafe = true;
         return menu;
-    }
-
-    public static SelectMenu auto(String placeholder, Option... options) {
-        return SelectMenu.auto(null, 1, 1, placeholder, options);
     }
 
     public SelectMenu min_values(int min_values) {
@@ -95,6 +97,7 @@ public class SelectMenu extends Component {
     }
 
     public static class Option extends Payload {
+
         public String label, value;
         public @Optional String description;
         public @Optional Payload emoji;
@@ -127,6 +130,7 @@ public class SelectMenu extends Component {
             this.is_default = is_default;
             return this;
         }
+
     }
 
 }

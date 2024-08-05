@@ -1,12 +1,12 @@
 package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.argo.Json;
-import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.data.Payload;
+import mx.kenzie.eris.utility.ArrayMerge;
+import mx.kenzie.grammar.Optional;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.Arrays;
 
 public class Embed extends Entity {
 
@@ -47,9 +47,7 @@ public class Embed extends Entity {
         if (this.fields == null) this.fields = fields;
         else if (this.fields.length == 0) this.fields = fields;
         else {
-            final Field[] result = Arrays.copyOf(this.fields, fields.length + this.fields.length);
-            System.arraycopy(fields, 0, result, this.fields.length - 1, fields.length);
-            this.fields = result;
+            this.fields = ArrayMerge.merge(this.fields, fields);
         }
     }
 
@@ -120,31 +118,42 @@ public class Embed extends Entity {
     }
 
     public static class Footer extends Payload {
+
         public String text;
         public @Optional String icon_url, proxy_icon_url;
+
     }
 
     public static class Image extends Media {
+
         public String url;
+
     }
 
     public static class Thumbnail extends Image {
     }
 
     public static class Video extends Media {
+
         public @Optional String url;
+
     }
 
     public static class Provider extends Payload {
+
         public @Optional String name, url;
+
     }
 
     public static class Author extends Payload {
+
         public String name;
         public @Optional String url, icon_url, proxy_icon_url;
+
     }
 
     public static class Field extends Payload {
+
         public String name, value;
         public boolean inline;
 
@@ -161,11 +170,14 @@ public class Embed extends Entity {
             this.value = value;
             this.inline = inline;
         }
+
     }
 
     static class Media extends Payload {
+
         public @Optional String proxy_url;
         public @Optional Integer height, width;
+
     }
 
 }

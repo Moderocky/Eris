@@ -7,6 +7,7 @@ public abstract class Expecting<Type> extends Lazy {
     private transient final Object lock = new Object();
     private transient volatile boolean triggered0, ready0, cancelled0;
     private transient Type object;
+    private transient final long createdAt = System.currentTimeMillis();
 
     @Override
     public void await(long timeout) {
@@ -40,19 +41,17 @@ public abstract class Expecting<Type> extends Lazy {
         }
     }
 
-    public synchronized void cancel() {
+    protected synchronized void cancel() {
         this.cancelled0 = true;
         this.finish();
     }
 
-    public abstract void expectResult();
-
-    public synchronized void trigger() {
+    protected synchronized void trigger() {
         this.triggered0 = true;
         this.ready0 = false;
     }
 
-    public void setResult(Type result) {
+    protected void setResult(Type result) {
         synchronized (this) {
             this.object = result;
             this.triggered0 = false;
@@ -63,12 +62,19 @@ public abstract class Expecting<Type> extends Lazy {
         }
     }
 
-    public synchronized boolean cancelled() {
+    protected synchronized boolean cancelled() {
         return this.cancelled0;
     }
 
-    public synchronized Type result() {
+    protected synchronized Type getResult() {
         return object;
+    }
+
+    /**
+     * Used internally for deciding when to discard auto-generated interaction listeners.
+     */
+    protected long createdAt() {
+        return createdAt;
     }
 
 }

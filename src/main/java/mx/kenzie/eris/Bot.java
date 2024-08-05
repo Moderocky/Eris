@@ -39,6 +39,10 @@ import mx.kenzie.eris.data.outgoing.gateway.Heartbeat;
 import mx.kenzie.eris.data.outgoing.gateway.Identify;
 import mx.kenzie.eris.data.outgoing.gateway.Resume;
 import mx.kenzie.eris.network.NetworkController;
+import mx.kenzie.eris.utility.CommandRegister;
+import mx.kenzie.eris.utility.ResponseManager;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 
 import java.io.IOException;
 import java.net.http.WebSocket;
@@ -51,7 +55,6 @@ import java.util.function.Consumer;
 
 public class Bot extends Lazy implements Runnable, AutoCloseable {
 
-    public static final WeakMap<String, Expecting<Interaction>> INLINE_CALLBACKS = new WeakMap<>();
     public static final Map<String, Class<? extends Event>> EVENT_LIST = new HashMap<>();
     public static String API_URL = "https://discord.com/api/v10";
     public static String CDN_URL = "https://cdn.discordapp.com";
@@ -134,6 +137,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     protected final Map<Listener<?>, Class<? extends Event>> listeners = new HashMap<>();
     protected final Map<Command, CommandHandler> commands = new HashMap<>();
     protected final DiscordAPI api;
+    protected final ResponseManager responder;
     final String token;
     final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(Eris, B)"};
     private final Object lock = new Object();
@@ -158,6 +162,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         this.headers[1] = "Bot " + token;
         this.network = new NetworkController(API_URL, this);
         this.api = new DiscordAPI(network, this);
+        this.responder = new ResponseManager(this, api);
         for (int intent : intents) this.intents |= intent;
     }
 
@@ -177,6 +182,11 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     public void unregisterListener(Listener<?> listener) {
         this.listeners.remove(listener);
         this.network.unregisterListener(listener);
+    }
+
+    @Contract(pure = true)
+    public CommandRegister registerCommands() {
+        return new CommandRegister(this, api);
     }
 
     public void registerCommand(Command command, CommandHandler handler) {
@@ -312,6 +322,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                 this.finish();
             });
             this.registerListener(Interaction.class, interaction -> {
+                if (responder.consume(interaction)) return;
                 for (final Map.Entry<Command, CommandHandler> entry : this.commands.entrySet()) {
                     final Command command = entry.getKey();
                     if (interaction.data.type != null && interaction.data.type != command.type) continue;
@@ -319,17 +330,9 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
                     if (command.guild_id == null || command.guild_id.equals(interaction.guild_id))
                         entry.getValue().on(interaction);
                 }
-                if (interaction.data.custom_id != null) {
-                    final Expecting<Interaction> expecting = Bot.INLINE_CALLBACKS.getValue(interaction.data.custom_id);
-                    if (expecting == null) return;
-                    Bot.INLINE_CALLBACKS.remove(interaction.data.custom_id);
-                    expecting.setResult(interaction);
-                    expecting.finish();
-                }
             });
             this.connect(false);
             this.scheduler.schedule(this.api::cleanCache, 90, TimeUnit.SECONDS);
-            this.scheduler.schedule(Bot.INLINE_CALLBACKS::cleanAsync, 120, TimeUnit.SECONDS);
         } catch (Throwable ex) {
             ex.printStackTrace();
         }
@@ -411,4 +414,19 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         final Debug debug = new Debug(message, trace);
         this.triggerEvent(debug);
     }
+
+    @ApiStatus.Internal
+    public ScheduledExecutorService scheduler() {
+        return scheduler;
+    }
+
+    @ApiStatus.Internal
+    public Map<Command, CommandHandler> commands() {
+        return commands;
+    }
+
+    public ResponseManager responder() {
+        return responder;
+    }
+
 }

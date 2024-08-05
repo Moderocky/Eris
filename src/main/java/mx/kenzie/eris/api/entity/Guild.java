@@ -1,8 +1,6 @@
 package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.argo.Json;
-import mx.kenzie.grammar.Name;
-import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.entity.command.Command;
@@ -11,6 +9,8 @@ import mx.kenzie.eris.api.utility.BulkEntity;
 import mx.kenzie.eris.api.utility.LazyList;
 import mx.kenzie.eris.api.utility.Query;
 import mx.kenzie.eris.data.Payload;
+import mx.kenzie.grammar.Name;
+import mx.kenzie.grammar.Optional;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -26,9 +26,12 @@ public class Guild extends Snowflake {
     public @Optional
     @Name("owner") boolean is_owner;
     public @Optional boolean widget_enabled;
-    public int afk_timeout, verification_level, default_message_notifications, explicit_content_filter, mfa_level, system_channel_flags, premium_tier, nsfw_level;
-    public @Optional Integer max_presences, max_members, premium_subscription_count, max_video_channel_users, approximate_member_count, approximate_presence_count, hub_type;
-    public String name, icon, splash, discovery_splash, owner_id, afk_channel_id, application_id, system_channel_id, rules_channel_id, vanity_url_code, description, banner, preferred_locale, public_updates_channel_id;
+    public int afk_timeout, verification_level, default_message_notifications, explicit_content_filter, mfa_level,
+        system_channel_flags, premium_tier, nsfw_level;
+    public @Optional Integer max_presences, max_members, premium_subscription_count, max_video_channel_users,
+        approximate_member_count, approximate_presence_count, hub_type;
+    public String name, icon, splash, discovery_splash, owner_id, afk_channel_id, application_id, system_channel_id,
+        rules_channel_id, vanity_url_code, description, banner, preferred_locale, public_updates_channel_id;
     public @Optional String icon_hash, permissions, region, widget_channel_id;
     public String[] features;
     public Role[] roles;
@@ -48,7 +51,8 @@ public class Guild extends Snowflake {
     }
 
     public BulkEntity<Rule> getRules() {
-        return BulkEntity.of(api, Rule.class, list -> this.api.get("/guilds/" + id + "/auto-moderation/rules", null, list));
+        return BulkEntity.of(api, Rule.class, list -> this.api.get("/guilds/" + id + "/auto-moderation/rules", null,
+            list));
     }
 
     public <IRule> Rule getRule(IRule id) {
@@ -136,7 +140,8 @@ public class Guild extends Snowflake {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final String id = role instanceof String string ? string : role.toString();
         if (roles0 == null) roles0 = new LazyList<>(Role.class, new ArrayList<>());
-        this.api.patch("/guilds/" + this + "/roles", "[{\"id\": \"" + id + "\", \"position\": " + position + "}]", roles0)
+        this.api.patch("/guilds/" + this + "/roles", "[{\"id\": \"" + id + "\", \"position\": " + position + "}]",
+                roles0)
             .exceptionally(roles0::error).thenAccept(Lazy::finish);
         return roles0;
     }
@@ -164,8 +169,8 @@ public class Guild extends Snowflake {
     public <IUser, IRole> Guild removeRole(IUser id, IRole role) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         this.unready();
-        this.api.request("DELETE", "/guilds/" + this.id + "/members/" + api.getUserId(id) + "/roles/" + role, null, null)
-            .exceptionally(this::error).thenRun(this::finish);
+        this.api.request("DELETE", "/guilds/" + this.id + "/members/" + api.getUserId(id) + "/roles/" + role,
+            null, null).exceptionally(this::error).thenRun(this::finish);
         return this;
     }
 
@@ -195,11 +200,15 @@ public class Guild extends Snowflake {
     }
 
     public <IUser> Member timeOut(IUser user, Duration duration) {
+        return this.timeOut(user, duration, null);
+    }
+
+    public <IUser> Member timeOut(IUser user, Duration duration, String reason) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final String end = DateTimeFormatter.ISO_INSTANT.format(Instant.now().plus(duration));
         final Member member = new Member();
         member.communication_disabled_until = end;
-        return this.api.modifyMember(this.id, user, member);
+        return this.api.modifyMember(this.id, user, member, reason);
     }
 
     public <IUser> void ban(IUser user, String reason) {
@@ -230,11 +239,14 @@ public class Guild extends Snowflake {
     }
 
     public static class GuildHashes extends Payload {
+
         public Hash channels, roles, metadata;
         public int version;
+
     }
 
     public static class Preview extends Snowflake {
+
         public String name, icon, splash, discovery_splash, description;
         public String[] features = new String[0];
         public Emoji[] emojis = new Emoji[0];
@@ -277,6 +289,7 @@ public class Guild extends Snowflake {
             this.limit = limit;
             return this;
         }
+
     }
 
 }

@@ -1,11 +1,10 @@
 package mx.kenzie.eris.api.entity.command.callback;
 
-import mx.kenzie.grammar.Any;
-import mx.kenzie.eris.Bot;
 import mx.kenzie.eris.api.Expecting;
 import mx.kenzie.eris.api.entity.message.ActionRow;
 import mx.kenzie.eris.api.entity.message.Component;
 import mx.kenzie.eris.api.event.Interaction;
+import mx.kenzie.grammar.Any;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -30,7 +29,7 @@ public class Modal extends Expecting<Interaction> implements Callback {
     }
 
     public static Modal auto(String id, String title, Component... components) {
-        if (id == null) id = "auto_modal_id_" + COUNTER.incrementAndGet();
+        if (id == null) id = Component.safeId();
         final Modal modal = new Modal();
         modal.custom_id = id;
         modal.title = title;
@@ -41,18 +40,12 @@ public class Modal extends Expecting<Interaction> implements Callback {
             components = array;
         }
         modal.components = components;
-        modal.expectResult();
         return modal;
-    }
-
-    @Override
-    public void expectResult() {
-        Bot.INLINE_CALLBACKS.set(custom_id, this);
-        this.trigger();
     }
 
     @Override
     public int interactionResponseType() {
         return 9;
     }
+
 }
