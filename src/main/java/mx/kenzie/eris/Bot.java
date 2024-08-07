@@ -43,6 +43,7 @@ import mx.kenzie.eris.utility.CommandRegister;
 import mx.kenzie.eris.utility.ResponseManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.http.WebSocket;
@@ -138,7 +139,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     protected final Map<Command, CommandHandler> commands = new HashMap<>();
     protected final DiscordAPI api;
     protected final ResponseManager responder;
-    final String token;
+    final String token, secret;
     final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(Eris, B)"};
     private final Object lock = new Object();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
@@ -158,12 +159,21 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     }
 
     public Bot(String token, int... intents) {
+        this(token, null, intents);
+    }
+
+    public Bot(String token, @Nullable String secret, int... intents) {
+        this.secret = secret;
         this.token = token;
         this.headers[1] = "Bot " + token;
         this.network = new NetworkController(API_URL, this);
         this.api = new DiscordAPI(network, this);
         this.responder = new ResponseManager(this, api);
         for (int intent : intents) this.intents |= intent;
+    }
+
+    public boolean hasClientSecret() {
+        return secret != null;
     }
 
     public String getSessionID() {

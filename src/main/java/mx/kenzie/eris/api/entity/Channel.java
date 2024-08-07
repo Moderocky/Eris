@@ -136,6 +136,11 @@ public class Channel extends CreateChannel {
         return BulkEntity.of(api, Message.class, list -> this.api.get("/channels/" + id + "/pins", null, list));
     }
 
+    public Thread getAsThread() {
+        if (this instanceof Thread thread) return thread;
+        return api.clone(this, new Thread());
+    }
+
     public class ThreadRequest extends Lazy {
 
         public Thread[] threads = new Thread[0];

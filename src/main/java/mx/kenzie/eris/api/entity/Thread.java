@@ -1,13 +1,14 @@
 package mx.kenzie.eris.api.entity;
 
 import mx.kenzie.argo.Json;
-import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.DiscordAPI;
 import mx.kenzie.eris.api.Lazy;
 import mx.kenzie.eris.api.utility.BulkEntity;
 import mx.kenzie.eris.data.Payload;
+import mx.kenzie.grammar.Optional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public class Thread extends Channel {
@@ -56,7 +57,7 @@ public class Thread extends Channel {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final String id = api.getUserId(user);
         this.unready();
-        this.api.request("PUT", "/channels/" + id + "/thread-members/" + id, null, null)
+        this.api.request("PUT", "/channels/" + this.id + "/thread-members/" + id, null, null)
             .exceptionally(this::error)
             .thenRun(this::finish);
         return this;
@@ -87,9 +88,19 @@ public class Thread extends Channel {
         return new ThreadMembers();
     }
 
+    public <IChannel> boolean isParent(IChannel channel) {
+        if (parent_id != null && channel instanceof Channel other)
+            return Objects.equals(parent_id, other.id);
+        if (api == null) throw DiscordAPI.unlinkedEntity(this);
+        if (parent_id == null && this.name == null && !this.ready()) this.await(); // probably not yet loaded
+        return Objects.equals(parent_id, api.getId(channel));
+    }
+
     public static class Member extends Lazy {
+
         public String id, user_id, join_timestamp;
         public int flags;
+
     }
 
     public class ThreadMembers extends BulkEntity<Member> {
@@ -113,7 +124,7 @@ public class Thread extends Channel {
         protected DiscordAPI api() {
             return api;
         }
-    }
 
+    }
 
 }

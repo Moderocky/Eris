@@ -8,6 +8,8 @@ import mx.kenzie.eris.api.entity.Thread;
 import mx.kenzie.eris.api.entity.*;
 import mx.kenzie.eris.api.entity.command.Command;
 import mx.kenzie.eris.api.entity.command.CreateCommand;
+import mx.kenzie.eris.api.entity.connection.AccessToken;
+import mx.kenzie.eris.api.entity.connection.Metadata;
 import mx.kenzie.eris.api.entity.guild.*;
 import mx.kenzie.eris.api.entity.message.Attachment;
 import mx.kenzie.eris.api.entity.message.UnsentMessage;
@@ -22,7 +24,10 @@ import mx.kenzie.eris.error.DiscordException;
 import mx.kenzie.eris.network.CacheJson;
 import mx.kenzie.eris.network.EntityCache;
 import mx.kenzie.eris.network.NetworkController;
-import mx.kenzie.eris.utility.ArrayMerge;
+import mx.kenzie.eris.utility.Request;
+import mx.kenzie.eris.utility.Schema;
+import mx.kenzie.eris.utility.URLBuilder;
+import mx.kenzie.grammar.Optional;
 import org.jetbrains.annotations.Nullable;
 import sun.reflect.ReflectionFactory;
 
@@ -72,6 +77,11 @@ public class DiscordAPI {
     }
 
     @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> get(String path, Type object, String... headers) {
+        return this.request("GET", path, null, object, headers);
+    }
+
+    @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> get(String path, Map<?, ?> query, Type object, String... headers) {
         if (query != null && !query.isEmpty()) {
             final List<String> parts = new ArrayList<>();
@@ -84,11 +94,24 @@ public class DiscordAPI {
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> request(String type, String path, String body, Type object,
                                                   String... headers) {
+        return this.request0(type, path, body, object, true, headers);
+    }
+
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> requestRaw(String type, String path, String body, Type object,
+                                                     String... headers) {
+        return this.request0(type, path, body, object, false, headers);
+    }
+
+    @SuppressWarnings("all")
+    protected <Type> CompletableFuture<Type> request0(String type, String path, String body, Type object,
+                                                      boolean defaultAuthorisation,
+                                                      String... headers) {
         for (String header : headers) if (header == null) throw new NullPointerException("Null header");
         return CompletableFuture.supplyAsync(() -> {
             try {
                 final HttpResponse<InputStream> request = this.network.request(type, path, body,
-                    ArrayMerge.merge(bot.headers, headers));
+                    defaultAuthorisation ? URLBuilder.mergeHeaders(headers, bot.headers) : headers);
                 return this.handle(request, object);
             } catch (IOException | InterruptedException ex) {
                 throw new DiscordException("Error in request.", ex);
@@ -173,7 +196,7 @@ public class DiscordAPI {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 final HttpResponse<InputStream> request = this.network.multiRequest(type, path, body,
-                    ArrayMerge.merge(bot.headers, headers));
+                    URLBuilder.mergeHeaders(headers, bot.headers));
                 return this.handle(request, object);
             } catch (IOException | InterruptedException ex) {
                 throw new DiscordException("Error in request.", ex);
@@ -195,6 +218,11 @@ public class DiscordAPI {
     @SuppressWarnings("all")
     public <Type> CompletableFuture<Type> post(String path, String body, Type object) {
         return this.request("POST", path, body, object);
+    }
+
+    @SuppressWarnings("all")
+    public <Type> CompletableFuture<Type> post(String path, String body, Type object, String... headers) {
+        return this.request("POST", path, body, object, headers);
     }
 
     public Message sendMessage(long channel, Message message) {
@@ -392,7 +420,15 @@ public class DiscordAPI {
     public String getUserId(Object object) {
         if (object == null) return null;
         if (object instanceof String value) return value;
-        if (object instanceof User value) return value.id;
+        if (object instanceof Member value) return value.user.id;
+        if (object instanceof Snowflake value) return value.id;
+        return Objects.toString(object);
+    }
+
+    public String getId(Object object) {
+        if (object == null) return null;
+        if (object instanceof String value) return value;
+        if (object instanceof Snowflake snowflake) return snowflake.id;
         if (object instanceof Member value) return value.user.id;
         return Objects.toString(object);
     }
@@ -611,6 +647,16 @@ public class DiscordAPI {
         return application;
     }
 
+    public <IUser, IChannel> Request addThreadMember(IUser user, IChannel thread) {
+        final String id = this.getUserId(user), target = this.getId(thread);
+        final Request request = new Request();
+        request.unready();
+        this.request("PUT", "/channels/" + target + "/thread-members/" + id, null, null)
+            .exceptionally(request::error)
+            .thenRun(request::finish);
+        return request;
+    }
+
     public <IGuild> LazyList<Thread> getActiveThreads(IGuild guild) {
         final String id = this.getGuildId(guild);
         final ArrayList<Thread> list = new ArrayList<>();
@@ -634,6 +680,49 @@ public class DiscordAPI {
         return threads;
     }
 
+    public Request updateMetadata(AccessToken token, String platformName, Payload data) {
+        final String access = token.accessToken();
+        final Request request = new Request();
+        request.unready();
+        this.requestRaw("PUT", "/users/@me/applications/" + this.getSelf().id + "/role-connection",
+                new Payload() {
+                    public final String platform_name = platformName;
+                    public final Payload metadata = data;
+                }.toJson(null), request, "Authorization", "Bearer " + access)
+            .exceptionally(request::error).thenAccept(Lazy::finish);
+        return request;
+    }
+
+    public CompletableFuture<Metadata[]> registerMetadata(Metadata... metadata) {
+        return this.request("PUT", "/applications/" + this.getSelf().id + "/role-connections/metadata",
+            Json.toJsonArray(metadata)).thenApply(Json::new).thenApply(json -> json.toArray(Metadata.class));
+    }
+
+    public AccessToken exchangeToken(String tokenCode, String redirectUri) {
+        final AccessToken response = new AccessToken();
+        response.api = this;
+        response.unready();
+        final Payload payload = new Payload() {
+            @Optional
+            public final String
+                client_id = DiscordAPI.this.getSelf().id, client_secret = DiscordAPI.this.getClientSecret(),
+                grant_type = "authorization_code", code = tokenCode, redirect_uri = redirectUri;
+        };
+        final String body = URLBuilder.toQueryString(payload);
+        this.request0("POST", "/oauth2/token", body, response, false, "Content-Type", "application/x-www-form" +
+                "-urlencoded")
+            .exceptionally(response::error).thenAccept(Lazy::finish);
+        return response;
+    }
+
+    public URLBuilder createAuthURL(@Nullable String redirectUri, String... scopes) {
+        final URLBuilder builder = new URLBuilder("https://discord.com/api/oauth2/authorize");
+        builder.query("client_id", this.getSelf().id).query("response_type", "code").query("prompt", "consent");
+        if (redirectUri != null) builder.query("redirect_uri", redirectUri);
+        if (scopes.length > 0) builder.query("scope", String.join(" ", scopes));
+        return builder;
+    }
+
     public CompletableFuture<Json> get(String path) {
         return this.request("GET", path, null).thenApply(Json::new);
     }
@@ -647,6 +736,22 @@ public class DiscordAPI {
                 throw new DiscordException(ex);
             }
         });
+    }
+
+    public <Type extends Payload> Type clone(Payload source, Type target) {
+        assert source != null && target != null;
+        final Schema schema = Schema.of(source.getClass());
+        schema.copy(source, target);
+        if (source instanceof Entity entity && target instanceof Entity other) other.api = entity.api;
+        return target;
+    }
+
+    public String getClientSecret() {
+        return bot.secret;
+    }
+
+    public boolean hasClientSecret() {
+        return bot.hasClientSecret();
     }
 
     private static class TypeMaker<Type> {
