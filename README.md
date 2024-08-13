@@ -18,6 +18,8 @@ The library is designed to be:
 
 *No third-party libraries were harmed in the making of this.*
 
+Get started with [this introduction guide](GETTING-STARTED.md).
+
 ## Maven Information
 ```xml
 <repository>
