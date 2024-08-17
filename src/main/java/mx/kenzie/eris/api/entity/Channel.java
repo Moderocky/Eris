@@ -76,7 +76,8 @@ public class Channel extends CreateChannel {
         else this.api.delete("/channels/" + this + "/messages/" + id);
     }
 
-    public void deleteMessages(Object[] messages) {
+    @SafeVarargs
+    public final <IMessage> void deleteMessages(IMessage... messages) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         final Set<String> ids = new HashSet<>();
         for (final Object message : messages) {
