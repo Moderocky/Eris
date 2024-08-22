@@ -439,4 +439,16 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
         return responder;
     }
 
+    public String token() {
+        return token;
+    }
+
+    public String secret() {
+        return secret;
+    }
+
+    public int intents() {
+        return intents;
+    }
+
 }
