@@ -139,7 +139,7 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
     protected final Map<Command, CommandHandler> commands = new HashMap<>();
     protected final DiscordAPI api;
     protected final ResponseManager responder;
-    final String token, secret;
+    protected String token, secret;
     final String[] headers = {"Authorization", null, "User-Agent", "DiscordBot(Eris, B)"};
     private final Object lock = new Object();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
@@ -449,6 +449,18 @@ public class Bot extends Lazy implements Runnable, AutoCloseable {
 
     public int intents() {
         return intents;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public void setSecret(String secret) {
+        this.secret = secret;
+    }
+
+    public void setIntents(int intents) {
+        this.intents = intents;
     }
 
 }
