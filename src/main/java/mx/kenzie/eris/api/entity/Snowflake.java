@@ -1,5 +1,6 @@
 package mx.kenzie.eris.api.entity;
 
+import mx.kenzie.argo.Json;
 import mx.kenzie.grammar.Optional;
 import mx.kenzie.eris.api.Lazy;
 import org.jetbrains.annotations.Contract;
@@ -43,8 +44,9 @@ public class Snowflake extends Lazy implements Comparable<Snowflake> {
     }
 
     @Override
-    public String toString() {
-        return id;
+    public @NotNull String toString() {
+        if (id != null) return id;
+        return Json.toJson(this); // we shouldn't be returning null in toString
     }
 
     @Override
