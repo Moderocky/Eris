@@ -112,7 +112,7 @@ public class Guild extends Snowflake {
     public Channel modifyChannel(Channel channel) {
         if (api == null) throw DiscordAPI.unlinkedEntity(this);
         channel.api = api;
-        this.api.post("/channels/" + channel, Json.toJson(channel, CreateChannel.class, null), channel)
+        this.api.patch("/channels/" + channel, Json.toJson(channel, CreateChannel.class, null), channel)
             .exceptionally(channel::error).thenAccept(Lazy::finish);
         return channel;
     }
