@@ -39,6 +39,10 @@ public class Button extends Component {
         return button;
     }
 
+    public static Button ofLink(String label, String url) {
+        return new Button().style(ButtonStyle.LINK).label(label).url(url);
+    }
+
     public Button style(int style) {
         this.style = style;
         return this;
