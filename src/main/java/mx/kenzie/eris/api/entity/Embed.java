@@ -43,12 +43,13 @@ public class Embed extends Entity {
         }
     }
 
-    public void addField(Field... fields) {
+    public Embed addField(Field... fields) {
         if (this.fields == null) this.fields = fields;
         else if (this.fields.length == 0) this.fields = fields;
         else {
             this.fields = ArrayMerge.merge(this.fields, fields);
         }
+        return this;
     }
 
     @Override
@@ -114,6 +115,77 @@ public class Embed extends Entity {
 
     public Embed color(int r, int g, int b) {
         this.color = ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | ((b & 0xFF));
+        return this;
+    }
+
+    public Embed footer(String footer) {
+        this.footer.text = footer;
+        return this;
+    }
+
+    public Embed footer(String footer, String iconUrl, String proxyIconUrl) {
+        this.footer.text = footer;
+        this.footer.icon_url = iconUrl;
+        this.footer.proxy_icon_url = proxyIconUrl;
+        return this;
+    }
+
+    public Embed image(Image image) {
+        this.image = image;
+        return this;
+    }
+
+    public Embed image(String url) {
+        this.image.url = url;
+        return this;
+    }
+
+    public Embed thumbnail(Thumbnail thumbnail) {
+        this.thumbnail = thumbnail;
+        return this;
+    }
+
+    public Embed thumbnail(String url) {
+        this.thumbnail.url = url;
+        return this;
+    }
+
+    public Embed video(Video video) {
+        this.video = video;
+        return this;
+    }
+
+    public Embed video(String url) {
+        this.video.url = url;
+        return this;
+    }
+
+    public Embed provider(Provider provider) {
+        this.provider = provider;
+        return this;
+    }
+
+    public Embed provider(String name, String url) {
+        this.provider.name = name;
+        this.provider.url = url;
+        return this;
+    }
+
+    public Embed author(Author author) {
+        this.author = author;
+        return this;
+    }
+
+    public Embed author(String name) {
+        this.author.name = name;
+        return this;
+    }
+
+    public Embed author(String name, String url, String iconUrl, String proxyIconUrl) {
+        this.author.name = name;
+        this.author.url = url;
+        this.author.icon_url = iconUrl;
+        this.author.proxy_icon_url = proxyIconUrl;
         return this;
     }
 
