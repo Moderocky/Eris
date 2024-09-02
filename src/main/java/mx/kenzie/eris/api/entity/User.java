@@ -50,7 +50,8 @@ public class User extends Snowflake {
 
     public String getDefaultAvatarURL() {
         if (discriminator == null) this.await();
-        return Bot.CDN_URL + "/embed/avatars/" + discriminator + ".png";
+        int discriminator = this.discriminator();
+        return Bot.CDN_URL + "/embed/avatars/" + (discriminator != 0 ? discriminator % 5 : (id() >> 22) % 6) + ".png";
     }
 
     public String getGuildAvatarURL(Guild guild) {
